@@ -3,7 +3,7 @@
   "name": "phase1-wp2-local-data",
   "title": "阶段1-WP2：本地数据模型与 Drift",
   "description": "MediaItem、UserEntry、ProgressEntry、本地仓储层与基础查询",
-  "status": "in-progress",
+  "status": "completed",
   "dev_type": null,
   "scope": null,
   "package": null,
@@ -11,11 +11,12 @@
   "creator": "lingshichat",
   "assignee": "lingshichat",
   "createdAt": "2026-04-19",
-  "completedAt": null,
+  "completedAt": "2026-04-19",
   "branch": null,
   "base_branch": "main",
   "worktree_path": null,
-  "current_phase": 3,
+  "current_phase": 6,
+  "commit": "e9618ec",
   "next_action": [
     {
       "phase": 1,
@@ -42,7 +43,6 @@
       "action": "record-session"
     }
   ],
-  "commit": null,
   "pr_url": null,
   "subtasks": [],
   "children": [],
