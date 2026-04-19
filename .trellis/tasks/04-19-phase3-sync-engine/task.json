@@ -1,0 +1,53 @@
+{
+  "id": "phase3-sync-engine",
+  "name": "phase3-sync-engine",
+  "title": "阶段3：跨端同步内核（WebDAV / S3-compatible）",
+  "description": "对象同步、同步队列、冲突处理、WebDAV 与 S3-compatible 适配",
+  "status": "planning",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P1",
+  "creator": "lingshichat",
+  "assignee": "lingshichat",
+  "createdAt": "2026-04-19",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "current_phase": 0,
+  "next_action": [
+    {
+      "phase": 1,
+      "action": "brainstorm"
+    },
+    {
+      "phase": 2,
+      "action": "research"
+    },
+    {
+      "phase": 3,
+      "action": "implement"
+    },
+    {
+      "phase": 4,
+      "action": "check"
+    },
+    {
+      "phase": 5,
+      "action": "update-spec"
+    },
+    {
+      "phase": 6,
+      "action": "record-session"
+    }
+  ],
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "04-18-flutter-media-tracker",
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {}
+}
