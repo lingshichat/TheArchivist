@@ -23,52 +23,62 @@ class LibraryPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('媒体库 / Library', style: theme.textTheme.displaySmall),
+          Text('Welcome back, Elias.', style: theme.textTheme.displaySmall),
           const SizedBox(height: AppSpacing.xs),
           Text(
             'Managing 1,248 items across your personal archive.',
             style: theme.textTheme.bodyMedium,
           ),
           const SizedBox(height: AppSpacing.xxl),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final Widget tabs = Wrap(
-                spacing: AppSpacing.xl,
-                runSpacing: AppSpacing.sm,
-                children: const [
-                  _LibraryTab(label: 'Movies', isActive: true),
-                  _LibraryTab(label: 'Books'),
-                  _LibraryTab(label: 'Games'),
-                ],
-              );
-              final Widget filters = Wrap(
-                spacing: AppSpacing.sm,
-                runSpacing: AppSpacing.sm,
-                children: const [
-                  _CompactFilter(label: 'Status', value: 'All'),
-                  _CompactFilter(label: 'Sort', value: 'Recent'),
-                ],
-              );
+          Container(
+            padding: const EdgeInsets.only(bottom: AppSpacing.xl),
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: AppColors.outlineVariant.withValues(alpha: 0.1),
+                ),
+              ),
+            ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final Widget tabs = Wrap(
+                  spacing: AppSpacing.xl,
+                  runSpacing: AppSpacing.sm,
+                  children: const [
+                    _LibraryTab(label: 'Movies', isActive: true),
+                    _LibraryTab(label: 'Books'),
+                    _LibraryTab(label: 'Games'),
+                  ],
+                );
+                final Widget filters = Wrap(
+                  spacing: AppSpacing.sm,
+                  runSpacing: AppSpacing.sm,
+                  children: const [
+                    _CompactFilter(label: 'Status', value: 'All'),
+                    _CompactFilter(label: 'Sort', value: 'Recent'),
+                  ],
+                );
 
-              if (constraints.maxWidth >= 920) {
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                if (constraints.maxWidth >= 920) {
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Expanded(child: tabs),
+                      filters,
+                    ],
+                  );
+                }
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(child: tabs),
+                    tabs,
+                    const SizedBox(height: AppSpacing.lg),
                     filters,
                   ],
                 );
-              }
-
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  tabs,
-                  const SizedBox(height: AppSpacing.lg),
-                  filters,
-                ],
-              );
-            },
+              },
+            ),
           ),
           const SizedBox(height: AppSpacing.xxl),
           _LibraryGrid(
@@ -79,12 +89,7 @@ class LibraryPage extends StatelessWidget {
             onItemTap: () => context.go(AppRoutes.detail),
           ),
           const SizedBox(height: 80),
-          Center(
-            child: OutlinedButton(
-              onPressed: () {},
-              child: const Text('Load More Entries'),
-            ),
-          ),
+          const Center(child: _LoadMoreButton()),
         ],
       ),
     );
@@ -153,7 +158,7 @@ class _LibraryPosterTile extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadii.container),
+        borderRadius: BorderRadius.circular(AppRadii.card),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -162,10 +167,7 @@ class _LibraryPosterTile extends StatelessWidget {
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   color: AppColors.surfaceContainer,
-                  borderRadius: BorderRadius.circular(AppRadii.container),
-                  border: Border.all(
-                    color: AppColors.outlineVariant.withValues(alpha: 0.18),
-                  ),
+                  borderRadius: BorderRadius.circular(AppRadii.card),
                 ),
                 child: PosterArt(item: item),
               ),
@@ -293,9 +295,9 @@ class _CompactFilter extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: AppColors.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(AppRadii.floating),
+        borderRadius: BorderRadius.circular(AppRadii.container),
         border: Border.all(
-          color: AppColors.outlineVariant.withValues(alpha: 0.14),
+          color: AppColors.outlineVariant.withValues(alpha: 0.1),
         ),
       ),
       child: Row(
@@ -316,6 +318,42 @@ class _CompactFilter extends StatelessWidget {
             color: AppColors.subtleText,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _LoadMoreButton extends StatelessWidget {
+  const _LoadMoreButton();
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {},
+        borderRadius: BorderRadius.circular(AppRadii.card),
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.xxxl,
+            vertical: AppSpacing.md,
+          ),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadii.card),
+            border: Border.all(
+              color: AppColors.outlineVariant.withValues(alpha: 0.3),
+            ),
+          ),
+          child: Text(
+            'LOAD MORE ENTRIES',
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: AppColors.outline,
+              letterSpacing: 2.0,
+            ),
+          ),
+        ),
       ),
     );
   }

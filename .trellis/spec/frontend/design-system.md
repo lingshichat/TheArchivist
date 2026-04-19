@@ -86,6 +86,34 @@ Use Stitch as the visual contract for:
 - Treating Tailwind classes as runtime dependencies
 - Rebuilding every tiny animation before the static layout is faithful
 
+### Design Decision: fixed-slot top bar geometry
+
+**Context**
+
+Earlier Flutter drafts let the search field drift horizontally because the title
+width and page-specific padding changed per route. That made Home, Library, and
+Settings look like different shells even when they were meant to share the same
+desktop chrome.
+
+**Decision**
+
+Keep the top bar as a fixed-slot layout:
+
+- title slot stays fixed
+- search field starts at a fixed anchor
+- trailing action stays at a fixed anchor
+- route variants change copy and palette first, not geometry
+
+**Route rule**
+
+- Home / Library / Settings share the same slot widths and black editorial title
+- Detail may keep the accent-ink title, but it should still reuse the same slot
+  geometry
+
+**Why**
+
+This prevents title-length drift and keeps Stitch desktop alignment stable.
+
 ---
 
 ## Editorial North Star
@@ -261,7 +289,37 @@ adding empty hero spacing unless the Stitch screen clearly uses it.
 - Sidebar is fixed on desktop
 - Top bar is sticky and aligned with the content area, not the full viewport
 - Top bar height: approximately `64px`
+- Top bar max width: `1600px`
+- Main content max width:
+  - Home / Library: `1600px`
+  - Detail: `1440px`
+  - Settings: `1280px`
+- Settings content background uses `shellPanel`, not the brighter page
+  background
 - Main content uses generous horizontal padding and dense internal grids
+
+### Top Bar Geometry
+
+Shared desktop header geometry:
+
+- horizontal padding: `48px`
+- vertical padding: `16px`
+- title slot width: `188px`
+- search gap after title: `24px`
+- search field target width: `360px`
+- search shell height: `34px`
+- trailing action tap target: `36px`
+
+Shared title behavior:
+
+- Home: `Home`
+- Library: `Library`
+- Settings: `Settings`
+- Home / Library / Settings use `onSurface` as title ink
+- Detail keeps the branded `The Archivist` title in `accentStrong`
+
+Do not use slash-separated bilingual titles in the desktop top bar once the
+Stitch copy has been locked.
 
 ### Home
 
@@ -278,11 +336,20 @@ adding empty hero spacing unless the Stitch screen clearly uses it.
 
 - Dense poster wall is the main event
 - Includes:
-  - page title
+  - top-bar title `Library`
+  - greeting hero title
+  - stats subtitle
   - media-type tabs
   - filter row
-  - sort row
+  - sort controls
   - multi-column desktop grid
+- Hero copy uses:
+  - title: `Welcome back, Elias.`
+  - subtitle: `Managing 1,248 items across your personal archive.`
+- Tabs and filters belong to one shared control band
+- A single low-opacity underline is allowed inside that control band only when
+  it helps anchor the controls; it must stay near `outlineVariant` at or below
+  `10%` opacity
 - Large desktop widths should feel full, not sparse
 
 ### Detail
@@ -367,6 +434,8 @@ Widget buildPosterTile({
 - Filters and segmented controls sit on grouped neutral surfaces
 - Controls should feel editorial and calm, not app-store playful
 - Glass treatment is allowed here, but not as a page-wide effect
+- Search should start from the same x-anchor on Home / Library / Settings
+- Title length must not push the search field left or right
 
 ### Border / Divider Contract
 
@@ -374,6 +443,8 @@ Widget buildPosterTile({
 - Avoid list dividers; use whitespace and tone separation
 - If a border is required, keep it near `outlineVariant` at approximately
   `15%` opacity
+- Narrow exception: a single underline inside a local tab/filter band may go as
+  low as `10%` opacity when it is not used as the primary page grouping device
 
 ### Button Contract
 
@@ -409,6 +480,7 @@ Widget buildPosterTile({
 |------|----------|-----------|
 | Sidebar | fixed `256px`, custom item rows, visible active state | looks like `NavigationRail` |
 | Top bar | sticky, compact, aligned to content area | spans full page chrome like default `AppBar` |
+| Top-bar alignment | Home / Library / Settings share title, search, and action anchors | search start position drifts with title length |
 | Dividers | whitespace + tonal grouping | page relies on strong 1px separators |
 | Glass usage | only top bar / search areas | glass cards appear everywhere |
 | Gradient usage | primary CTA or hero emphasis only | gradients spread across generic UI |
@@ -455,13 +527,16 @@ Manual assertions:
 
 1. Sidebar width matches the desktop contract
 2. Top bar placement matches the content area
-3. Poster grids keep `2:3` ratio and dense layout
-4. Typography uses the approved hierarchy
-5. Settings still highlights local-first storage clearly
-6. No default Material shell chrome is obvious
-7. Page grouping does not depend on strong divider lines
-8. Gradients appear only in allowed emphasis areas
-9. Glass treatment stays limited to top-bar/search contexts
+3. Home / Library / Settings share the same top-bar alignment
+4. Poster grids keep `2:3` ratio and dense layout
+5. Typography uses the approved hierarchy
+6. Settings still highlights local-first storage clearly and keeps the
+   `shellPanel` background
+7. Library hero copy uses greeting + stats, not the old bilingual page title
+8. No default Material shell chrome is obvious
+9. Page grouping does not depend on strong divider lines
+10. Gradients appear only in allowed emphasis areas
+11. Glass treatment stays limited to top-bar/search contexts
 
 If screenshot-based or golden testing is introduced later, use this file as the
 assertion baseline.

@@ -41,6 +41,9 @@ If it departs from Stitch, the burden is on the change author.
 - Applying gradients to generic cards, filters, badges, or settings groups
 - Using pure black text or high-contrast border-heavy containers
 - Committing unreadable mojibake or broken UI copy
+- Letting top-bar title length change the search field alignment across pages
+- Reintroducing slash-separated bilingual desktop top-bar titles after copy has
+  been fixed in Stitch
 - Mixing shell route state and page-only UI state in the same widget without a
   clear boundary
 
@@ -66,6 +69,13 @@ Why these are forbidden:
 - Restrict gradient treatment to primary emphasis moments only
 - Keep structural radii sharp and desktop-like
 - Keep labels editorial: compact, uppercase when used as metadata
+- Keep Home / Library / Settings on the same top-bar slot geometry
+- Keep route-specific shell width/background rules in `app_shell_scaffold.dart`,
+  not scattered through page widgets
+- Keep Library body copy as greeting + stats once that Stitch direction is
+  approved
+- If a local control band uses a hairline border, keep it near `outlineVariant`
+  at `10%` opacity and do not reuse it as a global section-divider pattern
 
 Example baseline:
 
@@ -92,9 +102,12 @@ When shell geometry, page composition, or tokens change:
 - Verify these points manually:
   - sidebar width and active state
   - top bar placement
+  - Home / Library / Settings top-bar title/search/action anchors stay aligned
   - poster density and aspect ratio
   - typography hierarchy
+  - Library body hero uses greeting + stats
   - local data/settings group treatments
+  - Settings uses the quieter `shellPanel` background treatment
   - absence of obvious default Material chrome
   - absence of heavy divider lines as grouping crutch
   - glass visible only in top-bar/search contexts
@@ -112,6 +125,9 @@ If golden tests are introduced later, use them for shell and page-layout fidelit
 - Are shell pieces reusable and kept out of feature-only business logic?
 - Did the author avoid one-off visual constants in page files?
 - Are labels readable and correctly encoded?
+- Do Home / Library / Settings still share one top-bar skeleton?
+- Did the change preserve the approved plain desktop titles (`Home`, `Library`,
+  `Settings`)?
 - Did the author preserve the No-Line rule and tonal grouping?
 - Is glass usage limited to allowed chrome surfaces?
 - Is gradient usage limited to allowed emphasis surfaces?

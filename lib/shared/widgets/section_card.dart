@@ -27,21 +27,21 @@ class SectionCard extends StatelessWidget {
         color: highlighted
             ? AppColors.accent.withValues(alpha: 0.05)
             : AppColors.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(AppRadii.floating),
+        borderRadius: BorderRadius.circular(AppRadii.container),
         border: Border(
           top: BorderSide(
-            color: AppColors.outlineVariant.withValues(alpha: 0.16),
+            color: AppColors.outlineVariant.withValues(alpha: 0.1),
           ),
           right: BorderSide(
-            color: AppColors.outlineVariant.withValues(alpha: 0.16),
+            color: AppColors.outlineVariant.withValues(alpha: 0.1),
           ),
           bottom: BorderSide(
-            color: AppColors.outlineVariant.withValues(alpha: 0.16),
+            color: AppColors.outlineVariant.withValues(alpha: 0.1),
           ),
           left: BorderSide(
             color: highlighted
                 ? AppColors.accent
-                : AppColors.outlineVariant.withValues(alpha: 0.16),
+                : AppColors.outlineVariant.withValues(alpha: 0.1),
             width: highlighted ? 4 : 1,
           ),
         ),

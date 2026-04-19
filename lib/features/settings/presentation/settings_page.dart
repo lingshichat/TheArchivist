@@ -190,7 +190,7 @@ class _PreferencesSection extends StatelessWidget {
           padding: const EdgeInsets.all(AppSpacing.xl),
           decoration: BoxDecoration(
             color: AppColors.surfaceContainerLowest,
-            borderRadius: BorderRadius.circular(AppRadii.floating),
+            borderRadius: BorderRadius.circular(AppRadii.container),
           ),
           child: Column(
             children: [
@@ -290,7 +290,7 @@ class _LocalDataSection extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.xl),
       decoration: BoxDecoration(
         color: AppColors.accent.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(AppRadii.floating),
+        borderRadius: BorderRadius.circular(AppRadii.container),
         border: const Border(
           left: BorderSide(color: AppColors.accent, width: 4),
         ),
@@ -480,7 +480,7 @@ class _AboutSection extends StatelessWidget {
             height: 48,
             decoration: BoxDecoration(
               color: AppColors.surfaceContainer,
-              borderRadius: BorderRadius.circular(AppRadii.floating),
+              borderRadius: BorderRadius.circular(AppRadii.container),
             ),
             child: const Icon(
               Icons.token_outlined,
@@ -609,7 +609,7 @@ class _ModeSwitcher extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.xs),
       decoration: BoxDecoration(
         color: AppColors.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(AppRadii.floating),
+        borderRadius: BorderRadius.circular(AppRadii.container),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -637,7 +637,7 @@ class _SelectPill extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: AppColors.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(AppRadii.floating),
+        borderRadius: BorderRadius.circular(AppRadii.container),
       ),
       child: Row(
         children: [
@@ -703,9 +703,16 @@ class _RatingStyleButton extends StatelessWidget {
       ),
       alignment: Alignment.center,
       child: DefaultTextStyle(
-        style: Theme.of(
-          context,
-        ).textTheme.labelMedium!.copyWith(color: AppColors.onSurfaceVariant),
+        style:
+            Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: AppColors.onSurfaceVariant,
+            ) ??
+            const TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: AppColors.onSurfaceVariant,
+            ),
         child: child,
       ),
     );
@@ -733,7 +740,7 @@ class _DataButton extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadii.floating),
+        borderRadius: BorderRadius.circular(AppRadii.container),
         child: Container(
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.md,
@@ -741,7 +748,7 @@ class _DataButton extends StatelessWidget {
           ),
           decoration: BoxDecoration(
             color: filled ? AppColors.accent : AppColors.secondaryContainer,
-            borderRadius: BorderRadius.circular(AppRadii.floating),
+            borderRadius: BorderRadius.circular(AppRadii.container),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,

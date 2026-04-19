@@ -16,19 +16,18 @@ class AppShellScaffold extends StatelessWidget {
   final Widget child;
 
   static const double _sidebarWidth = 256;
-  static const double _contentMaxWidth = 1600;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: _contentBackgroundForPath(currentPath),
       body: SafeArea(
         child: Row(
           children: [
             SizedBox(
               width: _sidebarWidth,
               child: DecoratedBox(
-                decoration: const BoxDecoration(color: AppColors.panel),
+                decoration: const BoxDecoration(color: AppColors.shellPanel),
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(
                     AppSpacing.xl,
@@ -68,21 +67,23 @@ class AppShellScaffold extends StatelessWidget {
             ),
             Expanded(
               child: DecoratedBox(
-                decoration: const BoxDecoration(color: AppColors.background),
+                decoration: BoxDecoration(
+                  color: _contentBackgroundForPath(currentPath),
+                ),
                 child: Column(
                   children: [
                     Align(
                       alignment: Alignment.topLeft,
                       child: ConstrainedBox(
-                        constraints: const BoxConstraints(
-                          maxWidth: _contentMaxWidth,
+                        constraints: BoxConstraints(
+                          maxWidth: _topBarMaxWidthForPath(currentPath),
                         ),
                         child: AppTopBar(
                           title: _topBarTitleForPath(currentPath),
                           searchHint: _searchHintForPath(currentPath),
                           actionIcon: _actionIconForPath(currentPath),
                           searchFieldWidth: _searchWidthForPath(currentPath),
-                          isBrandBar: _isBrandBar(currentPath),
+                          variant: _topBarVariantForPath(currentPath),
                           horizontalPadding: _horizontalPaddingForPath(
                             currentPath,
                           ),
@@ -94,8 +95,8 @@ class AppShellScaffold extends StatelessWidget {
                       child: Align(
                         alignment: Alignment.topLeft,
                         child: ConstrainedBox(
-                          constraints: const BoxConstraints(
-                            maxWidth: _contentMaxWidth,
+                          constraints: BoxConstraints(
+                            maxWidth: _contentMaxWidthForPath(currentPath),
                           ),
                           child: child,
                         ),
@@ -122,18 +123,32 @@ class AppShellScaffold extends StatelessWidget {
     return path.startsWith(AppRoutes.settings);
   }
 
-  static bool _isBrandBar(String path) {
-    return path.startsWith(AppRoutes.library) ||
-        path.startsWith(AppRoutes.detail);
+  static AppTopBarVariant _topBarVariantForPath(String path) {
+    if (path.startsWith(AppRoutes.settings)) {
+      return AppTopBarVariant.settings;
+    }
+
+    if (path.startsWith(AppRoutes.library)) {
+      return AppTopBarVariant.library;
+    }
+
+    if (path.startsWith(AppRoutes.detail)) {
+      return AppTopBarVariant.detail;
+    }
+
+    return AppTopBarVariant.home;
   }
 
   static String _topBarTitleForPath(String path) {
     if (path.startsWith(AppRoutes.settings)) {
-      return 'Settings / Settings';
+      return 'Settings';
     }
 
-    if (path.startsWith(AppRoutes.library) ||
-        path.startsWith(AppRoutes.detail)) {
+    if (path.startsWith(AppRoutes.library)) {
+      return 'Library';
+    }
+
+    if (path.startsWith(AppRoutes.detail)) {
       return 'The Archivist';
     }
 
@@ -158,35 +173,43 @@ class AppShellScaffold extends StatelessWidget {
       return Icons.help_outline_rounded;
     }
 
-    return Icons.tune_rounded;
+    return Icons.filter_list_rounded;
   }
 
   static double _searchWidthForPath(String path) {
-    if (path.startsWith(AppRoutes.library) ||
-        path.startsWith(AppRoutes.detail)) {
-      return 320;
+    return 360;
+  }
+
+  static double _topBarMaxWidthForPath(String path) {
+    return 1600;
+  }
+
+  static double _contentMaxWidthForPath(String path) {
+    if (path.startsWith(AppRoutes.settings)) {
+      return 1280;
     }
 
-    return 340;
+    if (path.startsWith(AppRoutes.detail)) {
+      return 1440;
+    }
+
+    return 1600;
+  }
+
+  static Color _contentBackgroundForPath(String path) {
+    if (path.startsWith(AppRoutes.settings)) {
+      return AppColors.shellPanel;
+    }
+
+    return AppColors.background;
   }
 
   static double _horizontalPaddingForPath(String path) {
-    if (path.startsWith(AppRoutes.library) ||
-        path.startsWith(AppRoutes.detail) ||
-        path.startsWith(AppRoutes.settings)) {
-      return AppSpacing.xxxl;
-    }
-
-    return AppSpacing.xxl;
+    return AppSpacing.xxxl;
   }
 
   static double _verticalPaddingForPath(String path) {
-    if (path.startsWith(AppRoutes.library) ||
-        path.startsWith(AppRoutes.detail)) {
-      return AppSpacing.lg;
-    }
-
-    return AppSpacing.md;
+    return AppSpacing.lg;
   }
 }
 

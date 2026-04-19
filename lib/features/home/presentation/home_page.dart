@@ -158,7 +158,7 @@ class _HomePosterTile extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadii.container),
+        borderRadius: BorderRadius.circular(AppRadii.card),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -167,10 +167,7 @@ class _HomePosterTile extends StatelessWidget {
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   color: AppColors.surfaceContainer,
-                  borderRadius: BorderRadius.circular(AppRadii.container),
-                  border: Border.all(
-                    color: AppColors.outlineVariant.withValues(alpha: 0.18),
-                  ),
+                  borderRadius: BorderRadius.circular(AppRadii.card),
                 ),
                 child: PosterArt(item: item),
               ),
@@ -218,7 +215,7 @@ class _FinishedPosterTile extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadii.container),
+        borderRadius: BorderRadius.circular(AppRadii.card),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -230,12 +227,7 @@ class _FinishedPosterTile extends StatelessWidget {
                     child: DecoratedBox(
                       decoration: BoxDecoration(
                         color: AppColors.surfaceContainer,
-                        borderRadius: BorderRadius.circular(AppRadii.container),
-                        border: Border.all(
-                          color: AppColors.outlineVariant.withValues(
-                            alpha: 0.18,
-                          ),
-                        ),
+                        borderRadius: BorderRadius.circular(AppRadii.card),
                       ),
                       child: PosterArt(item: item, muted: true),
                     ),
@@ -319,10 +311,7 @@ class _CategoryGrid extends StatelessWidget {
                   padding: const EdgeInsets.all(AppSpacing.xl),
                   decoration: BoxDecoration(
                     color: AppColors.surfaceContainerLow,
-                    borderRadius: BorderRadius.circular(AppRadii.floating),
-                    border: Border.all(
-                      color: AppColors.outlineVariant.withValues(alpha: 0.14),
-                    ),
+                    borderRadius: BorderRadius.circular(AppRadii.container),
                   ),
                   child: Stack(
                     children: [

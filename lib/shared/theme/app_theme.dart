@@ -5,12 +5,15 @@ abstract final class AppColors {
   static const Color surface = Color(0xFFF9F9FB);
   static const Color surfaceBase = Color(0xFFF9F9FB);
   static const Color surfaceMuted = Color(0xFFF2F4F6);
+  static const Color shellPanel = Color(0xFFF2F2F4);
+  static const Color panel = shellPanel;
   static const Color surfaceContainerLowest = Color(0xFFFFFFFF);
   static const Color surfaceContainerLow = Color(0xFFF2F4F6);
   static const Color surfaceContainer = Color(0xFFEBEEF2);
   static const Color surfaceContainerHigh = Color(0xFFE4E9EE);
   static const Color surfaceContainerHighest = Color(0xFFDDE3E9);
-  static const Color panel = Color(0xFFF2F2F4);
+  static const Color surfaceDim = Color(0xFFD3DBE2);
+  static const Color surfaceVariant = Color(0xFFDDE3E9);
 
   static const Color title = Color(0xFF2D3338);
   static const Color onSurface = Color(0xFF2D3338);
@@ -25,6 +28,9 @@ abstract final class AppColors {
   static const Color accentStrong = Color(0xFF365858);
   static const Color accentContainer = Color(0xFFC5EAE9);
   static const Color accentForeground = Color(0xFFDAFFFE);
+  static const Color secondary = Color(0xFF5C605F);
+  static const Color secondaryDim = Color(0xFF505453);
+  static const Color secondaryFixedDim = Color(0xFFD2D5D4);
   static const Color secondaryContainer = Color(0xFFE0E3E2);
   static const Color tertiaryContainer = Color(0xFFD9F9DF);
   static const Color error = Color(0xFF9F403D);
@@ -89,7 +95,7 @@ abstract final class AppTheme {
             vertical: AppSpacing.md,
           ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadii.floating),
+            borderRadius: BorderRadius.circular(AppRadii.container),
           ),
         ),
       ),
@@ -105,7 +111,7 @@ abstract final class AppTheme {
             vertical: AppSpacing.md,
           ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadii.floating),
+            borderRadius: BorderRadius.circular(AppRadii.container),
           ),
         ),
       ),
@@ -154,7 +160,7 @@ abstract final class AppTheme {
           ),
           shape: WidgetStateProperty.all(
             RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppRadii.floating),
+              borderRadius: BorderRadius.circular(AppRadii.container),
             ),
           ),
         ),
@@ -168,20 +174,22 @@ abstract final class AppTheme {
           vertical: AppSpacing.sm,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadii.container),
+          borderRadius: BorderRadius.circular(AppRadii.card),
           borderSide: BorderSide(
-            color: AppColors.outlineVariant.withValues(alpha: 0.2),
+            color: AppColors.outlineVariant.withValues(alpha: 0.15),
           ),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadii.container),
+          borderRadius: BorderRadius.circular(AppRadii.card),
           borderSide: BorderSide(
-            color: AppColors.outlineVariant.withValues(alpha: 0.2),
+            color: AppColors.outlineVariant.withValues(alpha: 0.15),
           ),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadii.container),
-          borderSide: const BorderSide(color: AppColors.accent),
+          borderRadius: BorderRadius.circular(AppRadii.card),
+          borderSide: BorderSide(
+            color: AppColors.accent.withValues(alpha: 0.4),
+          ),
         ),
       ),
     );

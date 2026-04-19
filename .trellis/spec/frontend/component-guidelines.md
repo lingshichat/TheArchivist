@@ -144,6 +144,10 @@ Example:
 - Use surface shifts before borders to separate groups.
 - Keep structural radii sharp; reserve softer/floating radii for pills, toasts,
   and emphasis controls.
+- Use radius by surface role:
+  - `AppRadii.card` for poster tiles, compact buttons, and input outlines
+  - `AppRadii.container` for top-bar search shells and grouped desktop chrome
+  - `AppRadii.pill` only for true pill/avatar treatments
 - Use gradients only for primary emphasis moments, not generic component fill.
 - Keep list separation whitespace-based; avoid default divider habits.
 
@@ -166,12 +170,29 @@ Container(
 
 ## Stitch-Derived Component Contracts
 
+### Top-Bar Layout Contract
+
+- Build the desktop top bar from fixed slots, not intrinsic title width.
+- Home / Library / Settings reuse the same geometry:
+  - title slot: `188px`
+  - search gap: `24px`
+  - search width: `360px`
+  - search height: `34px`
+  - action target: `36px`
+- Route variants may change copy, hint text, or title color, but should not
+  change the search anchor without an explicit design-spec update.
+- Home / Library / Settings titles use the same black editorial title style.
+- Detail may keep the branded accent title while reusing the same geometry.
+- Backdrop blur belongs to the top bar only.
+
 ### No-Line Contract
 
 - Do not use strong 1px dividers as the default grouping mechanism.
 - Prefer `surface`, `surfaceContainerLow`, and `surfaceContainerLowest`
   transitions.
 - If a border is required, keep it ghosted near `outlineVariant` low opacity.
+- Local exception: a single underline inside a tab/filter band is acceptable
+  when it stays faint and does not become the page's main grouping mechanism.
 
 ### Tonal Layering Contract
 
@@ -201,13 +222,30 @@ Container(
 
 ## Desktop Layout Rules
 
-- Desktop pages should open directly into working content, not a welcome hero.
+- Desktop pages should open directly into working content, not an invented
+  onboarding hero. Use an editorial greeting block only when the Stitch
+  reference explicitly shows one.
 - Preserve lateral whitespace and dense vertical stacking similar to Stitch.
 - Library and home pages should feel like archival surfaces, not card carousels.
 - Detail and settings pages should prefer two-column desktop composition over
   long single-column mobile stacking at large widths.
 - Components should align to shared gutters instead of centering like mobile cards.
 - Large titles may sit asymmetrically when the reference screen does so.
+
+### Library Intro Pattern
+
+- Library keeps the chrome title as `Library`, but the page body opens with an
+  editorial greeting instead of repeating the route label.
+- Use this pattern:
+  - display title for greeting
+  - body subtitle for collection stats
+  - shared control band for tabs + filters
+- Desktop behavior:
+  - row layout when width is approximately `920px` or above
+  - stacked layout below that breakpoint
+- The "load more" control should read like archive utility UI:
+  uppercase label, tracked text, thin ghost border, no large Material button
+  treatment
 
 ---
 

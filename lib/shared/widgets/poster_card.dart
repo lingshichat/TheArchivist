@@ -30,13 +30,11 @@ class PosterCard extends StatelessWidget {
           color: Colors.transparent,
           child: InkWell(
             onTap: onTap,
-            borderRadius: BorderRadius.circular(AppRadii.container),
+            borderRadius: BorderRadius.circular(AppRadii.card),
             child: Ink(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(AppRadii.container),
-                border: Border.all(
-                  color: AppColors.outlineVariant.withValues(alpha: 0.22),
-                ),
+                color: AppColors.surfaceContainer,
+                borderRadius: BorderRadius.circular(AppRadii.card),
               ),
               child: AspectRatio(
                 aspectRatio: 2 / 3,

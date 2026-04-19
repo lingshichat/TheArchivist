@@ -259,7 +259,7 @@ class _DetailContent extends StatelessWidget {
                           vertical: AppSpacing.xs,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.secondaryContainer,
+                          color: AppColors.secondaryFixedDim,
                           borderRadius: BorderRadius.circular(AppRadii.pill),
                         ),
                         child: Text(
@@ -343,10 +343,17 @@ class _NotesWorkspace extends StatelessWidget {
             ),
           ),
           child: DefaultTextStyle(
-            style: theme.textTheme.bodyMedium!.copyWith(
-              color: AppColors.onSurfaceVariant,
-              height: 1.9,
-            ),
+            style:
+                theme.textTheme.bodyMedium?.copyWith(
+                  color: AppColors.onSurfaceVariant,
+                  height: 1.9,
+                ) ??
+                const TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 14,
+                  height: 1.9,
+                  color: AppColors.onSurfaceVariant,
+                ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

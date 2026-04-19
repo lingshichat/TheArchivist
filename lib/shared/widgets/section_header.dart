@@ -17,12 +17,13 @@ class SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
+    final String? normalizedActionLabel = actionLabel;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Expanded(child: Text(title, style: theme.textTheme.titleLarge)),
-        if (actionLabel != null)
+        if (normalizedActionLabel != null)
           InkWell(
             onTap: onActionTap,
             borderRadius: BorderRadius.circular(AppRadii.card),
@@ -32,9 +33,9 @@ class SectionHeader extends StatelessWidget {
                 vertical: AppSpacing.xs,
               ),
               child: Text(
-                actionLabel!.toUpperCase(),
+                normalizedActionLabel.toUpperCase(),
                 style: theme.textTheme.labelSmall?.copyWith(
-                  color: AppColors.subtleText,
+                  color: AppColors.accent,
                 ),
               ),
             ),
