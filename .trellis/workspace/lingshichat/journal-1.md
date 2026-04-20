@@ -86,3 +86,37 @@
 ### Next Steps
 
 - WP3（Windows 首页、库页、详情页骨架）依赖本层，可启动
+
+
+## Session 2: 完成 WP3 Windows 页面骨架与详情页响应式修复
+
+**Date**: 2026-04-20
+**Task**: 完成 WP3 Windows 页面骨架与详情页响应式修复
+**Branch**: `main`
+
+### Summary
+
+完成 WP3：首页、库页、详情页和 /add 占位；统一 PosterViewData 与 EmptyState；补齐 /detail/:id 与 provider 数据适配；修复详情页双栏在中等窗口过早堆叠的问题，并更新工作流为用户显式授权时允许 AI commit。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `04029af` | (see git log) |
+| `347b053` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
