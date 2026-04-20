@@ -49,3 +49,4 @@ app.*.map.json
 # Drift / build_runner generated code
 *.g.dart
 *.drift.dart
+.claude/

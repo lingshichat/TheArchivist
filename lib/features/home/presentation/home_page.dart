@@ -1,17 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/router/app_router.dart';
-import '../../../shared/demo/demo_data.dart';
 import '../../../shared/theme/app_theme.dart';
-import '../../../shared/widgets/poster_art.dart';
+import '../../../shared/widgets/category_view_data.dart';
+import '../../../shared/widgets/empty_state.dart';
+import '../../../shared/widgets/poster_card.dart';
+import '../../../shared/widgets/poster_view_data.dart';
+import '../../../shared/widgets/poster_wrap.dart';
 import '../../../shared/widgets/section_header.dart';
+import '../data/home_view_data.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final HomeViewData data = ref.watch(homeViewDataProvider);
+
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.xxxl,
@@ -28,18 +35,19 @@ class HomePage extends StatelessWidget {
             onActionTap: () => context.go(AppRoutes.library),
           ),
           const SizedBox(height: AppSpacing.xl),
-          _ResponsiveGrid(
-            items: DemoData.continuingItems,
+          _HomeSection(
+            items: data.continuing,
+            emptyTitle: '没有进行中的项目',
+            emptyBody: '从你的档案中挑一项继续推进。',
+            emptyActionLabel: '打开媒介库',
+            onEmptyAction: () => context.go(AppRoutes.library),
+            onItemTap: (v) => context.go(AppRoutes.detailFor(v.id)),
+            variant: PosterCardVariant.continuing,
             minColumns: 2,
             maxColumns: 5,
             minTileWidth: 170,
             horizontalSpacing: AppSpacing.xxl,
             verticalSpacing: AppSpacing.xxl,
-            itemBuilder: (item) => _HomePosterTile(
-              item: item,
-              label: item.mediaLabel,
-              onTap: () => context.go(AppRoutes.detail),
-            ),
           ),
           const SizedBox(height: 64),
           SectionHeader(
@@ -48,19 +56,19 @@ class HomePage extends StatelessWidget {
             onActionTap: () => context.go(AppRoutes.library),
           ),
           const SizedBox(height: AppSpacing.xl),
-          _ResponsiveGrid(
-            items: DemoData.recentlyAddedItems,
+          _HomeSection(
+            items: data.recentlyAdded,
+            emptyTitle: '还没有新条目',
+            emptyBody: '添加新条目后会出现在这里。',
+            emptyActionLabel: '+ 添加条目',
+            onEmptyAction: () => context.go(AppRoutes.add),
+            onItemTap: (v) => context.go(AppRoutes.detailFor(v.id)),
+            variant: PosterCardVariant.compact,
             minColumns: 3,
             maxColumns: 8,
             minTileWidth: 112,
             horizontalSpacing: AppSpacing.xl,
             verticalSpacing: AppSpacing.xl,
-            itemBuilder: (item) => _HomePosterTile(
-              item: item,
-              label: item.mediaLabel,
-              compact: true,
-              onTap: () => context.go(AppRoutes.detail),
-            ),
           ),
           const SizedBox(height: 64),
           SectionHeader(
@@ -69,220 +77,85 @@ class HomePage extends StatelessWidget {
             onActionTap: () => context.go(AppRoutes.library),
           ),
           const SizedBox(height: AppSpacing.xl),
-          _ResponsiveGrid(
-            items: DemoData.recentlyFinishedItems,
+          _HomeSection(
+            items: data.recentlyFinished,
+            emptyTitle: '尚无已完成条目',
+            emptyBody: '把进行中的条目标记完成后，会在这里回顾。',
+            onItemTap: (v) => context.go(AppRoutes.detailFor(v.id)),
+            variant: PosterCardVariant.finishedOverlay,
             minColumns: 2,
             maxColumns: 6,
             minTileWidth: 140,
             horizontalSpacing: AppSpacing.xxl,
             verticalSpacing: AppSpacing.xxl,
-            itemBuilder: (item) => _FinishedPosterTile(
-              item: item,
-              onTap: () => context.go(AppRoutes.detail),
-            ),
           ),
           const SizedBox(height: 64),
           const SectionHeader(title: 'Categories'),
           const SizedBox(height: AppSpacing.xl),
-          const _CategoryGrid(),
+          _CategoryGrid(categories: data.categories),
         ],
       ),
     );
   }
 }
 
-class _ResponsiveGrid extends StatelessWidget {
-  const _ResponsiveGrid({
+class _HomeSection extends StatelessWidget {
+  const _HomeSection({
     required this.items,
+    required this.emptyTitle,
+    required this.emptyBody,
+    required this.onItemTap,
+    required this.variant,
     required this.minColumns,
     required this.maxColumns,
     required this.minTileWidth,
     required this.horizontalSpacing,
     required this.verticalSpacing,
-    required this.itemBuilder,
+    this.emptyActionLabel,
+    this.onEmptyAction,
   });
 
-  final List<DemoMediaItem> items;
+  final List<PosterViewData> items;
+  final String emptyTitle;
+  final String emptyBody;
+  final String? emptyActionLabel;
+  final VoidCallback? onEmptyAction;
+  final ValueChanged<PosterViewData> onItemTap;
+  final PosterCardVariant variant;
   final int minColumns;
   final int maxColumns;
   final double minTileWidth;
   final double horizontalSpacing;
   final double verticalSpacing;
-  final Widget Function(DemoMediaItem item) itemBuilder;
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final int estimatedColumns =
-            ((constraints.maxWidth + horizontalSpacing) /
-                    (minTileWidth + horizontalSpacing))
-                .floor();
-        final int columns = estimatedColumns.clamp(minColumns, maxColumns);
-        final double totalSpacing = (columns - 1) * horizontalSpacing;
-        final double itemWidth =
-            (constraints.maxWidth - totalSpacing) / columns;
+    if (items.isEmpty) {
+      return EmptyState(
+        title: emptyTitle,
+        body: emptyBody,
+        actionLabel: emptyActionLabel,
+        onActionTap: onEmptyAction,
+      );
+    }
 
-        return Wrap(
-          spacing: horizontalSpacing,
-          runSpacing: verticalSpacing,
-          children: items
-              .map(
-                (item) => SizedBox(width: itemWidth, child: itemBuilder(item)),
-              )
-              .toList(),
-        );
-      },
-    );
-  }
-}
-
-class _HomePosterTile extends StatelessWidget {
-  const _HomePosterTile({
-    required this.item,
-    required this.label,
-    required this.onTap,
-    this.compact = false,
-  });
-
-  final DemoMediaItem item;
-  final String label;
-  final VoidCallback onTap;
-  final bool compact;
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadii.card),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AspectRatio(
-              aspectRatio: 2 / 3,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceContainer,
-                  borderRadius: BorderRadius.circular(AppRadii.card),
-                ),
-                child: PosterArt(item: item),
-              ),
-            ),
-            SizedBox(height: compact ? 12 : 16),
-            Text(
-              label.toUpperCase(),
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: compact ? AppColors.subtleText : AppColors.accentStrong,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              item.title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: compact
-                  ? theme.textTheme.bodySmall?.copyWith(
-                      color: AppColors.onSurface,
-                      fontWeight: FontWeight.w600,
-                    )
-                  : theme.textTheme.titleMedium?.copyWith(
-                      color: AppColors.onSurface,
-                      fontWeight: FontWeight.w700,
-                    ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _FinishedPosterTile extends StatelessWidget {
-  const _FinishedPosterTile({required this.item, required this.onTap});
-
-  final DemoMediaItem item;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadii.card),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AspectRatio(
-              aspectRatio: 2 / 3,
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceContainer,
-                        borderRadius: BorderRadius.circular(AppRadii.card),
-                      ),
-                      child: PosterArt(item: item, muted: true),
-                    ),
-                  ),
-                  Positioned.fill(
-                    child: Center(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.md,
-                          vertical: AppSpacing.sm,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.accent.withValues(alpha: 0.92),
-                          borderRadius: BorderRadius.circular(AppRadii.pill),
-                        ),
-                        child: Text(
-                          item.statusLabel.toUpperCase(),
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: AppColors.accentForeground,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              item.title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: AppColors.onSurface,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              item.subtitle,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.bodySmall?.copyWith(
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-          ],
-        ),
-      ),
+    return PosterWrap(
+      items: items,
+      variant: variant,
+      minColumns: minColumns,
+      maxColumns: maxColumns,
+      minTileWidth: minTileWidth,
+      horizontalSpacing: horizontalSpacing,
+      verticalSpacing: verticalSpacing,
+      onItemTap: onItemTap,
     );
   }
 }
 
 class _CategoryGrid extends StatelessWidget {
-  const _CategoryGrid();
+  const _CategoryGrid({required this.categories});
+
+  final List<CategoryViewData> categories;
 
   @override
   Widget build(BuildContext context) {
@@ -303,7 +176,7 @@ class _CategoryGrid extends StatelessWidget {
         return Wrap(
           spacing: AppSpacing.xl,
           runSpacing: AppSpacing.xl,
-          children: DemoData.mediaCategories
+          children: categories
               .map(
                 (category) => Container(
                   width: cardWidth,

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/add/presentation/add_entry_page.dart';
 import '../../features/detail/presentation/detail_page.dart';
 import '../../features/home/presentation/home_page.dart';
 import '../../features/library/presentation/library_page.dart';
@@ -11,7 +12,10 @@ abstract final class AppRoutes {
   static const home = '/';
   static const library = '/library';
   static const detail = '/detail';
+  static const add = '/add';
   static const settings = '/settings';
+
+  static String detailFor(String id) => '$detail/$id';
 }
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -36,9 +40,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             },
           ),
           GoRoute(
-            path: AppRoutes.detail,
+            path: '${AppRoutes.detail}/:id',
             pageBuilder: (context, state) {
-              return const NoTransitionPage<void>(child: DetailPage());
+              final id = state.pathParameters['id'] ?? '';
+              return NoTransitionPage<void>(child: DetailPage(mediaId: id));
+            },
+          ),
+          GoRoute(
+            path: AppRoutes.add,
+            pageBuilder: (context, state) {
+              return const NoTransitionPage<void>(child: AddEntryPage());
             },
           ),
           GoRoute(

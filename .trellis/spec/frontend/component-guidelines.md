@@ -119,12 +119,27 @@ Feature-only helpers can stay inside the feature page file.
 - Use `VoidCallback?` for tap actions on presentation components.
 - Pass domain-light view data into reusable widgets instead of raw maps.
 - Pass explicit visual state instead of letting widgets infer it from routes or globals.
+- When feature data comes from demo, repository, or provider layers, adapt it
+  before it enters `shared/widgets/`.
+- Shared presentation widgets should consume stable view data models such as
+  `PosterViewData` or `CategoryViewData`, not feature-specific entities.
 
 Example:
 
 - `SidebarNavItem(label: 'Library', icon: Icons.grid_view_rounded, isActive: true)`
 - `PosterTile(item: item, statusLabel: 'In Progress', onTap: ...)`
 - `SettingsPanel(title: 'Local Data', trailingBadge: 'Current: Local Mode')`
+
+### Empty-State Contract
+
+- Reuse a shared `EmptyState` widget for archive blanks that appear on 2+ pages.
+- Empty states should stay calm and editorial:
+  - `surfaceContainerLow` or `surfaceContainerLowest` first
+  - ghosted outline only when needed
+  - centered icon, title, body, optional action
+- Do not invent one-off empty cards with brighter accents, gradients, or strong
+  borders.
+- Page-specific copy may vary, but visual structure should stay shared.
 
 ---
 
@@ -229,6 +244,10 @@ Container(
 - Library and home pages should feel like archival surfaces, not card carousels.
 - Detail and settings pages should prefer two-column desktop composition over
   long single-column mobile stacking at large widths.
+- For desktop detail boards, prefer fluid column widths and shrinking gaps
+  before collapsing into a single-column stack.
+- Avoid early hard breakpoints that push the entire right-side detail content
+  below the fold while desktop width is still available.
 - Components should align to shared gutters instead of centering like mobile cards.
 - Large titles may sit asymmetrically when the reference screen does so.
 

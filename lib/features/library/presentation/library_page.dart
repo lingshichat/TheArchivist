@@ -1,17 +1,43 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/router/app_router.dart';
-import '../../../shared/demo/demo_data.dart';
 import '../../../shared/theme/app_theme.dart';
-import '../../../shared/widgets/poster_art.dart';
+import '../../../shared/widgets/empty_state.dart';
+import '../../../shared/widgets/poster_card.dart';
+import '../../../shared/widgets/poster_view_data.dart';
+import '../../../shared/widgets/poster_wrap.dart';
+import '../data/library_view_data.dart';
 
-class LibraryPage extends StatelessWidget {
+const List<String> _statusOptions = [
+  'All',
+  'Wishlist',
+  'In Progress',
+  'Completed',
+];
+
+const List<String> _sortOptions = ['Recent', 'Title', 'Year'];
+
+class LibraryPage extends ConsumerStatefulWidget {
   const LibraryPage({super.key});
+
+  @override
+  ConsumerState<LibraryPage> createState() => _LibraryPageState();
+}
+
+class _LibraryPageState extends ConsumerState<LibraryPage> {
+  LibraryMediaType _selectedType = LibraryMediaType.movies;
+  String _selectedStatus = _statusOptions.first;
+  String _selectedSort = _sortOptions.first;
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
+    final LibraryHeaderViewData header = ref.watch(libraryHeaderProvider);
+    final List<PosterViewData> items = ref.watch(
+      libraryItemsProvider(_selectedType),
+    );
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(
@@ -23,12 +49,9 @@ class LibraryPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Welcome back, Elias.', style: theme.textTheme.displaySmall),
+          Text(header.title, style: theme.textTheme.displaySmall),
           const SizedBox(height: AppSpacing.xs),
-          Text(
-            'Managing 1,248 items across your personal archive.',
-            style: theme.textTheme.bodyMedium,
-          ),
+          Text(header.subtitle, style: theme.textTheme.bodyMedium),
           const SizedBox(height: AppSpacing.xxl),
           Container(
             padding: const EdgeInsets.only(bottom: AppSpacing.xl),
@@ -44,18 +67,33 @@ class LibraryPage extends StatelessWidget {
                 final Widget tabs = Wrap(
                   spacing: AppSpacing.xl,
                   runSpacing: AppSpacing.sm,
-                  children: const [
-                    _LibraryTab(label: 'Movies', isActive: true),
-                    _LibraryTab(label: 'Books'),
-                    _LibraryTab(label: 'Games'),
-                  ],
+                  children: LibraryMediaType.values
+                      .map(
+                        (type) => _LibraryTab(
+                          label: type.label,
+                          isActive: type == _selectedType,
+                          onTap: () => setState(() => _selectedType = type),
+                        ),
+                      )
+                      .toList(),
                 );
                 final Widget filters = Wrap(
                   spacing: AppSpacing.sm,
                   runSpacing: AppSpacing.sm,
-                  children: const [
-                    _CompactFilter(label: 'Status', value: 'All'),
-                    _CompactFilter(label: 'Sort', value: 'Recent'),
+                  children: [
+                    _FilterPopup(
+                      label: 'Status',
+                      value: _selectedStatus,
+                      options: _statusOptions,
+                      onSelected: (v) =>
+                          setState(() => _selectedStatus = v),
+                    ),
+                    _FilterPopup(
+                      label: 'Sort',
+                      value: _selectedSort,
+                      options: _sortOptions,
+                      onSelected: (v) => setState(() => _selectedSort = v),
+                    ),
                   ],
                 );
 
@@ -81,243 +119,161 @@ class LibraryPage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.xxl),
-          _LibraryGrid(
-            items: DemoData.libraryItems,
-            minColumns: 4,
-            maxColumns: 7,
-            minTileWidth: 150,
-            onItemTap: () => context.go(AppRoutes.detail),
-          ),
-          const SizedBox(height: 80),
-          const Center(child: _LoadMoreButton()),
+          if (items.isEmpty)
+            EmptyState(
+              icon: Icons.inventory_2_outlined,
+              title: '这里还没有 ${_selectedType.label}',
+              body: '从 Bangumi 或手动添加一条，试试看。',
+              actionLabel: '+ 添加条目',
+              onActionTap: () => context.go(AppRoutes.add),
+            )
+          else
+            PosterWrap(
+              items: items,
+              variant: PosterCardVariant.libraryFooter,
+              minColumns: 4,
+              maxColumns: 7,
+              minTileWidth: 150,
+              horizontalSpacing: 24,
+              verticalSpacing: 40,
+              onItemTap: (v) => context.go(AppRoutes.detailFor(v.id)),
+            ),
+          if (items.isNotEmpty) ...[
+            const SizedBox(height: 80),
+            const Center(child: _LoadMoreButton()),
+          ],
         ],
       ),
     );
   }
 }
 
-class _LibraryGrid extends StatelessWidget {
-  const _LibraryGrid({
-    required this.items,
-    required this.minColumns,
-    required this.maxColumns,
-    required this.minTileWidth,
-    required this.onItemTap,
+class _LibraryTab extends StatelessWidget {
+  const _LibraryTab({
+    required this.label,
+    required this.isActive,
+    required this.onTap,
   });
 
-  final List<DemoMediaItem> items;
-  final int minColumns;
-  final int maxColumns;
-  final double minTileWidth;
-  final VoidCallback onItemTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        const double horizontalSpacing = 24;
-        const double verticalSpacing = 40;
-        final int estimatedColumns =
-            ((constraints.maxWidth + horizontalSpacing) /
-                    (minTileWidth + horizontalSpacing))
-                .floor();
-        final int columns = estimatedColumns.clamp(minColumns, maxColumns);
-        final double totalSpacing = (columns - 1) * horizontalSpacing;
-        final double itemWidth =
-            (constraints.maxWidth - totalSpacing) / columns;
-
-        return Wrap(
-          spacing: horizontalSpacing,
-          runSpacing: verticalSpacing,
-          children: items
-              .map(
-                (item) => SizedBox(
-                  width: itemWidth,
-                  child: _LibraryPosterTile(item: item, onTap: onItemTap),
-                ),
-              )
-              .toList(),
-        );
-      },
-    );
-  }
-}
-
-class _LibraryPosterTile extends StatelessWidget {
-  const _LibraryPosterTile({required this.item, required this.onTap});
-
-  final DemoMediaItem item;
+  final String label;
+  final bool isActive;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    final _LibraryStatusPalette palette = _paletteFor(item.statusTone);
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppRadii.card),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AspectRatio(
-              aspectRatio: 2 / 3,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceContainer,
-                  borderRadius: BorderRadius.circular(AppRadii.card),
-                ),
-                child: PosterArt(item: item),
+        child: Container(
+          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: isActive ? AppColors.accent : Colors.transparent,
+                width: 2,
               ),
             ),
-            const SizedBox(height: 12),
-            Text(
-              item.title,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: AppColors.onSurface,
-                fontWeight: FontWeight.w700,
-                height: 1.2,
-              ),
+          ),
+          child: Text(
+            label.toUpperCase(),
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: isActive ? AppColors.accent : AppColors.subtleText,
             ),
-            const SizedBox(height: AppSpacing.sm),
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm,
-                    vertical: AppSpacing.xs,
-                  ),
-                  decoration: BoxDecoration(
-                    color: palette.background,
-                    borderRadius: BorderRadius.circular(AppRadii.card),
-                  ),
-                  child: Text(
-                    item.statusLabel.toUpperCase(),
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: palette.foreground,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Text(item.year, style: theme.textTheme.labelMedium),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  _LibraryStatusPalette _paletteFor(DemoStatusTone tone) {
-    switch (tone) {
-      case DemoStatusTone.primary:
-        return const _LibraryStatusPalette(
-          background: AppColors.accentContainer,
-          foreground: AppColors.accentStrong,
-        );
-      case DemoStatusTone.tertiary:
-        return const _LibraryStatusPalette(
-          background: AppColors.tertiaryContainer,
-          foreground: AppColors.onSurface,
-        );
-      case DemoStatusTone.muted:
-        return const _LibraryStatusPalette(
-          background: AppColors.surfaceContainerHigh,
-          foreground: AppColors.subtleText,
-        );
-      case DemoStatusTone.secondary:
-        return const _LibraryStatusPalette(
-          background: AppColors.secondaryContainer,
-          foreground: AppColors.onSurface,
-        );
-    }
-  }
-}
-
-class _LibraryStatusPalette {
-  const _LibraryStatusPalette({
-    required this.background,
-    required this.foreground,
-  });
-
-  final Color background;
-  final Color foreground;
-}
-
-class _LibraryTab extends StatelessWidget {
-  const _LibraryTab({required this.label, this.isActive = false});
-
-  final String label;
-  final bool isActive;
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: isActive ? AppColors.accent : Colors.transparent,
-            width: 2,
           ),
         ),
       ),
-      child: Text(
-        label.toUpperCase(),
-        style: theme.textTheme.labelLarge?.copyWith(
-          color: isActive ? AppColors.accent : AppColors.subtleText,
-        ),
-      ),
     );
   }
 }
 
-class _CompactFilter extends StatelessWidget {
-  const _CompactFilter({required this.label, required this.value});
+class _FilterPopup extends StatelessWidget {
+  const _FilterPopup({
+    required this.label,
+    required this.value,
+    required this.options,
+    required this.onSelected,
+  });
 
   final String label;
   final String value;
+  final List<String> options;
+  final ValueChanged<String> onSelected;
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
 
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.sm,
-      ),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
+    return PopupMenuButton<String>(
+      initialValue: value,
+      onSelected: onSelected,
+      tooltip: '$label filter',
+      position: PopupMenuPosition.under,
+      color: AppColors.surfaceContainerLowest,
+      elevation: 2,
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadii.container),
-        border: Border.all(
-          color: AppColors.outlineVariant.withValues(alpha: 0.1),
+        side: BorderSide(
+          color: AppColors.outlineVariant.withValues(alpha: 0.15),
         ),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text('${label.toUpperCase()}:', style: theme.textTheme.labelMedium),
-          const SizedBox(width: AppSpacing.sm),
-          Text(
-            value.toUpperCase(),
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: AppColors.onSurface,
+      itemBuilder: (context) {
+        return options
+            .map(
+              (option) => PopupMenuItem<String>(
+                value: option,
+                child: Text(
+                  option,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: option == value
+                        ? AppColors.accent
+                        : AppColors.onSurface,
+                    fontWeight: option == value
+                        ? FontWeight.w700
+                        : FontWeight.w500,
+                  ),
+                ),
+              ),
+            )
+            .toList();
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainerLowest,
+          borderRadius: BorderRadius.circular(AppRadii.container),
+          border: Border.all(
+            color: AppColors.outlineVariant.withValues(alpha: 0.1),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '${label.toUpperCase()}:',
+              style: theme.textTheme.labelMedium,
             ),
-          ),
-          const SizedBox(width: AppSpacing.xs),
-          const Icon(
-            Icons.expand_more_rounded,
-            size: 16,
-            color: AppColors.subtleText,
-          ),
-        ],
+            const SizedBox(width: AppSpacing.sm),
+            Text(
+              value.toUpperCase(),
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: AppColors.onSurface,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            const Icon(
+              Icons.expand_more_rounded,
+              size: 16,
+              color: AppColors.subtleText,
+            ),
+          ],
+        ),
       ),
     );
   }

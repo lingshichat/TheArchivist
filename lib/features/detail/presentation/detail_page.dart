@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../shared/demo/demo_data.dart';
 import '../../../shared/theme/app_theme.dart';
+import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/poster_art.dart';
+import '../../../shared/widgets/poster_view_data.dart';
+import '../data/detail_view_data.dart';
 
-class DetailPage extends StatelessWidget {
-  const DetailPage({super.key});
+class DetailPage extends ConsumerWidget {
+  const DetailPage({super.key, required this.mediaId});
+
+  final String mediaId;
 
   @override
-  Widget build(BuildContext context) {
-    final DemoMediaItem item = DemoData.detailItem;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final DetailViewData view = ref.watch(detailViewDataProvider(mediaId));
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(
@@ -20,27 +25,37 @@ class DetailPage extends StatelessWidget {
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final bool useTwoColumns = constraints.maxWidth >= 980;
+          final double pageWidth = constraints.maxWidth;
+          final bool useTwoColumns = pageWidth >= 820;
+          final double sidebarWidth = (pageWidth * 0.26)
+              .clamp(216.0, 280.0)
+              .toDouble();
+          final double columnGap = (pageWidth * 0.045)
+              .clamp(32.0, 64.0)
+              .toDouble();
 
-          final Widget leftColumn = _DetailSidebar(item: item);
-          final Widget rightColumn = _DetailContent(item: item);
+          final Widget leftColumn = _DetailSidebar(poster: view.poster);
+          final Widget rightColumn = _DetailContent(view: view);
 
           if (!useTwoColumns) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                leftColumn,
-                const SizedBox(height: AppSpacing.xxxl),
-                rightColumn,
-              ],
+            return SizedBox(
+              width: double.infinity,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(width: sidebarWidth, child: leftColumn),
+                  const SizedBox(height: AppSpacing.xxxl),
+                  SizedBox(width: double.infinity, child: rightColumn),
+                ],
+              ),
             );
           }
 
           return Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(width: 320, child: leftColumn),
-              const SizedBox(width: 64),
+              SizedBox(width: sidebarWidth, child: leftColumn),
+              SizedBox(width: columnGap),
               Expanded(child: rightColumn),
             ],
           );
@@ -51,9 +66,9 @@ class DetailPage extends StatelessWidget {
 }
 
 class _DetailSidebar extends StatelessWidget {
-  const _DetailSidebar({required this.item});
+  const _DetailSidebar({required this.poster});
 
-  final DemoMediaItem item;
+  final PosterViewData poster;
 
   @override
   Widget build(BuildContext context) {
@@ -62,108 +77,100 @@ class _DetailSidebar extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 248),
-          child: AspectRatio(
-            aspectRatio: 2 / 3,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: AppColors.surfaceContainerLowest,
-                border: Border.all(
-                  color: AppColors.outlineVariant.withValues(alpha: 0.15),
-                ),
+        AspectRatio(
+          aspectRatio: 2 / 3,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: AppColors.surfaceContainerLowest,
+              border: Border.all(
+                color: AppColors.outlineVariant.withValues(alpha: 0.15),
               ),
-              child: PosterArt(item: item, muted: true),
             ),
+            child: PosterArt(item: poster, muted: true),
           ),
         ),
         const SizedBox(height: 40),
-        ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 248),
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(AppSpacing.xl),
-            decoration: const BoxDecoration(
-              color: AppColors.surfaceContainerLow,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('STATUS', style: theme.textTheme.labelSmall),
-                const SizedBox(height: AppSpacing.lg),
-                const _StatusStrip(),
-                const SizedBox(height: AppSpacing.xl),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text('PROGRESS', style: theme.textTheme.labelSmall),
-                    Text(
-                      '124 / 150 min',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: AppColors.accent,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Container(
-                  height: 4,
-                  color: AppColors.surfaceContainerHigh,
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: FractionallySizedBox(
-                      widthFactor: 0.82,
-                      child: Container(color: AppColors.accent),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(AppSpacing.xl),
+          decoration: const BoxDecoration(color: AppColors.surfaceContainerLow),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('STATUS', style: theme.textTheme.labelSmall),
+              const SizedBox(height: AppSpacing.lg),
+              const _StatusStrip(),
+              const SizedBox(height: AppSpacing.xl),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text('PROGRESS', style: theme.textTheme.labelSmall),
+                  Text(
+                    '124 / 150 min',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: AppColors.accent,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Container(
+                height: 4,
+                color: AppColors.surfaceContainerHigh,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: FractionallySizedBox(
+                    widthFactor: 0.82,
+                    child: Container(color: AppColors.accent),
+                  ),
                 ),
-                const SizedBox(height: AppSpacing.xl),
-                Text('PERSONAL RATING', style: theme.textTheme.labelSmall),
-                const SizedBox(height: AppSpacing.md),
-                Row(
-                  children: [
-                    ...List.generate(
-                      4,
-                      (index) => const Padding(
-                        padding: EdgeInsets.only(right: AppSpacing.sm),
-                        child: Icon(
-                          Icons.star_rounded,
-                          size: 18,
-                          color: AppColors.accent,
-                        ),
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              Text('PERSONAL RATING', style: theme.textTheme.labelSmall),
+              const SizedBox(height: AppSpacing.md),
+              Row(
+                children: [
+                  ...List.generate(
+                    4,
+                    (index) => const Padding(
+                      padding: EdgeInsets.only(right: AppSpacing.sm),
+                      child: Icon(
+                        Icons.star_rounded,
+                        size: 18,
+                        color: AppColors.accent,
                       ),
                     ),
-                    Icon(
-                      Icons.star_rounded,
-                      size: 18,
-                      color: AppColors.outlineVariant.withValues(alpha: 0.3),
+                  ),
+                  Icon(
+                    Icons.star_rounded,
+                    size: 18,
+                    color: AppColors.outlineVariant.withValues(alpha: 0.3),
+                  ),
+                  const Spacer(),
+                  Text(
+                    '8/10',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: AppColors.onSurface,
                     ),
-                    const Spacer(),
-                    Text(
-                      '8/10',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: AppColors.onSurface,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.xl),
-                _ActionButton(
-                  label: 'Resume Archiving',
-                  icon: Icons.play_arrow_rounded,
-                  filled: true,
-                  onTap: () {},
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                _ActionButton(
-                  label: 'Modify Entry',
-                  icon: Icons.edit_outlined,
-                  onTap: () {},
-                ),
-              ],
-            ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              _ActionButton(
+                label: 'Resume Archiving',
+                icon: Icons.play_arrow_rounded,
+                filled: true,
+                onTap: () {},
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              _ActionButton(
+                label: 'Modify Entry',
+                icon: Icons.edit_outlined,
+                onTap: () {},
+              ),
+            ],
           ),
         ),
       ],
@@ -172,150 +179,179 @@ class _DetailSidebar extends StatelessWidget {
 }
 
 class _DetailContent extends StatelessWidget {
-  const _DetailContent({required this.item});
+  const _DetailContent({required this.view});
 
-  final DemoMediaItem item;
+  final DetailViewData view;
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
+    final PosterViewData poster = view.poster;
+    final String? subtitle = poster.subtitle;
+    final String? year = poster.year;
+    final String? synopsis = view.synopsis;
+    final List<String> tags = view.tags ?? const <String>[];
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double titleFontSize = (constraints.maxWidth * 0.078)
+            .clamp(40.0, 56.0)
+            .toDouble();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.sm,
-                vertical: AppSpacing.xs,
-              ),
-              decoration: BoxDecoration(
-                color: AppColors.accentContainer,
-                borderRadius: BorderRadius.circular(AppRadii.card),
-              ),
-              child: Text(
-                item.mediaLabel.toUpperCase(),
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: AppColors.accentStrong,
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                    vertical: AppSpacing.xs,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.accentContainer,
+                    borderRadius: BorderRadius.circular(AppRadii.card),
+                  ),
+                  child: Text(
+                    poster.mediaLabel.toUpperCase(),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: AppColors.accentStrong,
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(width: AppSpacing.md),
+                Text('ID: ARC-89021', style: theme.textTheme.labelMedium),
+              ],
             ),
-            const SizedBox(width: AppSpacing.md),
-            Text('ID: ARC-89021', style: theme.textTheme.labelMedium),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.lg),
-        Text(
-          item.title,
-          style: theme.textTheme.displayLarge?.copyWith(
-            fontSize: 56,
-            height: 0.95,
-          ),
-        ),
-        const SizedBox(height: AppSpacing.md),
-        Wrap(
-          spacing: AppSpacing.md,
-          runSpacing: AppSpacing.sm,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
+            const SizedBox(height: AppSpacing.lg),
             Text(
-              item.subtitle,
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: AppColors.onSurface,
+              poster.title,
+              style: theme.textTheme.displayLarge?.copyWith(
+                fontSize: titleFontSize,
+                height: 0.95,
               ),
             ),
-            const _DotDivider(),
-            Text(item.year, style: theme.textTheme.titleMedium),
-            const _DotDivider(),
-            Text('Experimental Noir', style: theme.textTheme.titleMedium),
-          ],
-        ),
-        const SizedBox(height: 48),
-        ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 620),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('SYNOPSIS', style: theme.textTheme.labelSmall),
-              const SizedBox(height: AppSpacing.md),
-              Text(
-                DemoData.detailSynopsis,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  fontSize: 18,
-                  height: 1.7,
-                  color: AppColors.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xl),
-              Wrap(
-                spacing: AppSpacing.sm,
-                runSpacing: AppSpacing.sm,
-                children: DemoData.detailTags
-                    .map(
-                      (tag) => Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.md,
-                          vertical: AppSpacing.xs,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.secondaryFixedDim,
-                          borderRadius: BorderRadius.circular(AppRadii.pill),
-                        ),
-                        child: Text(
-                          tag.toUpperCase(),
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: AppColors.onSurface,
-                          ),
-                        ),
+            const SizedBox(height: AppSpacing.md),
+            Wrap(
+              spacing: AppSpacing.md,
+              runSpacing: AppSpacing.sm,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                if (subtitle != null)
+                  Text(
+                    subtitle,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: AppColors.onSurface,
+                    ),
+                  ),
+                if (subtitle != null && year != null) const _DotDivider(),
+                if (year != null)
+                  Text(year, style: theme.textTheme.titleMedium),
+              ],
+            ),
+            const SizedBox(height: 48),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 620),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('SYNOPSIS', style: theme.textTheme.labelSmall),
+                  const SizedBox(height: AppSpacing.md),
+                  if (synopsis != null)
+                    Text(
+                      synopsis,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        fontSize: 18,
+                        height: 1.7,
+                        color: AppColors.onSurfaceVariant,
                       ),
                     )
-                    .toList(),
+                  else
+                    const EmptyState(
+                      compact: true,
+                      icon: Icons.article_outlined,
+                      title: 'No synopsis',
+                      body: '尚未为这条档案补全简介。',
+                    ),
+                  if (tags.isNotEmpty) ...[
+                    const SizedBox(height: AppSpacing.xl),
+                    Wrap(
+                      spacing: AppSpacing.sm,
+                      runSpacing: AppSpacing.sm,
+                      children: tags
+                          .map(
+                            (tag) => Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.md,
+                                vertical: AppSpacing.xs,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.secondaryFixedDim,
+                                borderRadius: BorderRadius.circular(
+                                  AppRadii.pill,
+                                ),
+                              ),
+                              child: Text(
+                                tag.toUpperCase(),
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: AppColors.onSurface,
+                                ),
+                              ),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ],
+                ],
               ),
-            ],
-          ),
-        ),
-        const SizedBox(height: AppSpacing.xxxl),
-        Container(
-          height: 1,
-          color: AppColors.outlineVariant.withValues(alpha: 0.1),
-        ),
-        const SizedBox(height: 40),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final bool split = constraints.maxWidth >= 760;
+            ),
+            const SizedBox(height: AppSpacing.xxxl),
+            Container(
+              height: 1,
+              color: AppColors.outlineVariant.withValues(alpha: 0.1),
+            ),
+            const SizedBox(height: 40),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final bool split = constraints.maxWidth >= 760;
 
-            final Widget notes = const _NotesWorkspace();
-            final Widget history = const _HistoryWorkspace();
+                final Widget notes = _NotesWorkspace(notes: view.notes);
+                final Widget history = _HistoryWorkspace(
+                  entries: view.lifecycle,
+                );
 
-            if (!split) {
-              return Column(
-                children: [notes, const SizedBox(height: 40), history],
-              );
-            }
+                if (!split) {
+                  return Column(
+                    children: [notes, const SizedBox(height: 40), history],
+                  );
+                }
 
-            return Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(child: notes),
-                const SizedBox(width: 48),
-                Expanded(child: history),
-              ],
-            );
-          },
-        ),
-      ],
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: notes),
+                    const SizedBox(width: 48),
+                    Expanded(child: history),
+                  ],
+                );
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 }
 
 class _NotesWorkspace extends StatelessWidget {
-  const _NotesWorkspace();
+  const _NotesWorkspace({required this.notes});
+
+  final DetailNotesEntry? notes;
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    final List<String> paragraphs = DemoData.detailNotes.split('\n\n');
+    final DetailNotesEntry? notesEntry = notes;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -332,105 +368,114 @@ class _NotesWorkspace extends StatelessWidget {
           ],
         ),
         const SizedBox(height: AppSpacing.lg),
-        Container(
-          width: double.infinity,
-          constraints: const BoxConstraints(minHeight: 300),
-          padding: const EdgeInsets.all(AppSpacing.xl),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceContainerLowest,
-            border: Border.all(
-              color: AppColors.outlineVariant.withValues(alpha: 0.1),
+        if (notesEntry == null)
+          const EmptyState(
+            compact: true,
+            icon: Icons.note_add_outlined,
+            title: 'No notes yet',
+            body: '为这条档案添加你的第一条笔记。',
+            actionLabel: '+ Add note',
+          )
+        else
+          Container(
+            width: double.infinity,
+            constraints: const BoxConstraints(minHeight: 300),
+            padding: const EdgeInsets.all(AppSpacing.xl),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceContainerLowest,
+              border: Border.all(
+                color: AppColors.outlineVariant.withValues(alpha: 0.1),
+              ),
             ),
-          ),
-          child: DefaultTextStyle(
-            style:
-                theme.textTheme.bodyMedium?.copyWith(
-                  color: AppColors.onSurfaceVariant,
-                  height: 1.9,
-                ) ??
-                const TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 14,
-                  height: 1.9,
-                  color: AppColors.onSurfaceVariant,
-                ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'October 14, 2024',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: AppColors.accent,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                Text(
-                  paragraphs.first,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: AppColors.onSurfaceVariant.withValues(alpha: 0.72),
-                    fontStyle: FontStyle.italic,
+            child: DefaultTextStyle(
+              style:
+                  theme.textTheme.bodyMedium?.copyWith(
+                    color: AppColors.onSurfaceVariant,
                     height: 1.9,
+                  ) ??
+                  const TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 14,
+                    height: 1.9,
+                    color: AppColors.onSurfaceVariant,
                   ),
-                ),
-                if (paragraphs.length > 1) ...[
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    notesEntry.date,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: AppColors.accent,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                   const SizedBox(height: AppSpacing.lg),
-                  Text(paragraphs.sublist(1).join('\n\n')),
-                ],
-                const SizedBox(height: AppSpacing.xxxl),
-                Container(
-                  margin: const EdgeInsets.only(top: AppSpacing.xl),
-                  padding: const EdgeInsets.only(top: AppSpacing.lg),
-                  decoration: BoxDecoration(
-                    border: Border(
-                      top: BorderSide(
-                        color: AppColors.outlineVariant.withValues(alpha: 0.06),
+                  Text(notesEntry.body),
+                  const SizedBox(height: AppSpacing.xxxl),
+                  Container(
+                    margin: const EdgeInsets.only(top: AppSpacing.xl),
+                    padding: const EdgeInsets.only(top: AppSpacing.lg),
+                    decoration: BoxDecoration(
+                      border: Border(
+                        top: BorderSide(
+                          color: AppColors.outlineVariant.withValues(
+                            alpha: 0.06,
+                          ),
+                        ),
+                      ),
+                    ),
+                    child: Text(
+                      '+ ADD NEW ENTRY',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: AppColors.accent,
                       ),
                     ),
                   ),
-                  child: Text(
-                    '+ ADD NEW ENTRY',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: AppColors.accent,
-                    ),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
-        ),
       ],
     );
   }
 }
 
 class _HistoryWorkspace extends StatelessWidget {
-  const _HistoryWorkspace();
+  const _HistoryWorkspace({required this.entries});
+
+  final List<DetailLifecycleEntry>? entries;
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
+    final List<DetailLifecycleEntry> resolved = entries ?? const [];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('LIFECYCLE LOG', style: theme.textTheme.labelSmall),
         const SizedBox(height: AppSpacing.xl),
-        const _TimelineEntry(
-          title: 'STATUS UPDATED: IN PROGRESS',
-          time: '14 OCT 2024 — 09:42 AM',
-          active: true,
-        ),
-        const SizedBox(height: AppSpacing.xl),
-        const _TimelineEntry(
-          title: 'ADDED TO COLLECTION',
-          time: '10 OCT 2024 — 02:15 PM',
-        ),
-        const SizedBox(height: AppSpacing.xl),
-        const _TimelineEntry(
-          title: 'CATALOG ENTRY CREATED',
-          time: '10 OCT 2024 — 02:10 PM',
-        ),
+        if (resolved.isEmpty)
+          const EmptyState(
+            compact: true,
+            icon: Icons.history_outlined,
+            title: 'No activity',
+            body: '保存状态/进度变化会出现在这里。',
+          )
+        else
+          ...List.generate(resolved.length, (index) {
+            final entry = resolved[index];
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: index == resolved.length - 1 ? 0 : AppSpacing.xl,
+              ),
+              child: _TimelineEntry(
+                title: entry.title,
+                time: entry.time,
+                active: entry.current,
+              ),
+            );
+          }),
         const SizedBox(height: AppSpacing.xxxl),
         Row(
           children: const [

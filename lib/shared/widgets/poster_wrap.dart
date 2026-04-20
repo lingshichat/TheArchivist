@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../demo/demo_data.dart';
 import 'poster_card.dart';
+import 'poster_view_data.dart';
 
 class PosterWrap extends StatelessWidget {
   const PosterWrap({
@@ -10,22 +10,20 @@ class PosterWrap extends StatelessWidget {
     required this.minColumns,
     required this.maxColumns,
     this.onItemTap,
+    this.variant = PosterCardVariant.continuing,
     this.minTileWidth = 120,
     this.horizontalSpacing = 20,
     this.verticalSpacing = 32,
-    this.showSubtitle = false,
-    this.showFooter = false,
   });
 
-  final List<DemoMediaItem> items;
+  final List<PosterViewData> items;
   final int minColumns;
   final int maxColumns;
-  final VoidCallback? onItemTap;
+  final ValueChanged<PosterViewData>? onItemTap;
+  final PosterCardVariant variant;
   final double minTileWidth;
   final double horizontalSpacing;
   final double verticalSpacing;
-  final bool showSubtitle;
-  final bool showFooter;
 
   @override
   Widget build(BuildContext context) {
@@ -35,16 +33,7 @@ class PosterWrap extends StatelessWidget {
             ((constraints.maxWidth + horizontalSpacing) /
                     (minTileWidth + horizontalSpacing))
                 .floor();
-        final int columns;
-
-        if (estimatedColumns < minColumns) {
-          columns = minColumns;
-        } else if (estimatedColumns > maxColumns) {
-          columns = maxColumns;
-        } else {
-          columns = estimatedColumns;
-        }
-
+        final int columns = estimatedColumns.clamp(minColumns, maxColumns);
         final double totalSpacing = (columns - 1) * horizontalSpacing;
         final double itemWidth =
             (constraints.maxWidth - totalSpacing) / columns;
@@ -58,9 +47,8 @@ class PosterWrap extends StatelessWidget {
                   width: itemWidth,
                   child: PosterCard(
                     item: item,
-                    onTap: onItemTap,
-                    showSubtitle: showSubtitle,
-                    showFooter: showFooter,
+                    variant: variant,
+                    onTap: onItemTap == null ? null : () => onItemTap!(item),
                   ),
                 ),
               )

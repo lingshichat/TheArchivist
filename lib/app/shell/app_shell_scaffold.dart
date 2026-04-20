@@ -152,6 +152,10 @@ class AppShellScaffold extends StatelessWidget {
       return 'The Archivist';
     }
 
+    if (path.startsWith(AppRoutes.add)) {
+      return 'Add Entry';
+    }
+
     return 'Home';
   }
 
@@ -163,6 +167,10 @@ class AppShellScaffold extends StatelessWidget {
     if (path.startsWith(AppRoutes.library) ||
         path.startsWith(AppRoutes.detail)) {
       return 'Search collection...';
+    }
+
+    if (path.startsWith(AppRoutes.add)) {
+      return 'Search your archive...';
     }
 
     return 'Search your archive...';

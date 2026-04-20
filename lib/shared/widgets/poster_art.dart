@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../demo/demo_data.dart';
 import '../theme/app_theme.dart';
+import 'poster_view_data.dart';
 
 class PosterArt extends StatelessWidget {
   const PosterArt({super.key, required this.item, this.muted = false});
 
-  final DemoMediaItem item;
+  final PosterViewData item;
   final bool muted;
 
   @override

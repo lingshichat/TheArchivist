@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../widgets/category_view_data.dart';
+import '../widgets/poster_view_data.dart';
+
 enum DemoStatusTone { primary, secondary, tertiary, muted }
 
 class DemoMediaItem {
@@ -22,6 +25,11 @@ class DemoMediaItem {
   final Color posterColor;
   final Color posterAccentColor;
   final DemoStatusTone statusTone;
+
+  String get id => title
+      .toLowerCase()
+      .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
+      .replaceAll(RegExp(r'^-+|-+$'), '');
 }
 
 class DemoMediaCategory {
@@ -38,6 +46,43 @@ class DemoMediaCategory {
   final String itemCount;
   final IconData icon;
   final Color accentColor;
+}
+
+extension DemoMediaItemPoster on DemoMediaItem {
+  PosterViewData toPosterView() => PosterViewData(
+    id: id,
+    title: title,
+    subtitle: subtitle.isEmpty ? null : subtitle,
+    mediaLabel: mediaLabel,
+    year: year.isEmpty ? null : year,
+    statusLabel: statusLabel.isEmpty ? null : statusLabel,
+    statusTone: _mapTone(statusTone),
+    posterColor: posterColor,
+    posterAccentColor: posterAccentColor,
+  );
+}
+
+extension DemoMediaCategoryX on DemoMediaCategory {
+  CategoryViewData toCategoryView() => CategoryViewData(
+    label: label,
+    description: description,
+    itemCount: itemCount,
+    icon: icon,
+    accentColor: accentColor,
+  );
+}
+
+PosterStatusTone _mapTone(DemoStatusTone tone) {
+  switch (tone) {
+    case DemoStatusTone.primary:
+      return PosterStatusTone.primary;
+    case DemoStatusTone.secondary:
+      return PosterStatusTone.secondary;
+    case DemoStatusTone.tertiary:
+      return PosterStatusTone.tertiary;
+    case DemoStatusTone.muted:
+      return PosterStatusTone.muted;
+  }
 }
 
 abstract final class DemoData {
@@ -345,4 +390,23 @@ abstract final class DemoData {
     'Added to collection — 10 Oct 2024, 14:15',
     'Catalog entry created — 10 Oct 2024, 14:10',
   ];
+
+  static DemoMediaItem? lookupById(String id) {
+    for (final list in const [
+      continuingItems,
+      recentlyAddedItems,
+      recentlyFinishedItems,
+      libraryItems,
+    ]) {
+      for (final item in list) {
+        if (item.id == id) {
+          return item;
+        }
+      }
+    }
+    if (detailItem.id == id) {
+      return detailItem;
+    }
+    return null;
+  }
 }
