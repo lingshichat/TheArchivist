@@ -1,0 +1,13 @@
+{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend development guide"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend development guide"}
+{"file": ".trellis/tasks/04-19-phase1-wp4-local-record-flow/prd.md", "reason": "WP4 最终任务范围与验收"}
+{"file": ".trellis/tasks/archive/2026-04/04-19-phase1-wp2-local-data/prd.md", "reason": "承接 WP2 的数据模型与仓储边界"}
+{"file": ".trellis/tasks/archive/2026-04/04-19-phase1-wp3-windows-shell-pages/prd.md", "reason": "承接 WP3 的页面骨架与 provider 边界"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "保持 feature/shared 目录边界"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "本地数据通过 Riverpod provider 暴露"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "shared widgets 只接轻量 view data"}
+{"file": ".trellis/spec/frontend/design-system.md", "reason": "保持 Stitch 桌面视觉契约"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "避免视觉与结构回退"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "映射 Drift 到 view data 的跨层链路"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "优先扩展已有 poster/empty/provider 模式"}
