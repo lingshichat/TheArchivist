@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
 import 'converters/converters.dart';
+import 'daos/activity_log_dao.dart';
 import 'daos/media_dao.dart';
 import 'daos/progress_dao.dart';
 import 'daos/shelf_dao.dart';
@@ -33,13 +34,7 @@ part 'app_database.g.dart';
     MediaItemShelves,
     ActivityLogs,
   ],
-  daos: [
-    MediaDao,
-    UserEntryDao,
-    ProgressDao,
-    TagDao,
-    ShelfDao,
-  ],
+  daos: [ActivityLogDao, MediaDao, UserEntryDao, ProgressDao, TagDao, ShelfDao],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
@@ -51,12 +46,12 @@ class AppDatabase extends _$AppDatabase {
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-        onCreate: (Migrator m) async {
-          await m.createAll();
-          await customSelect('PRAGMA foreign_keys = ON').get();
-          await customSelect('PRAGMA journal_mode = WAL').get();
-        },
-      );
+    onCreate: (Migrator m) async {
+      await m.createAll();
+      await customSelect('PRAGMA foreign_keys = ON').get();
+      await customSelect('PRAGMA journal_mode = WAL').get();
+    },
+  );
 }
 
 QueryExecutor _openConnection() {

@@ -1,6 +1,12 @@
+import 'dart:convert';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../shared/demo/demo_data.dart';
+import '../../../shared/data/app_database.dart';
+import '../../../shared/data/daos/media_dao.dart';
+import '../../../shared/data/local_view_adapters.dart';
+import '../../../shared/data/providers.dart';
+import '../../../shared/data/stream_combine.dart';
 import '../../../shared/widgets/poster_view_data.dart';
 
 class DetailNotesEntry {
@@ -24,78 +30,259 @@ class DetailLifecycleEntry {
 
 class DetailViewData {
   const DetailViewData({
+    required this.mediaId,
+    required this.mediaType,
     required this.poster,
+    required this.archiveId,
+    required this.status,
+    required this.progressLabel,
+    required this.progressSummary,
+    required this.progressRatio,
+    required this.progressValue,
+    required this.primaryActionLabel,
+    required this.primaryActionStatus,
+    required this.score,
+    required this.lifecycle,
+    required this.updateCount,
     this.synopsis,
-    this.tags,
+    this.tags = const <String>[],
+    this.shelves = const <String>[],
     this.notes,
-    this.lifecycle,
   });
 
+  final String mediaId;
+  final MediaType mediaType;
   final PosterViewData poster;
+  final String archiveId;
+  final UnifiedStatus status;
+  final String progressLabel;
+  final String progressSummary;
+  final double progressRatio;
+  final double? progressValue;
+  final String primaryActionLabel;
+  final UnifiedStatus primaryActionStatus;
+  final int? score;
   final String? synopsis;
-  final List<String>? tags;
+  final List<String> tags;
+  final List<String> shelves;
   final DetailNotesEntry? notes;
-  final List<DetailLifecycleEntry>? lifecycle;
+  final List<DetailLifecycleEntry> lifecycle;
+  final int updateCount;
 
   bool get hasSynopsis => synopsis != null && synopsis!.isNotEmpty;
-  bool get hasTags => tags != null && tags!.isNotEmpty;
+  bool get hasTags => tags.isNotEmpty;
+  bool get hasShelves => shelves.isNotEmpty;
   bool get hasNotes => notes != null;
-  bool get hasLifecycle => lifecycle != null && lifecycle!.isNotEmpty;
+  bool get hasLifecycle => lifecycle.isNotEmpty;
 }
 
-abstract class DetailViewDataSource {
-  DetailViewData fetchById(String id);
-}
+final detailViewDataProvider = StreamProvider.family<DetailViewData?, String>((
+  ref,
+  id,
+) {
+  final mediaRepository = ref.watch(mediaRepositoryProvider);
+  final tagRepository = ref.watch(tagRepositoryProvider);
+  final shelfRepository = ref.watch(shelfRepositoryProvider);
+  final activityLogRepository = ref.watch(activityLogRepositoryProvider);
 
-class DemoDetailViewDataSource implements DetailViewDataSource {
-  const DemoDetailViewDataSource();
+  return combineLatest4(
+    mediaRepository.watchDetailBase(id),
+    tagRepository.watchByMediaItemId(id),
+    shelfRepository.watchByMediaItemId(id),
+    activityLogRepository.watchByMediaItemId(id),
+    (
+      MediaItemWithUserEntry? base,
+      List<Tag> tags,
+      List<ShelfList> shelves,
+      List<ActivityLog> logs,
+    ) {
+      if (base == null) {
+        return null;
+      }
 
-  @override
-  DetailViewData fetchById(String id) {
-    final DemoMediaItem? item = DemoData.lookupById(id);
-    if (item == null) {
-      return _fullView(DemoData.detailItem);
-    }
-    if (item.id == DemoData.detailItem.id) {
-      return _fullView(item);
-    }
-    return DetailViewData(poster: item.toPosterView());
-  }
+      final notes = _buildNotes(
+        notesBody: base.userEntry?.notes,
+        logs: logs,
+        fallbackTime: base.userEntry?.updatedAt ?? base.mediaItem.updatedAt,
+      );
 
-  DetailViewData _fullView(DemoMediaItem item) {
-    final parts = DemoData.detailNotes.split('\n\n');
-    final notesDate = parts.isNotEmpty ? parts.first : '';
-    final notesBody = parts.length > 1 ? parts.sublist(1).join('\n\n') : '';
-
-    return DetailViewData(
-      poster: item.toPosterView(),
-      synopsis: DemoData.detailSynopsis,
-      tags: DemoData.detailTags,
-      notes: DetailNotesEntry(date: notesDate, body: notesBody),
-      lifecycle: const [
-        DetailLifecycleEntry(
-          title: 'STATUS UPDATED: IN PROGRESS',
-          time: '14 OCT 2024 — 09:42 AM',
-          current: true,
+      return DetailViewData(
+        mediaId: base.mediaItem.id,
+        mediaType: base.mediaItem.mediaType,
+        poster: LocalViewAdapters.toPosterView(base),
+        archiveId: LocalViewAdapters.archiveIdLabel(base.mediaItem.id),
+        status: base.userEntry?.status ?? UnifiedStatus.wishlist,
+        progressLabel: _progressLabel(base.mediaItem.mediaType),
+        progressSummary: LocalViewAdapters.buildProgressSummary(
+          base.mediaItem,
+          base.progressEntry,
         ),
-        DetailLifecycleEntry(
-          title: 'ADDED TO COLLECTION',
-          time: '10 OCT 2024 — 02:15 PM',
+        progressRatio: LocalViewAdapters.buildProgressRatio(
+          base.mediaItem,
+          base.progressEntry,
         ),
-        DetailLifecycleEntry(
-          title: 'CATALOG ENTRY CREATED',
-          time: '10 OCT 2024 — 02:10 PM',
+        progressValue: _progressValue(
+          base.mediaItem.mediaType,
+          base.progressEntry,
         ),
-      ],
-    );
-  }
-}
-
-final detailViewDataSourceProvider = Provider<DetailViewDataSource>((ref) {
-  return const DemoDetailViewDataSource();
+        primaryActionLabel: _primaryActionLabel(base.userEntry?.status),
+        primaryActionStatus: _primaryActionStatus(base.userEntry?.status),
+        score: base.userEntry?.score,
+        synopsis: base.mediaItem.overview,
+        tags: tags.map((tag) => tag.name).toList(),
+        shelves: shelves.map((shelf) => shelf.name).toList(),
+        notes: notes,
+        lifecycle: _buildLifecycle(logs),
+        updateCount: logs.length,
+      );
+    },
+  );
 });
 
-final detailViewDataProvider =
-    Provider.family<DetailViewData, String>((ref, id) {
-      return ref.watch(detailViewDataSourceProvider).fetchById(id);
-    });
+DetailNotesEntry? _buildNotes({
+  required String? notesBody,
+  required List<ActivityLog> logs,
+  required DateTime fallbackTime,
+}) {
+  final resolvedNotes = notesBody?.trim();
+  if (resolvedNotes == null || resolvedNotes.isEmpty) {
+    return null;
+  }
+
+  DateTime noteTime = fallbackTime;
+  for (final log in logs) {
+    if (log.event == ActivityEvent.noteEdited) {
+      noteTime = log.createdAt;
+      break;
+    }
+  }
+
+  return DetailNotesEntry(
+    date: LocalViewAdapters.formatDateTime(noteTime),
+    body: resolvedNotes,
+  );
+}
+
+List<DetailLifecycleEntry> _buildLifecycle(List<ActivityLog> logs) {
+  return List<DetailLifecycleEntry>.generate(logs.length, (index) {
+    final log = logs[index];
+    return DetailLifecycleEntry(
+      title: _activityTitle(log),
+      time: LocalViewAdapters.formatDateTime(log.createdAt),
+      current: index == 0,
+    );
+  });
+}
+
+String _activityTitle(ActivityLog log) {
+  final payload = _decodePayload(log.payloadJson);
+
+  switch (log.event) {
+    case ActivityEvent.added:
+      return 'ADDED TO COLLECTION';
+    case ActivityEvent.statusChanged:
+      final nextStatus = payload['to'] as String?;
+      return 'STATUS UPDATED: ${_statusNameFromStorage(nextStatus).toUpperCase()}';
+    case ActivityEvent.scoreChanged:
+      final score = payload['score'];
+      if (score == null) {
+        return 'RATING CLEARED';
+      }
+      return 'RATING UPDATED: $score/10';
+    case ActivityEvent.progressChanged:
+      final summary = payload['summary'] as String?;
+      if (summary == null || summary.isEmpty) {
+        return 'PROGRESS UPDATED';
+      }
+      return 'PROGRESS UPDATED: $summary';
+    case ActivityEvent.noteEdited:
+      final hasNotes = payload['hasNotes'] == true;
+      return hasNotes ? 'NOTES UPDATED' : 'NOTES CLEARED';
+    case ActivityEvent.completed:
+      return 'MARKED COMPLETED';
+  }
+}
+
+Map<String, Object?> _decodePayload(String payloadJson) {
+  final decoded = jsonDecode(payloadJson);
+  if (decoded is Map<String, dynamic>) {
+    return Map<String, Object?>.from(decoded);
+  }
+  return const <String, Object?>{};
+}
+
+String _progressLabel(MediaType mediaType) {
+  switch (mediaType) {
+    case MediaType.tv:
+      return 'EPISODE PROGRESS';
+    case MediaType.book:
+      return 'PAGE PROGRESS';
+    case MediaType.movie:
+      return 'RUNTIME PROGRESS';
+    case MediaType.game:
+      return 'PLAYTIME';
+  }
+}
+
+double? _progressValue(MediaType mediaType, ProgressEntry? progressEntry) {
+  switch (mediaType) {
+    case MediaType.tv:
+      return progressEntry?.currentEpisode?.toDouble();
+    case MediaType.book:
+      return progressEntry?.currentPage?.toDouble();
+    case MediaType.movie:
+      return progressEntry?.currentMinutes;
+    case MediaType.game:
+      if (progressEntry?.currentMinutes == null) {
+        return null;
+      }
+      return progressEntry!.currentMinutes! / 60;
+  }
+}
+
+String _primaryActionLabel(UnifiedStatus? status) {
+  switch (status ?? UnifiedStatus.wishlist) {
+    case UnifiedStatus.wishlist:
+      return 'Start Tracking';
+    case UnifiedStatus.inProgress:
+      return 'Mark Completed';
+    case UnifiedStatus.done:
+      return 'Reopen Entry';
+    case UnifiedStatus.onHold:
+      return 'Resume Tracking';
+    case UnifiedStatus.dropped:
+      return 'Restart Entry';
+  }
+}
+
+UnifiedStatus _primaryActionStatus(UnifiedStatus? status) {
+  switch (status ?? UnifiedStatus.wishlist) {
+    case UnifiedStatus.wishlist:
+      return UnifiedStatus.inProgress;
+    case UnifiedStatus.inProgress:
+      return UnifiedStatus.done;
+    case UnifiedStatus.done:
+      return UnifiedStatus.inProgress;
+    case UnifiedStatus.onHold:
+      return UnifiedStatus.inProgress;
+    case UnifiedStatus.dropped:
+      return UnifiedStatus.inProgress;
+  }
+}
+
+String _statusNameFromStorage(String? value) {
+  switch (value) {
+    case 'wishlist':
+      return 'Wishlist';
+    case 'inProgress':
+      return 'In Progress';
+    case 'done':
+      return 'Completed';
+    case 'onHold':
+      return 'On Hold';
+    case 'dropped':
+      return 'Dropped';
+    default:
+      return 'Wishlist';
+  }
+}

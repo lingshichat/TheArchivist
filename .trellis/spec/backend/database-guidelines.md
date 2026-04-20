@@ -6,140 +6,151 @@
 
 ## Overview
 
-This project uses [Drift](https://drift.simonbinder.eu/) (v2.x) as the local persistence layer, backed by SQLite via `drift_flutter` and `sqlite3_flutter_libs`.
+This project uses [Drift](https://drift.simonbinder.eu/) (v2.x) as the local
+persistence layer, backed by SQLite via `drift_flutter` and
+`sqlite3_flutter_libs`.
 
-The database lives at the platform's default database directory and is named `record_anywhere.db`.
+The database lives at the platform default directory and the local database is
+named `record_anywhere`.
 
 ---
 
 ## Naming Conventions
 
-- **Tables**: PascalCase class names extending `Table`. Drift generates the SQL table name as `snake_case`.
-  - Example: `MediaItems` class → `media_items` table
-- **Columns**: camelCase getters in the table class. Drift generates `snake_case` SQL columns.
-  - Example: `mediaType` getter → `media_type` column
-- **Primary keys**: All business tables use `id TEXT` (UUID v4), set explicitly via `primaryKey` override.
-- **Foreign keys**: `text().references(OtherTable, #column)()` — Drift generates FK constraints.
-- **Join tables**: Follow `media_item_tags` / `media_item_shelves` pattern: both FK columns + unique constraint.
+- **Tables**: PascalCase class names extending `Table`
+- **Columns**: camelCase getters in Dart, `snake_case` in SQL
+- **Primary keys**: `id TEXT` with UUID v4 generated in app code
+- **Foreign keys**: explicit `references(...)`
+- **Join tables**: use `media_item_tags` / `media_item_shelves` style naming
 
 ---
 
 ## Enum Storage
 
-Enums are stored as **text strings** using `TypeConverter` with `.map()`.
+Enums are stored as text with `TypeConverter`, not integer indexes.
 
-```dart
-// converter
-class StatusConverter extends TypeConverter<UnifiedStatus, String> { ... }
+Current enum sets:
 
-// table column
-TextColumn get status => text().map(const StatusConverter())();
-```
-
-**Why text, not int index**: Text survives enum reordering and is readable in raw SQL. Critical for cross-device sync where enum index collisions would corrupt data.
-
-Enums:
 - `MediaType`: `movie` / `tv` / `book` / `game`
 - `UnifiedStatus`: `wishlist` / `inProgress` / `done` / `onHold` / `dropped`
-- `ActivityEvent`: `added` / `statusChanged` / `scoreChanged` / `progressChanged` / `noteEdited` / `completed`
+- `ActivityEvent`: `added` / `statusChanged` / `scoreChanged` /
+  `progressChanged` / `noteEdited` / `completed`
 - `ShelfKind`: `system` / `user`
+
+Text storage is required because later sync work must survive enum reordering.
 
 ---
 
-## Sync Fields (All Business Tables)
+## Sync Fields
 
-Every table that may participate in cross-device sync carries these columns:
+Business tables that may sync later carry:
 
-| Column | Type | Default | Purpose |
-|--------|------|---------|---------|
-| `createdAt` | DateTime | required | Row creation time |
-| `updatedAt` | DateTime | required | Last modification time |
-| `deletedAt` | DateTime? | null | Soft delete marker |
-| `syncVersion` | INTEGER | 0 | Incremented on every write |
-| `deviceId` | TEXT | '' | Device that made the change |
-| `lastSyncedAt` | DateTime? | null | Last successful sync timestamp |
+- `createdAt`
+- `updatedAt`
+- `deletedAt`
+- `syncVersion`
+- `deviceId`
+- `lastSyncedAt`
 
-These fields are **auto-injected** by repository methods, not by UI code.
+Repository methods own these fields. UI code must not stamp them.
 
 ---
 
 ## Soft Delete
 
-All business queries filter out `deletedAt IS NOT NULL` by default.
-
-Hard delete is reserved for backup/restore paths (Phase 4). Never call `delete()` on business tables in normal flows — use `softDelete()` from the DAO/repository.
-
----
-
-## ID Strategy
-
-All primary keys are UUID v4 strings (36 chars), generated via the `uuid` package.
-
-Rationale:
-- Globally unique across devices — no collision during Phase 3 sync merge
-- No need to rewrite FK references when merging data
-- Slight index overhead acceptable at project scale
+- Normal product flows use soft delete
+- Read queries must filter out `deletedAt IS NOT NULL`
+- Hard delete is reserved for future backup/restore or maintenance flows
 
 ---
 
 ## Directory Structure
 
-```
+```text
 lib/shared/data/
-├── app_database.dart       # @DriftDatabase class
-├── providers.dart           # Riverpod providers
-├── converters/              # TypeConverter classes
-├── tables/                  # Table definitions + enums
-├── daos/                    # @DriftAccessor DAOs
-└── repositories/            # High-level write/read API
+├── app_database.dart
+├── providers.dart
+├── converters/
+├── tables/
+├── daos/
+└── repositories/
 ```
 
-Layering: UI → Riverpod providers → Repositories → DAOs → Drift tables.
+Layering:
 
----
-
-## Migrations
-
-- `schemaVersion` starts at 1. Bump for every schema change.
-- Use incremental `if (from < N)` checks in `onUpgrade`.
-- `onCreate` calls `m.createAll()` + enables `PRAGMA foreign_keys = ON` + `PRAGMA journal_mode = WAL`.
-- Always test migrations with in-memory databases.
-
----
-
-## Generated Code
-
-- `*.g.dart` and `*.drift.dart` files are listed in `.gitignore`.
-- Run `dart run build_runner build --delete-conflicting-outputs` after pulling changes.
-- CI (future) should include the build_runner step.
-
----
-
-## Testing
-
-Use `NativeDatabase.memory()` for unit tests:
-
-```dart
-db = AppDatabase.forTesting(NativeDatabase.memory());
-```
-
-Important: Drift stores `DateTime` columns as **seconds** since epoch, not milliseconds. Assertions on timestamp ordering require ≥1 second delays between writes.
+UI -> Riverpod providers -> repositories -> DAOs -> Drift tables
 
 ---
 
 ## Query Patterns
 
-- **Home page sections**: `watchContinuing` / `watchRecentlyAdded` / `watchRecentlyFinished` — join `media_items` + `user_entries`, filter by status + deletedAt.
-- **Library**: `watchLibrary` — filter by `mediaType` + `status`, sort by `updatedAt` / `title` / `score`.
-- **Detail**: `watchItem` + separate DAO calls for progress/tags/shelves.
-- **Joins**: Use `select().join([leftOuterJoin(...)])` for composed results; map with `row.readTable()` / `row.readTableOrNull()`.
+- **Home**:
+  - `watchContinuing`
+  - `watchRecentlyAdded`
+  - `watchRecentlyFinished`
+  - all join `media_items + user_entries + progress_entries`
+- **Library**:
+  - `watchLibrary`
+  - filter by media type list + status
+  - sort by `updatedAt`, `title`, `score`, or `releaseDate`
+- **Detail**:
+  - `watchDetailBase` joins `media_items + user_entries + progress_entries`
+  - tags / shelves / activity logs are combined above the DAO layer
+- **Joins**:
+  - use `select().join([...])`
+  - map with `row.readTable()` / `row.readTableOrNull()`
+
+---
+
+## WP4 Local Record Contracts
+
+- `watchLibrary` accepts `types` so one tab can represent multiple media types
+  (`movie + tv`)
+- Year sorting in the desktop library maps to `releaseDate`
+- `activity_logs` is append-only and backs the visible lifecycle timeline
+- Do not reconstruct lifecycle UI from `updatedAt` fields alone
+- `user_entries.updateStatus` semantics:
+  - first move to `inProgress` writes `startedAt` if missing
+  - move to `done` writes `finishedAt`
+  - move away from `done` clears `finishedAt`
+- Tag and shelf syncing should happen at repository level so page code can work
+  with plain text names
+
+---
+
+## Migrations
+
+- `schemaVersion` starts at 1
+- Bump the version for every schema change
+- Keep upgrades incremental with `if (from < N)` blocks
+- Test migrations with in-memory databases
+
+---
+
+## Generated Code
+
+- Run `dart run build_runner build --delete-conflicting-outputs` after Drift
+  schema or DAO changes
+- Keep generated `*.g.dart` files in sync with source before analyze/test
+
+---
+
+## Testing
+
+Use `AppDatabase.forTesting(NativeDatabase.memory())` in repository tests.
+
+Notes:
+
+- SQLite timestamp precision is second-level in current tests
+- Add round-trip tests for create -> mutate -> soft delete flows when contracts
+  span multiple repositories
 
 ---
 
 ## Common Mistakes
 
-- Using `intEnum<T>()` for enums that participate in sync — use text-based TypeConverter instead.
-- Forgetting to import converter classes in `app_database.dart` — the generated code references them.
-- Calling `delete()` on business tables instead of `softDelete()`.
-- Using auto-increment IDs — UUID v4 is required for sync compatibility.
-- Creating `DateTime` columns without considering second-level precision in tests.
+- Using integer-backed enums for sync-facing data
+- Letting page widgets call DAOs directly
+- Forgetting to filter soft-deleted rows
+- Reconstructing lifecycle history without `activity_logs`
+- Copying name-sync logic for tags and shelves into page widgets

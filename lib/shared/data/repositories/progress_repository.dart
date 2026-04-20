@@ -9,6 +9,14 @@ class ProgressRepository {
 
   ProgressRepository(this._db);
 
+  Stream<ProgressEntry?> watchByMediaItemId(String mediaItemId) {
+    return _db.progressDao.watchByMediaItemId(mediaItemId);
+  }
+
+  Future<ProgressEntry?> getByMediaItemId(String mediaItemId) {
+    return _db.progressDao.getByMediaItemId(mediaItemId);
+  }
+
   Future<void> updateProgress(
     String mediaItemId, {
     int? currentEpisode,
@@ -21,17 +29,19 @@ class ProgressRepository {
     final existing = await _db.progressDao.getByMediaItemId(mediaItemId);
     if (existing == null) {
       final now = SyncStampDecorator.now();
-      await _db.progressDao.upsert(ProgressEntriesCompanion.insert(
-        id: DeviceIdentityService.generate(),
-        mediaItemId: mediaItemId,
-        currentEpisode: Value(currentEpisode),
-        currentPage: Value(currentPage),
-        currentMinutes: Value(currentMinutes),
-        completionRatio: Value(completionRatio),
-        createdAt: now,
-        updatedAt: now,
-        deviceId: Value(deviceId),
-      ));
+      await _db.progressDao.upsert(
+        ProgressEntriesCompanion.insert(
+          id: DeviceIdentityService.generate(),
+          mediaItemId: mediaItemId,
+          currentEpisode: Value(currentEpisode),
+          currentPage: Value(currentPage),
+          currentMinutes: Value(currentMinutes),
+          completionRatio: Value(completionRatio),
+          createdAt: now,
+          updatedAt: now,
+          deviceId: Value(deviceId),
+        ),
+      );
     } else {
       await _db.progressDao.updateProgress(
         mediaItemId,

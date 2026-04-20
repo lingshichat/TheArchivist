@@ -11,10 +11,8 @@ class ActivityLogs extends Table {
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
   DateTimeColumn get deletedAt => dateTime().nullable()();
-  IntColumn get syncVersion =>
-      integer().withDefault(const Constant(0))();
-  TextColumn get deviceId =>
-      text().withDefault(const Constant(''))();
+  IntColumn get syncVersion => integer().withDefault(const Constant(0))();
+  TextColumn get deviceId => text().withDefault(const Constant(''))();
   DateTimeColumn get lastSyncedAt => dateTime().nullable()();
 
   @override

@@ -10,16 +10,16 @@ class ProgressDao extends DatabaseAccessor<AppDatabase>
     with _$ProgressDaoMixin {
   ProgressDao(super.db);
 
-  Stream<ProgressEntry> watchByMediaItemId(String mediaItemId) {
-    return (select(progressEntries)
-          ..where((t) => t.mediaItemId.equals(mediaItemId)))
-        .watchSingle();
+  Stream<ProgressEntry?> watchByMediaItemId(String mediaItemId) {
+    return (select(
+      progressEntries,
+    )..where((t) => t.mediaItemId.equals(mediaItemId))).watchSingleOrNull();
   }
 
   Future<ProgressEntry?> getByMediaItemId(String mediaItemId) {
-    return (select(progressEntries)
-          ..where((t) => t.mediaItemId.equals(mediaItemId)))
-        .getSingleOrNull();
+    return (select(
+      progressEntries,
+    )..where((t) => t.mediaItemId.equals(mediaItemId))).getSingleOrNull();
   }
 
   Future<void> upsert(ProgressEntriesCompanion entry) {
@@ -35,9 +35,9 @@ class ProgressDao extends DatabaseAccessor<AppDatabase>
     double? completionRatio,
   }) {
     final now = DateTime.now();
-    return (update(progressEntries)
-          ..where((t) => t.mediaItemId.equals(mediaItemId)))
-        .write(
+    return (update(
+      progressEntries,
+    )..where((t) => t.mediaItemId.equals(mediaItemId))).write(
       ProgressEntriesCompanion(
         currentEpisode: Value(currentEpisode),
         currentPage: Value(currentPage),

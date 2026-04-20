@@ -8,14 +8,16 @@
 
 This project uses `flutter_riverpod` as the application-level state solution.
 
-Current Phase 1 scope is intentionally light:
+Phase 1 now has a real local-first loop:
 
-- App bootstrap uses a root `ProviderScope`
-- Router configuration is exposed via a Riverpod provider
-- Page skeletons currently render demo data and local UI state only
+- App bootstrap still uses a root `ProviderScope`
+- Router configuration is still exposed via a provider
+- Home / Library / Detail now read from Drift-backed `StreamProvider`s
+- Add / Detail write flows now go through feature controllers
+- Page-local filters, dialog state, and text editing state stay local
 
-This keeps WP1 focused on shell and theme work while leaving room for WP2/WP4
-to introduce data providers and mutation flows later.
+The goal is to keep page widgets presentation-first while the data semantics
+live in repositories and controllers.
 
 ---
 
@@ -25,11 +27,12 @@ to introduce data providers and mutation flows later.
   - Router and future app-wide preferences
   - Lives in Riverpod providers
 - **Feature-local UI state**
-  - Temporary segmented controls, filters, and placeholders
-  - Can remain local until multiple widgets need to share it
+  - Selected tabs, filters, form text, dialog visibility
+  - Stays local unless multiple routes need to share it
 - **Domain/data state**
-  - Local database, sync state, and Bangumi integration
-  - Not part of the initial WP1 shell implementation
+  - Local database, sync state, Bangumi integration
+  - Read through repository-backed Riverpod providers
+  - Written through feature-scoped controllers
 
 ---
 
@@ -40,23 +43,64 @@ Promote state to Riverpod when:
 - It is shared by multiple routes or shell-level widgets
 - It survives page rebuilds and must stay coherent
 - It represents app-level preference or data lifecycle
+- It is a live read model backed by Drift streams
 
 Keep state local when:
 
 - It only affects a single widget subtree
 - It is temporary visual interaction state
-- It does not yet cross feature boundaries
+- It is form editing state that can be submitted in one action
+
+---
+
+## Local-First Read Pattern
+
+Use `StreamProvider` / `StreamProvider.family` for live archive reads.
+
+Rules:
+
+- Providers read from repositories, not directly from page widgets
+- Feature providers adapt DB entities into feature view data
+- Shared widgets should still consume stable UI models such as
+  `PosterViewData` and `CategoryViewData`
+- Missing records should resolve to `null` or empty view data, not demo
+  fallbacks
+
+Current examples:
+
+- `homeViewDataProvider`
+- `libraryHeaderProvider`
+- `libraryItemsProvider`
+- `detailViewDataProvider`
+
+---
+
+## Local-First Write Pattern
+
+Use controller classes for multi-step writes.
+
+Rules:
+
+- Pages trigger controller methods
+- Controllers orchestrate repository writes
+- Activity-log appends belong next to the mutation path
+- Pages should only handle progress UI, dialogs, and success feedback
+
+Current examples:
+
+- `AddEntryController`
+- `DetailActionsController`
 
 ---
 
 ## Server State
 
-There is no remote/server-state layer in WP1.
+There is no remote/server-state layer in Phase 1.
 
-Planned later:
+Current local-first pattern:
 
-- Local-first persistence will come from Drift-backed repositories
-- Sync state and remote integrations should enter through explicit providers
+- Local persistence comes from Drift-backed repositories
+- Sync state and remote integrations will enter through explicit providers later
 - UI must not talk directly to transport or storage details
 
 ---
@@ -64,5 +108,7 @@ Planned later:
 ## Common Mistakes
 
 - Creating global providers for one-off widget presentation state
-- Letting page widgets depend on storage or transport details too early
+- Letting page widgets call DAO methods directly
+- Doing multi-step writes inside button callbacks
+- Returning Drift row objects straight into shared presentation widgets
 - Duplicating route-selection logic in both shell and feature layers

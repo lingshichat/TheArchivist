@@ -55,7 +55,7 @@ class SectionCard extends StatelessWidget {
                 leading!,
                 const SizedBox(width: AppSpacing.sm),
               ],
-              Expanded(child: Text(title, style: theme.textTheme.titleLarge)),
+              Expanded(child: Text(title, style: AppTextStyles.panelTitle(theme))),
             ],
           ),
           const SizedBox(height: AppSpacing.lg),

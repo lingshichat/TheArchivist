@@ -61,6 +61,216 @@ abstract final class AppRadii {
   static const double pill = 999;
 }
 
+abstract final class AppTextStyles {
+  static TextStyle heroTitle(ThemeData theme) =>
+      theme.textTheme.displaySmall?.copyWith(
+        color: AppColors.onSurface,
+        fontWeight: FontWeight.w800,
+        letterSpacing: -0.5,
+        height: 1.0,
+      ) ??
+      const TextStyle(
+        fontFamily: 'Manrope',
+        fontFamilyFallback: ['Inter', 'Segoe UI', 'Roboto'],
+        fontSize: 28,
+        fontWeight: FontWeight.w800,
+        letterSpacing: -0.5,
+        height: 1.0,
+        color: AppColors.onSurface,
+      );
+
+  static TextStyle sectionTitle(ThemeData theme) =>
+      theme.textTheme.headlineSmall?.copyWith(
+        color: AppColors.onSurface,
+        fontWeight: FontWeight.w800,
+        letterSpacing: -0.35,
+        height: 1.05,
+      ) ??
+      const TextStyle(
+        fontFamily: 'Manrope',
+        fontFamilyFallback: ['Inter', 'Segoe UI', 'Roboto'],
+        fontSize: 18,
+        fontWeight: FontWeight.w800,
+        letterSpacing: -0.35,
+        height: 1.05,
+        color: AppColors.onSurface,
+      );
+
+  static TextStyle panelTitle(ThemeData theme) =>
+      theme.textTheme.titleLarge?.copyWith(
+        color: AppColors.onSurface,
+        fontWeight: FontWeight.w800,
+        letterSpacing: -0.25,
+        height: 1.05,
+      ) ??
+      const TextStyle(
+        fontFamily: 'Manrope',
+        fontFamilyFallback: ['Inter', 'Segoe UI', 'Roboto'],
+        fontSize: 20,
+        fontWeight: FontWeight.w800,
+        letterSpacing: -0.25,
+        height: 1.05,
+        color: AppColors.onSurface,
+      );
+}
+
+enum AppFormSurface { low, lowest }
+
+abstract final class AppFormStyles {
+  static InputDecorationTheme inputTheme(
+    TextTheme textTheme, {
+    AppFormSurface surface = AppFormSurface.low,
+  }) {
+    final labelStyle =
+        textTheme.bodyMedium?.copyWith(
+          color: AppColors.subtleText,
+          fontWeight: FontWeight.w600,
+        ) ??
+        const TextStyle(
+          fontFamily: 'Inter',
+          fontFamilyFallback: ['Segoe UI', 'Roboto', 'Arial'],
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: AppColors.subtleText,
+        );
+    final floatingLabelStyle = labelStyle.copyWith(
+      color: AppColors.accentStrong,
+      fontWeight: FontWeight.w700,
+    );
+    final hintStyle =
+        textTheme.bodyMedium?.copyWith(
+          color: AppColors.onSurfaceVariant.withValues(alpha: 0.86),
+        ) ??
+        const TextStyle(
+          fontFamily: 'Inter',
+          fontFamilyFallback: ['Segoe UI', 'Roboto', 'Arial'],
+          fontSize: 13,
+          fontWeight: FontWeight.w400,
+          color: AppColors.onSurfaceVariant,
+        );
+    final errorStyle =
+        textTheme.bodySmall?.copyWith(
+          color: AppColors.error,
+          fontWeight: FontWeight.w600,
+        ) ??
+        const TextStyle(
+          fontFamily: 'Inter',
+          fontFamilyFallback: ['Segoe UI', 'Roboto', 'Arial'],
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: AppColors.error,
+        );
+
+    return InputDecorationTheme(
+      filled: true,
+      fillColor: _fillColor(surface),
+      labelStyle: labelStyle,
+      floatingLabelStyle: floatingLabelStyle,
+      hintStyle: hintStyle,
+      errorStyle: errorStyle,
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: 14,
+      ),
+      border: _border(_enabledBorderColor(surface)),
+      enabledBorder: _border(_enabledBorderColor(surface)),
+      focusedBorder: _border(
+        AppColors.accent.withValues(alpha: 0.58),
+        width: 1.2,
+      ),
+      errorBorder: _border(AppColors.error.withValues(alpha: 0.5)),
+      focusedErrorBorder: _border(
+        AppColors.error.withValues(alpha: 0.72),
+        width: 1.2,
+      ),
+    );
+  }
+
+  static InputDecoration fieldDecoration(
+    ThemeData theme, {
+    required String label,
+    String? hintText,
+    AppFormSurface surface = AppFormSurface.low,
+  }) {
+    return InputDecoration(
+      labelText: label,
+      hintText: hintText,
+    ).applyDefaults(inputTheme(theme.textTheme, surface: surface));
+  }
+
+  static TextStyle fieldText(ThemeData theme) =>
+      theme.textTheme.bodyLarge?.copyWith(
+        color: AppColors.onSurface,
+        fontWeight: FontWeight.w500,
+        height: 1.35,
+      ) ??
+      const TextStyle(
+        fontFamily: 'Inter',
+        fontFamilyFallback: ['Segoe UI', 'Roboto', 'Arial'],
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        height: 1.35,
+        color: AppColors.onSurface,
+      );
+
+  static ButtonStyle secondaryButton(
+    ThemeData theme, {
+    AppFormSurface surface = AppFormSurface.low,
+  }) {
+    return OutlinedButton.styleFrom(
+      backgroundColor: _fillColor(surface),
+      foregroundColor: AppColors.onSurface,
+      textStyle:
+          theme.textTheme.labelLarge?.copyWith(color: AppColors.onSurface) ??
+          const TextStyle(
+            fontFamily: 'Inter',
+            fontFamilyFallback: ['Segoe UI', 'Roboto', 'Arial'],
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.2,
+            color: AppColors.onSurface,
+          ),
+      side: BorderSide(color: AppColors.outlineVariant.withValues(alpha: 0.36)),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.md,
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadii.container),
+      ),
+    );
+  }
+
+  static Color dropdownColor(AppFormSurface surface) => _fillColor(surface);
+
+  static Color get fieldIconColor => AppColors.onSurfaceVariant;
+
+  static OutlineInputBorder _border(Color color, {double width = 1}) {
+    return OutlineInputBorder(
+      borderRadius: BorderRadius.circular(AppRadii.card),
+      borderSide: BorderSide(color: color, width: width),
+    );
+  }
+
+  static Color _fillColor(AppFormSurface surface) {
+    switch (surface) {
+      case AppFormSurface.low:
+        return AppColors.surfaceContainerLowest;
+      case AppFormSurface.lowest:
+        return AppColors.surfaceContainerLow;
+    }
+  }
+
+  static Color _enabledBorderColor(AppFormSurface surface) {
+    switch (surface) {
+      case AppFormSurface.low:
+        return AppColors.outlineVariant.withValues(alpha: 0.34);
+      case AppFormSurface.lowest:
+        return AppColors.outlineVariant.withValues(alpha: 0.26);
+    }
+  }
+}
+
 abstract final class AppTheme {
   static ThemeData light() {
     const ColorScheme colorScheme = ColorScheme.light(
@@ -74,6 +284,9 @@ abstract final class AppTheme {
     );
 
     final TextTheme textTheme = _textTheme(Brightness.light);
+    final InputDecorationTheme formInputTheme = AppFormStyles.inputTheme(
+      textTheme,
+    );
 
     return ThemeData(
       useMaterial3: true,
@@ -101,10 +314,11 @@ abstract final class AppTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
+          backgroundColor: AppColors.surfaceContainerLowest,
           foregroundColor: AppColors.onSurface,
           textStyle: textTheme.labelLarge,
           side: BorderSide(
-            color: AppColors.outlineVariant.withValues(alpha: 0.28),
+            color: AppColors.outlineVariant.withValues(alpha: 0.36),
           ),
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.lg,
@@ -165,33 +379,7 @@ abstract final class AppTheme {
           ),
         ),
       ),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: AppColors.surfaceContainerLow,
-        hintStyle: textTheme.bodySmall?.copyWith(color: AppColors.subtleText),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.sm,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadii.card),
-          borderSide: BorderSide(
-            color: AppColors.outlineVariant.withValues(alpha: 0.15),
-          ),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadii.card),
-          borderSide: BorderSide(
-            color: AppColors.outlineVariant.withValues(alpha: 0.15),
-          ),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadii.card),
-          borderSide: BorderSide(
-            color: AppColors.accent.withValues(alpha: 0.4),
-          ),
-        ),
-      ),
+      inputDecorationTheme: formInputTheme,
     );
   }
 

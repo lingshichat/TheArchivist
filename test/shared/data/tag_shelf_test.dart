@@ -97,8 +97,7 @@ void main() {
         mediaType: MediaType.book,
         title: 'Shelved Book',
       );
-      final shelfId =
-          await shelfRepo.createShelf(name: 'Reading List');
+      final shelfId = await shelfRepo.createShelf(name: 'Reading List');
 
       await shelfRepo.attachToMedia(mediaId, shelfId);
 

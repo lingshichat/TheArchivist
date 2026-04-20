@@ -6,18 +6,8 @@ import '../../../app/router/app_router.dart';
 import '../../../shared/theme/app_theme.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/poster_card.dart';
-import '../../../shared/widgets/poster_view_data.dart';
 import '../../../shared/widgets/poster_wrap.dart';
 import '../data/library_view_data.dart';
-
-const List<String> _statusOptions = [
-  'All',
-  'Wishlist',
-  'In Progress',
-  'Completed',
-];
-
-const List<String> _sortOptions = ['Recent', 'Title', 'Year'];
 
 class LibraryPage extends ConsumerStatefulWidget {
   const LibraryPage({super.key});
@@ -28,15 +18,21 @@ class LibraryPage extends ConsumerStatefulWidget {
 
 class _LibraryPageState extends ConsumerState<LibraryPage> {
   LibraryMediaType _selectedType = LibraryMediaType.movies;
-  String _selectedStatus = _statusOptions.first;
-  String _selectedSort = _sortOptions.first;
+  LibraryStatusFilter _selectedStatus = LibraryStatusFilter.all;
+  LibrarySortOption _selectedSort = LibrarySortOption.recent;
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final LibraryHeaderViewData header = ref.watch(libraryHeaderProvider);
-    final List<PosterViewData> items = ref.watch(
-      libraryItemsProvider(_selectedType),
+    final theme = Theme.of(context);
+    final headerAsync = ref.watch(libraryHeaderProvider);
+    final itemsAsync = ref.watch(
+      libraryItemsProvider(
+        LibraryQuery(
+          mediaType: _selectedType,
+          statusFilter: _selectedStatus,
+          sortOption: _selectedSort,
+        ),
+      ),
     );
 
     return SingleChildScrollView(
@@ -49,9 +45,24 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(header.title, style: theme.textTheme.displaySmall),
-          const SizedBox(height: AppSpacing.xs),
-          Text(header.subtitle, style: theme.textTheme.bodyMedium),
+          headerAsync.when(
+            loading: () => const _LibraryHeaderState(
+              title: 'Loading archive',
+              subtitle: 'Reading your local shelves.',
+            ),
+            error: (error, stackTrace) => const _LibraryHeaderState(
+              title: 'Archive unavailable',
+              subtitle: 'The local library could not be read right now.',
+            ),
+            data: (header) => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(header.title, style: AppTextStyles.heroTitle(theme)),
+                const SizedBox(height: AppSpacing.xs),
+                Text(header.subtitle, style: theme.textTheme.bodyMedium),
+              ],
+            ),
+          ),
           const SizedBox(height: AppSpacing.xxl),
           Container(
             padding: const EdgeInsets.only(bottom: AppSpacing.xl),
@@ -64,7 +75,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
             ),
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final Widget tabs = Wrap(
+                final tabs = Wrap(
                   spacing: AppSpacing.xl,
                   runSpacing: AppSpacing.sm,
                   children: LibraryMediaType.values
@@ -77,22 +88,26 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                       )
                       .toList(),
                 );
-                final Widget filters = Wrap(
+
+                final filters = Wrap(
                   spacing: AppSpacing.sm,
                   runSpacing: AppSpacing.sm,
                   children: [
-                    _FilterPopup(
+                    _FilterPopup<LibraryStatusFilter>(
                       label: 'Status',
                       value: _selectedStatus,
-                      options: _statusOptions,
-                      onSelected: (v) =>
-                          setState(() => _selectedStatus = v),
+                      options: LibraryStatusFilter.values,
+                      itemLabel: (value) => value.label,
+                      onSelected: (value) =>
+                          setState(() => _selectedStatus = value),
                     ),
-                    _FilterPopup(
+                    _FilterPopup<LibrarySortOption>(
                       label: 'Sort',
                       value: _selectedSort,
-                      options: _sortOptions,
-                      onSelected: (v) => setState(() => _selectedSort = v),
+                      options: LibrarySortOption.values,
+                      itemLabel: (value) => value.label,
+                      onSelected: (value) =>
+                          setState(() => _selectedSort = value),
                     ),
                   ],
                 );
@@ -119,31 +134,79 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
             ),
           ),
           const SizedBox(height: AppSpacing.xxl),
-          if (items.isEmpty)
-            EmptyState(
-              icon: Icons.inventory_2_outlined,
-              title: '这里还没有 ${_selectedType.label}',
-              body: '从 Bangumi 或手动添加一条，试试看。',
-              actionLabel: '+ 添加条目',
-              onActionTap: () => context.go(AppRoutes.add),
-            )
-          else
-            PosterWrap(
-              items: items,
-              variant: PosterCardVariant.libraryFooter,
-              minColumns: 4,
-              maxColumns: 7,
-              minTileWidth: 150,
-              horizontalSpacing: 24,
-              verticalSpacing: 40,
-              onItemTap: (v) => context.go(AppRoutes.detailFor(v.id)),
+          itemsAsync.when(
+            loading: () => const _LibraryStatePanel(
+              icon: Icons.hourglass_bottom_rounded,
+              title: 'Loading titles',
+              body: 'Preparing the current slice of your archive.',
             ),
-          if (items.isNotEmpty) ...[
-            const SizedBox(height: 80),
-            const Center(child: _LoadMoreButton()),
-          ],
+            error: (error, stackTrace) => EmptyState(
+              icon: Icons.error_outline_rounded,
+              title: 'Could not load the library',
+              body:
+                  'The selected filters could not be resolved from local data.',
+              actionLabel: 'Clear Filters',
+              onActionTap: () {
+                setState(() {
+                  _selectedStatus = LibraryStatusFilter.all;
+                  _selectedSort = LibrarySortOption.recent;
+                });
+              },
+            ),
+            data: (items) {
+              if (items.isEmpty) {
+                return EmptyState(
+                  icon: Icons.inventory_2_outlined,
+                  title: 'Nothing matches this view',
+                  body:
+                      'Add a local entry or loosen the filters to bring titles back into view.',
+                  actionLabel: '+ Add Entry',
+                  onActionTap: () => context.go(AppRoutes.add),
+                );
+              }
+
+              return Column(
+                children: [
+                  PosterWrap(
+                    items: items,
+                    variant: PosterCardVariant.libraryFooter,
+                    minColumns: 4,
+                    maxColumns: 7,
+                    minTileWidth: 150,
+                    horizontalSpacing: 24,
+                    verticalSpacing: 40,
+                    onItemTap: (value) =>
+                        context.go(AppRoutes.detailFor(value.id)),
+                  ),
+                  const SizedBox(height: 80),
+                  const Center(child: _LoadMoreButton()),
+                ],
+              );
+            },
+          ),
         ],
       ),
+    );
+  }
+}
+
+class _LibraryHeaderState extends StatelessWidget {
+  const _LibraryHeaderState({required this.title, required this.subtitle});
+
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: AppTextStyles.heroTitle(theme)),
+        const SizedBox(height: AppSpacing.xs),
+        Text(subtitle, style: theme.textTheme.bodyMedium),
+      ],
     );
   }
 }
@@ -161,7 +224,7 @@ class _LibraryTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
+    final theme = Theme.of(context);
 
     return Material(
       color: Colors.transparent,
@@ -190,24 +253,26 @@ class _LibraryTab extends StatelessWidget {
   }
 }
 
-class _FilterPopup extends StatelessWidget {
+class _FilterPopup<T> extends StatelessWidget {
   const _FilterPopup({
     required this.label,
     required this.value,
     required this.options,
+    required this.itemLabel,
     required this.onSelected,
   });
 
   final String label;
-  final String value;
-  final List<String> options;
-  final ValueChanged<String> onSelected;
+  final T value;
+  final List<T> options;
+  final String Function(T value) itemLabel;
+  final ValueChanged<T> onSelected;
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
+    final theme = Theme.of(context);
 
-    return PopupMenuButton<String>(
+    return PopupMenuButton<T>(
       initialValue: value,
       onSelected: onSelected,
       tooltip: '$label filter',
@@ -223,10 +288,10 @@ class _FilterPopup extends StatelessWidget {
       itemBuilder: (context) {
         return options
             .map(
-              (option) => PopupMenuItem<String>(
+              (option) => PopupMenuItem<T>(
                 value: option,
                 child: Text(
-                  option,
+                  itemLabel(option),
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: option == value
                         ? AppColors.accent
@@ -255,13 +320,10 @@ class _FilterPopup extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              '${label.toUpperCase()}:',
-              style: theme.textTheme.labelMedium,
-            ),
+            Text('${label.toUpperCase()}:', style: theme.textTheme.labelMedium),
             const SizedBox(width: AppSpacing.sm),
             Text(
-              value.toUpperCase(),
+              itemLabel(value).toUpperCase(),
               style: theme.textTheme.labelLarge?.copyWith(
                 color: AppColors.onSurface,
               ),
@@ -284,7 +346,7 @@ class _LoadMoreButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
+    final theme = Theme.of(context);
 
     return Material(
       color: Colors.transparent,
@@ -312,5 +374,22 @@ class _LoadMoreButton extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _LibraryStatePanel extends StatelessWidget {
+  const _LibraryStatePanel({
+    required this.icon,
+    required this.title,
+    required this.body,
+  });
+
+  final IconData icon;
+  final String title;
+  final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    return EmptyState(compact: true, icon: icon, title: title, body: body);
   }
 }

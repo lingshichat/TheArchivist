@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app_database.dart';
+import 'repositories/activity_log_repository.dart';
 import 'repositories/media_repository.dart';
 import 'repositories/progress_repository.dart';
 import 'repositories/shelf_repository.dart';
@@ -31,4 +32,8 @@ final tagRepositoryProvider = Provider<TagRepository>((ref) {
 
 final shelfRepositoryProvider = Provider<ShelfRepository>((ref) {
   return ShelfRepository(ref.watch(appDatabaseProvider));
+});
+
+final activityLogRepositoryProvider = Provider<ActivityLogRepository>((ref) {
+  return ActivityLogRepository(ref.watch(appDatabaseProvider));
 });

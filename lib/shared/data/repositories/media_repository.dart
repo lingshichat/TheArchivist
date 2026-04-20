@@ -20,27 +20,36 @@ class MediaRepository {
 
   Stream<List<MediaItemWithUserEntry>> watchRecentlyFinished({
     int limit = 20,
-  }) =>
-      _db.mediaDao.watchRecentlyFinished(limit: limit);
+  }) => _db.mediaDao.watchRecentlyFinished(limit: limit);
 
   // --- Library ---
 
   Stream<List<MediaItemWithUserEntry>> watchLibrary({
     MediaType? type,
+    List<MediaType>? types,
     String? status,
     String sortBy = 'updatedAt',
     bool descending = true,
-  }) =>
-      _db.mediaDao.watchLibrary(
-        type: type,
-        status: status,
-        sortBy: sortBy,
-        descending: descending,
-      );
+  }) => _db.mediaDao.watchLibrary(
+    type: type,
+    types: types,
+    status: status,
+    sortBy: sortBy,
+    descending: descending,
+  );
 
   // --- Detail ---
 
   Stream<MediaItem> watchItem(String id) => _db.mediaDao.watchItem(id);
+
+  Stream<MediaItemWithUserEntry?> watchDetailBase(String id) =>
+      _db.mediaDao.watchDetailBase(id);
+
+  Future<MediaItem?> getItem(String id) async {
+    final query = _db.select(_db.mediaItems)
+      ..where((t) => t.id.equals(id) & t.deletedAt.isNull());
+    return query.getSingleOrNull();
+  }
 
   // --- Write ---
 
@@ -61,32 +70,36 @@ class MediaRepository {
     final id = DeviceIdentityService.generate();
     final deviceId = await _getDeviceId();
 
-    await _db.mediaDao.upsertItem(MediaItemsCompanion.insert(
-      id: id,
-      mediaType: mediaType,
-      title: title,
-      subtitle: Value(subtitle),
-      posterUrl: Value(posterUrl),
-      releaseDate: Value(releaseDate),
-      overview: Value(overview),
-      sourceIdsJson: Value(sourceIdsJson ?? '{}'),
-      runtimeMinutes: Value(runtimeMinutes),
-      totalEpisodes: Value(totalEpisodes),
-      totalPages: Value(totalPages),
-      estimatedPlayHours: Value(estimatedPlayHours),
-      createdAt: now,
-      updatedAt: now,
-      deviceId: Value(deviceId),
-    ));
+    await _db.mediaDao.upsertItem(
+      MediaItemsCompanion.insert(
+        id: id,
+        mediaType: mediaType,
+        title: title,
+        subtitle: Value(subtitle),
+        posterUrl: Value(posterUrl),
+        releaseDate: Value(releaseDate),
+        overview: Value(overview),
+        sourceIdsJson: Value(sourceIdsJson ?? '{}'),
+        runtimeMinutes: Value(runtimeMinutes),
+        totalEpisodes: Value(totalEpisodes),
+        totalPages: Value(totalPages),
+        estimatedPlayHours: Value(estimatedPlayHours),
+        createdAt: now,
+        updatedAt: now,
+        deviceId: Value(deviceId),
+      ),
+    );
 
     // Create a default user entry
-    await _db.userEntryDao.upsert(UserEntriesCompanion.insert(
-      id: DeviceIdentityService.generate(),
-      mediaItemId: id,
-      createdAt: now,
-      updatedAt: now,
-      deviceId: Value(deviceId),
-    ));
+    await _db.userEntryDao.upsert(
+      UserEntriesCompanion.insert(
+        id: DeviceIdentityService.generate(),
+        mediaItemId: id,
+        createdAt: now,
+        updatedAt: now,
+        deviceId: Value(deviceId),
+      ),
+    );
 
     return id;
   }

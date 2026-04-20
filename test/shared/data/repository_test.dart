@@ -1,9 +1,14 @@
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:record_anywhere/features/add/data/add_entry_controller.dart';
+import 'package:record_anywhere/features/detail/data/detail_actions_controller.dart';
 import 'package:record_anywhere/shared/data/app_database.dart';
+import 'package:record_anywhere/shared/data/repositories/activity_log_repository.dart';
 import 'package:record_anywhere/shared/data/repositories/media_repository.dart';
 import 'package:record_anywhere/shared/data/repositories/progress_repository.dart';
+import 'package:record_anywhere/shared/data/repositories/shelf_repository.dart';
+import 'package:record_anywhere/shared/data/repositories/tag_repository.dart';
 import 'package:record_anywhere/shared/data/repositories/user_entry_repository.dart';
 
 void main() {
@@ -11,12 +16,34 @@ void main() {
   late MediaRepository mediaRepo;
   late UserEntryRepository userEntryRepo;
   late ProgressRepository progressRepo;
+  late TagRepository tagRepo;
+  late ShelfRepository shelfRepo;
+  late ActivityLogRepository activityLogRepo;
+  late AddEntryController addEntryController;
+  late DetailActionsController detailActionsController;
 
   setUp(() {
     db = AppDatabase.forTesting(NativeDatabase.memory());
     mediaRepo = MediaRepository(db);
     userEntryRepo = UserEntryRepository(db);
     progressRepo = ProgressRepository(db);
+    tagRepo = TagRepository(db);
+    shelfRepo = ShelfRepository(db);
+    activityLogRepo = ActivityLogRepository(db);
+    addEntryController = AddEntryController(
+      mediaRepository: mediaRepo,
+      tagRepository: tagRepo,
+      shelfRepository: shelfRepo,
+      activityLogRepository: activityLogRepo,
+    );
+    detailActionsController = DetailActionsController(
+      mediaRepository: mediaRepo,
+      userEntryRepository: userEntryRepo,
+      progressRepository: progressRepo,
+      tagRepository: tagRepo,
+      shelfRepository: shelfRepo,
+      activityLogRepository: activityLogRepo,
+    );
   });
 
   tearDown(() async {
@@ -71,43 +98,45 @@ void main() {
       expect(continuing.first.mediaItem.title, 'Show A');
     });
 
-    test('watchRecentlyAdded returns items ordered by createdAt desc',
-        () async {
-      await mediaRepo.createItem(mediaType: MediaType.movie, title: 'First');
-      await Future<void>.delayed(const Duration(seconds: 1));
-      await mediaRepo.createItem(mediaType: MediaType.movie, title: 'Second');
+    test(
+      'watchRecentlyAdded returns items ordered by createdAt desc',
+      () async {
+        await mediaRepo.createItem(mediaType: MediaType.movie, title: 'First');
+        await Future<void>.delayed(const Duration(seconds: 1));
+        await mediaRepo.createItem(mediaType: MediaType.movie, title: 'Second');
 
-      final recent = await mediaRepo.watchRecentlyAdded().first;
-      expect(recent, hasLength(2));
-      expect(recent.first.mediaItem.title, 'Second');
-    });
+        final recent = await mediaRepo.watchRecentlyAdded().first;
+        expect(recent, hasLength(2));
+        expect(recent.first.mediaItem.title, 'Second');
+      },
+    );
 
-    test('watchRecentlyFinished returns done items ordered by finishedAt',
-        () async {
-      final id1 = await mediaRepo.createItem(
-        mediaType: MediaType.movie,
-        title: 'Finished A',
-      );
-      final id2 = await mediaRepo.createItem(
-        mediaType: MediaType.book,
-        title: 'Finished B',
-      );
+    test(
+      'watchRecentlyFinished returns done items ordered by finishedAt',
+      () async {
+        final id1 = await mediaRepo.createItem(
+          mediaType: MediaType.movie,
+          title: 'Finished A',
+        );
+        final id2 = await mediaRepo.createItem(
+          mediaType: MediaType.book,
+          title: 'Finished B',
+        );
 
-      await userEntryRepo.updateStatus(id1, UnifiedStatus.done);
-      await userEntryRepo.updateStatus(id2, UnifiedStatus.done);
+        await userEntryRepo.updateStatus(id1, UnifiedStatus.done);
+        await userEntryRepo.updateStatus(id2, UnifiedStatus.done);
 
-      final finished = await mediaRepo.watchRecentlyFinished().first;
-      expect(finished, hasLength(2));
-    });
+        final finished = await mediaRepo.watchRecentlyFinished().first;
+        expect(finished, hasLength(2));
+      },
+    );
 
     test('watchLibrary filters by mediaType', () async {
       await mediaRepo.createItem(mediaType: MediaType.movie, title: 'Movie');
       await mediaRepo.createItem(mediaType: MediaType.book, title: 'Book');
       await mediaRepo.createItem(mediaType: MediaType.game, title: 'Game');
 
-      final movies = await mediaRepo
-          .watchLibrary(type: MediaType.movie)
-          .first;
+      final movies = await mediaRepo.watchLibrary(type: MediaType.movie).first;
       expect(movies, hasLength(1));
       expect(movies.first.mediaItem.title, 'Movie');
     });
@@ -184,6 +213,34 @@ void main() {
         greaterThan(before!.updatedAt.millisecondsSinceEpoch),
       );
     });
+
+    test(
+      'status change maintains startedAt and finishedAt semantics',
+      () async {
+        final id = await mediaRepo.createItem(
+          mediaType: MediaType.movie,
+          title: 'Lifecycle Movie',
+        );
+
+        await userEntryRepo.updateStatus(id, UnifiedStatus.inProgress);
+        final started = await db.userEntryDao.getByMediaItemId(id);
+
+        expect(started!.startedAt, isNotNull);
+        expect(started.finishedAt, isNull);
+
+        await userEntryRepo.updateStatus(id, UnifiedStatus.done);
+        final finished = await db.userEntryDao.getByMediaItemId(id);
+
+        expect(finished!.startedAt, isNotNull);
+        expect(finished.finishedAt, isNotNull);
+
+        await userEntryRepo.updateStatus(id, UnifiedStatus.onHold);
+        final reopened = await db.userEntryDao.getByMediaItemId(id);
+
+        expect(reopened!.startedAt, isNotNull);
+        expect(reopened.finishedAt, isNull);
+      },
+    );
   });
 
   group('ProgressRepository', () {
@@ -216,6 +273,108 @@ void main() {
 
       final progress = await db.progressDao.getByMediaItemId(id);
       expect(progress!.currentPage, 100);
+    });
+  });
+
+  group('ActivityLogRepository', () {
+    test('appendEvent persists and exposes logs by media item', () async {
+      final id = await mediaRepo.createItem(
+        mediaType: MediaType.movie,
+        title: 'Logged Movie',
+      );
+
+      await activityLogRepo.appendEvent(
+        id,
+        ActivityEvent.scoreChanged,
+        payload: const <String, Object?>{'score': 9},
+      );
+
+      final logs = await activityLogRepo.watchByMediaItemId(id).first;
+      expect(logs, hasLength(1));
+      expect(logs.first.event, ActivityEvent.scoreChanged);
+      expect(logs.first.payloadJson, contains('"score":9'));
+    });
+  });
+
+  group('local record flow', () {
+    test('empty archive can create update and soft-delete an entry', () async {
+      expect(await mediaRepo.watchLibrary().first, isEmpty);
+
+      final mediaId = await addEntryController.create(
+        const AddEntryInput(
+          mediaType: MediaType.movie,
+          title: 'Flow Movie',
+          subtitle: 'Local only',
+          overview: 'A local-first archive test.',
+          runtimeMinutes: 150,
+          tags: <String>['Noir', 'Classic'],
+          shelves: <String>['Weekend'],
+        ),
+      );
+
+      final libraryAfterCreate = await mediaRepo.watchLibrary().first;
+      expect(libraryAfterCreate, hasLength(1));
+      expect(libraryAfterCreate.first.mediaItem.id, mediaId);
+
+      final createTags = await tagRepo.getByMediaItemId(mediaId);
+      final createShelves = await shelfRepo.getByMediaItemId(mediaId);
+      final createLogs = await activityLogRepo
+          .watchByMediaItemId(mediaId)
+          .first;
+
+      expect(createTags.map((e) => e.name), containsAll(['Noir', 'Classic']));
+      expect(createShelves.map((e) => e.name), contains('Weekend'));
+      expect(createLogs.first.event, ActivityEvent.added);
+
+      await detailActionsController.saveChanges(
+        mediaId,
+        const DetailEntryUpdateInput(
+          mediaType: MediaType.movie,
+          status: UnifiedStatus.inProgress,
+          score: 8,
+          progressValue: 124,
+          notes: 'Watched the first act locally.',
+          tags: <String>['Noir', 'Favorite'],
+          shelves: <String>['Weekend', 'Top Picks'],
+        ),
+      );
+
+      final entry = await userEntryRepo.getByMediaItemId(mediaId);
+      final progress = await progressRepo.getByMediaItemId(mediaId);
+      final updatedTags = await tagRepo.getByMediaItemId(mediaId);
+      final updatedShelves = await shelfRepo.getByMediaItemId(mediaId);
+      final updatedLogs = await activityLogRepo
+          .watchByMediaItemId(mediaId)
+          .first;
+
+      expect(entry!.status, UnifiedStatus.inProgress);
+      expect(entry.score, 8);
+      expect(entry.notes, 'Watched the first act locally.');
+      expect(entry.startedAt, isNotNull);
+      expect(progress!.currentMinutes, 124);
+      expect(updatedTags.map((e) => e.name), containsAll(['Noir', 'Favorite']));
+      expect(
+        updatedShelves.map((e) => e.name),
+        containsAll(['Weekend', 'Top Picks']),
+      );
+      expect(
+        updatedLogs.map((e) => e.event),
+        containsAll(<ActivityEvent>[
+          ActivityEvent.added,
+          ActivityEvent.statusChanged,
+          ActivityEvent.scoreChanged,
+          ActivityEvent.progressChanged,
+          ActivityEvent.noteEdited,
+        ]),
+      );
+
+      await detailActionsController.delete(mediaId);
+
+      final libraryAfterDelete = await mediaRepo.watchLibrary().first;
+      final deletedItem = await db.mediaDao.getItem(mediaId);
+
+      expect(libraryAfterDelete, isEmpty);
+      expect(deletedItem.deletedAt, isNotNull);
     });
   });
 }

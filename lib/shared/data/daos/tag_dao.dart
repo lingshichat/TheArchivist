@@ -14,6 +14,10 @@ class TagDao extends DatabaseAccessor<AppDatabase> with _$TagDaoMixin {
     return (select(tags)..where((t) => t.deletedAt.isNull())).watch();
   }
 
+  Future<List<Tag>> getAll() {
+    return (select(tags)..where((t) => t.deletedAt.isNull())).get();
+  }
+
   Future<void> upsert(TagsCompanion tag) {
     return into(tags).insertOnConflictUpdate(tag);
   }
@@ -33,22 +37,31 @@ class TagDao extends DatabaseAccessor<AppDatabase> with _$TagDaoMixin {
   }
 
   Future<void> detach(String mediaItemId, String tagId) {
-    return (delete(mediaItemTags)
-          ..where((t) =>
-              t.mediaItemId.equals(mediaItemId) & t.tagId.equals(tagId)))
+    return (delete(mediaItemTags)..where(
+          (t) => t.mediaItemId.equals(mediaItemId) & t.tagId.equals(tagId),
+        ))
         .go();
   }
 
   Stream<List<Tag>> watchByMediaItemId(String mediaItemId) {
-    final query = select(tags).join([
-      innerJoin(
-        mediaItemTags,
-        mediaItemTags.tagId.equalsExp(tags.id),
-      ),
-    ])
-      ..where(mediaItemTags.mediaItemId.equals(mediaItemId))
-      ..where(tags.deletedAt.isNull());
+    final query =
+        select(tags).join([
+            innerJoin(mediaItemTags, mediaItemTags.tagId.equalsExp(tags.id)),
+          ])
+          ..where(mediaItemTags.mediaItemId.equals(mediaItemId))
+          ..where(tags.deletedAt.isNull());
 
     return query.map((row) => row.readTable(tags)).watch();
+  }
+
+  Future<List<Tag>> getByMediaItemId(String mediaItemId) {
+    final query =
+        select(tags).join([
+            innerJoin(mediaItemTags, mediaItemTags.tagId.equalsExp(tags.id)),
+          ])
+          ..where(mediaItemTags.mediaItemId.equals(mediaItemId))
+          ..where(tags.deletedAt.isNull());
+
+    return query.map((row) => row.readTable(tags)).get();
   }
 }

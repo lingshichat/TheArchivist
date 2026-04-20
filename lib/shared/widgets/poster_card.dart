@@ -4,12 +4,7 @@ import '../theme/app_theme.dart';
 import 'poster_art.dart';
 import 'poster_view_data.dart';
 
-enum PosterCardVariant {
-  continuing,
-  compact,
-  finishedOverlay,
-  libraryFooter,
-}
+enum PosterCardVariant { continuing, compact, finishedOverlay, libraryFooter }
 
 class PosterCard extends StatefulWidget {
   const PosterCard({

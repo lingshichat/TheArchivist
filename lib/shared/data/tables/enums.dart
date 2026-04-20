@@ -1,17 +1,6 @@
-enum MediaType {
-  movie,
-  tv,
-  book,
-  game;
-}
+enum MediaType { movie, tv, book, game }
 
-enum UnifiedStatus {
-  wishlist,
-  inProgress,
-  done,
-  onHold,
-  dropped;
-}
+enum UnifiedStatus { wishlist, inProgress, done, onHold, dropped }
 
 enum ActivityEvent {
   added,
@@ -19,5 +8,5 @@ enum ActivityEvent {
   scoreChanged,
   progressChanged,
   noteEdited,
-  completed;
+  completed,
 }

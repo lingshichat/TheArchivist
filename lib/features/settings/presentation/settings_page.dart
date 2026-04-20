@@ -92,7 +92,7 @@ class _AppearanceSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Appearance', style: theme.textTheme.displaySmall),
+        Text('Appearance', style: AppTextStyles.heroTitle(theme)),
         const SizedBox(height: AppSpacing.xs),
         Text(
           'Configure the visual footprint of the archive gallery.',
@@ -178,7 +178,7 @@ class _PreferencesSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Logging Preferences', style: theme.textTheme.displaySmall),
+        Text('Logging Preferences', style: AppTextStyles.heroTitle(theme)),
         const SizedBox(height: AppSpacing.xs),
         Text(
           'Define how metadata and curation tools behave.',
@@ -306,7 +306,7 @@ class _LocalDataSection extends StatelessWidget {
                 color: AppColors.accent,
               ),
               const SizedBox(width: AppSpacing.sm),
-              Text('Local Data', style: theme.textTheme.titleLarge),
+              Text('Local Data', style: AppTextStyles.panelTitle(theme)),
             ],
           ),
           const SizedBox(height: AppSpacing.xl),
@@ -418,7 +418,7 @@ class _SyncSection extends StatelessWidget {
                 color: AppColors.subtleText,
               ),
               const SizedBox(width: AppSpacing.sm),
-              Text('Cloud Sync', style: theme.textTheme.titleLarge),
+              Text('Cloud Sync', style: AppTextStyles.panelTitle(theme)),
               const Spacer(),
               Container(
                 padding: const EdgeInsets.symmetric(

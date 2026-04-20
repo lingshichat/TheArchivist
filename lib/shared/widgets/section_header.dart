@@ -22,7 +22,7 @@ class SectionHeader extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Expanded(child: Text(title, style: theme.textTheme.titleLarge)),
+        Expanded(child: Text(title, style: AppTextStyles.sectionTitle(theme))),
         if (normalizedActionLabel != null)
           InkWell(
             onTap: onActionTap,

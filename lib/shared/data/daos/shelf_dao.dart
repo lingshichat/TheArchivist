@@ -14,6 +14,10 @@ class ShelfDao extends DatabaseAccessor<AppDatabase> with _$ShelfDaoMixin {
     return (select(shelfLists)..where((t) => t.deletedAt.isNull())).watch();
   }
 
+  Future<List<ShelfList>> getAll() {
+    return (select(shelfLists)..where((t) => t.deletedAt.isNull())).get();
+  }
+
   Future<void> upsert(ShelfListsCompanion shelf) {
     return into(shelfLists).insertOnConflictUpdate(shelf);
   }
@@ -33,23 +37,39 @@ class ShelfDao extends DatabaseAccessor<AppDatabase> with _$ShelfDaoMixin {
   }
 
   Future<void> detach(String mediaItemId, String shelfListId) {
-    return (delete(mediaItemShelves)
-          ..where((t) =>
+    return (delete(mediaItemShelves)..where(
+          (t) =>
               t.mediaItemId.equals(mediaItemId) &
-              t.shelfListId.equals(shelfListId)))
+              t.shelfListId.equals(shelfListId),
+        ))
         .go();
   }
 
   Stream<List<ShelfList>> watchByMediaItemId(String mediaItemId) {
-    final query = select(shelfLists).join([
-      innerJoin(
-        mediaItemShelves,
-        mediaItemShelves.shelfListId.equalsExp(shelfLists.id),
-      ),
-    ])
-      ..where(mediaItemShelves.mediaItemId.equals(mediaItemId))
-      ..where(shelfLists.deletedAt.isNull());
+    final query =
+        select(shelfLists).join([
+            innerJoin(
+              mediaItemShelves,
+              mediaItemShelves.shelfListId.equalsExp(shelfLists.id),
+            ),
+          ])
+          ..where(mediaItemShelves.mediaItemId.equals(mediaItemId))
+          ..where(shelfLists.deletedAt.isNull());
 
     return query.map((row) => row.readTable(shelfLists)).watch();
+  }
+
+  Future<List<ShelfList>> getByMediaItemId(String mediaItemId) {
+    final query =
+        select(shelfLists).join([
+            innerJoin(
+              mediaItemShelves,
+              mediaItemShelves.shelfListId.equalsExp(shelfLists.id),
+            ),
+          ])
+          ..where(mediaItemShelves.mediaItemId.equals(mediaItemId))
+          ..where(shelfLists.deletedAt.isNull());
+
+    return query.map((row) => row.readTable(shelfLists)).get();
   }
 }

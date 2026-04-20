@@ -10,16 +10,16 @@ class UserEntryDao extends DatabaseAccessor<AppDatabase>
     with _$UserEntryDaoMixin {
   UserEntryDao(super.db);
 
-  Stream<UserEntry> watchByMediaItemId(String mediaItemId) {
-    return (select(userEntries)
-          ..where((t) => t.mediaItemId.equals(mediaItemId)))
-        .watchSingle();
+  Stream<UserEntry?> watchByMediaItemId(String mediaItemId) {
+    return (select(
+      userEntries,
+    )..where((t) => t.mediaItemId.equals(mediaItemId))).watchSingleOrNull();
   }
 
   Future<UserEntry?> getByMediaItemId(String mediaItemId) {
-    return (select(userEntries)
-          ..where((t) => t.mediaItemId.equals(mediaItemId)))
-        .getSingleOrNull();
+    return (select(
+      userEntries,
+    )..where((t) => t.mediaItemId.equals(mediaItemId))).getSingleOrNull();
   }
 
   Future<void> upsert(UserEntriesCompanion entry) {
@@ -30,28 +30,28 @@ class UserEntryDao extends DatabaseAccessor<AppDatabase>
     String mediaItemId,
     UnifiedStatus status,
     String deviceId,
+    Value<DateTime?> startedAt,
+    Value<DateTime?> finishedAt,
   ) {
     final now = DateTime.now();
-    return (update(userEntries)
-          ..where((t) => t.mediaItemId.equals(mediaItemId)))
-        .write(
+    return (update(
+      userEntries,
+    )..where((t) => t.mediaItemId.equals(mediaItemId))).write(
       UserEntriesCompanion(
         status: Value(status),
+        startedAt: startedAt,
+        finishedAt: finishedAt,
         updatedAt: Value(now),
         deviceId: Value(deviceId),
       ),
     );
   }
 
-  Future<void> updateScore(
-    String mediaItemId,
-    int? score,
-    String deviceId,
-  ) {
+  Future<void> updateScore(String mediaItemId, int? score, String deviceId) {
     final now = DateTime.now();
-    return (update(userEntries)
-          ..where((t) => t.mediaItemId.equals(mediaItemId)))
-        .write(
+    return (update(
+      userEntries,
+    )..where((t) => t.mediaItemId.equals(mediaItemId))).write(
       UserEntriesCompanion(
         score: Value(score),
         updatedAt: Value(now),
@@ -60,15 +60,11 @@ class UserEntryDao extends DatabaseAccessor<AppDatabase>
     );
   }
 
-  Future<void> updateNotes(
-    String mediaItemId,
-    String? notes,
-    String deviceId,
-  ) {
+  Future<void> updateNotes(String mediaItemId, String? notes, String deviceId) {
     final now = DateTime.now();
-    return (update(userEntries)
-          ..where((t) => t.mediaItemId.equals(mediaItemId)))
-        .write(
+    return (update(
+      userEntries,
+    )..where((t) => t.mediaItemId.equals(mediaItemId))).write(
       UserEntriesCompanion(
         notes: Value(notes),
         updatedAt: Value(now),
@@ -83,9 +79,9 @@ class UserEntryDao extends DatabaseAccessor<AppDatabase>
     String deviceId,
   ) {
     final now = DateTime.now();
-    return (update(userEntries)
-          ..where((t) => t.mediaItemId.equals(mediaItemId)))
-        .write(
+    return (update(
+      userEntries,
+    )..where((t) => t.mediaItemId.equals(mediaItemId))).write(
       UserEntriesCompanion(
         favorite: Value(favorite),
         updatedAt: Value(now),

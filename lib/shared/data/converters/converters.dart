@@ -16,8 +16,10 @@ class StatusConverter extends TypeConverter<UnifiedStatus, String> {
   @override
   UnifiedStatus fromSql(String fromDb) {
     return _map.entries
-        .firstWhere((e) => e.value == fromDb,
-            orElse: () => const MapEntry(UnifiedStatus.wishlist, 'wishlist'))
+        .firstWhere(
+          (e) => e.value == fromDb,
+          orElse: () => const MapEntry(UnifiedStatus.wishlist, 'wishlist'),
+        )
         .key;
   }
 
@@ -38,8 +40,10 @@ class MediaTypeConverter extends TypeConverter<MediaType, String> {
   @override
   MediaType fromSql(String fromDb) {
     return _map.entries
-        .firstWhere((e) => e.value == fromDb,
-            orElse: () => const MapEntry(MediaType.movie, 'movie'))
+        .firstWhere(
+          (e) => e.value == fromDb,
+          orElse: () => const MapEntry(MediaType.movie, 'movie'),
+        )
         .key;
   }
 
@@ -62,8 +66,10 @@ class ActivityEventConverter extends TypeConverter<ActivityEvent, String> {
   @override
   ActivityEvent fromSql(String fromDb) {
     return _map.entries
-        .firstWhere((e) => e.value == fromDb,
-            orElse: () => const MapEntry(ActivityEvent.added, 'added'))
+        .firstWhere(
+          (e) => e.value == fromDb,
+          orElse: () => const MapEntry(ActivityEvent.added, 'added'),
+        )
         .key;
   }
 
