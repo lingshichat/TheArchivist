@@ -352,7 +352,8 @@ python3 ./.trellis/scripts/task.py list-archive    # List archived tasks
 3. **After development complete**:
    - Use `/trellis:finish-work` for completion checklist
    - After fix bug, use `/trellis:break-loop` for deep analysis
-   - Human commits after testing passes
+   - Human commits after testing passes, or the AI may commit when the user has
+     explicitly authorized it in the current session
    - Use `add_session.py` to record progress
 
 ### [X] DON'T - Should Not Do
@@ -362,7 +363,8 @@ python3 ./.trellis/scripts/task.py list-archive    # List archived tasks
 3. **Don't** develop multiple unrelated tasks simultaneously
 4. **Don't** commit code with lint/test errors
 5. **Don't** forget to update spec docs after learning something
-6. [!] **Don't** execute `git commit` - AI should not commit code
+6. [!] **Don't** execute `git commit` unless the user has explicitly authorized
+   the AI to commit in the current session and finish-work checks have passed
 
 ---
 
