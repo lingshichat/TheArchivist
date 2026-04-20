@@ -47,8 +47,7 @@
   "subtasks": [],
   "children": [
     "04-19-phase1-wp4-local-record-flow",
-    "04-19-phase1-wp3-windows-shell-pages",
-    "04-19-phase1-wp2-local-data"
+    "04-19-phase1-wp3-windows-shell-pages"
   ],
   "parent": "04-18-flutter-media-tracker",
   "relatedFiles": [],
