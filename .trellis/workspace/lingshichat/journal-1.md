@@ -242,3 +242,60 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 6: 完成阶段2 Bangumi 搜索、快捷添加与同步
+
+**Date**: 2026-04-21
+**Task**: 完成阶段2 Bangumi 搜索、快捷添加与同步
+**Branch**: `main`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+### Main Changes
+
+- 完成阶段2三段主链路：Bangumi API 基础设施、`/add` 搜索与快捷添加、设置页绑定与状态/评分双向同步。
+- 搜索链路已覆盖关键词搜索、媒介类型过滤、结果分页、封面展示、已在库状态标识、状态选择层与手动创建回退入口。
+- 绑定同步链路已覆盖 OAuth / token 校验、secure storage 持久化、启动恢复、首次导入、手动 `Sync now`、详情页与 Quick Add 的 push。
+- 远程收藏导入遵守 local-first：只同步 `status` / `score`，用 `sourceIdsJson.bangumi` 去重，脏数据场景保留本地并记 `localWins`。
+- 相关父任务 PRD 与 architecture/backend/frontend 规范已同步收口，标题字体只保留给标题语义，toast 与状态文案统一回 `Inter`。
+
+### Testing
+
+- [OK] `rtk pwsh -NoProfile -File '.codex-temp/flutter_with_local_appdata.ps1' analyze lib test`
+- [OK] `rtk pwsh -NoProfile -File '.codex-temp/flutter_with_local_appdata.ps1' test`
+- [OK] Windows 桌面端已实际拉起并完成 Bangumi 连接、同步状态和 toast 样式验看
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 阶段2已收口；后续 Bangumi 扩展项转入阶段4 / follow-up 处理，例如进度同步、远端删除联动、重试与运维入口。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `5924f4a` | (see git log) |
+| `208004e` | (see git log) |
+| `84e2905` | (see git log) |
+| `578cb2a` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
