@@ -108,6 +108,140 @@ Rules:
 
 ---
 
+## Scenario: Bangumi subject search and detail fetch
+
+### 1. Scope / Trigger
+
+- Trigger: `/add` needs Bangumi search, infinite-scroll pagination, and a
+  pre-add detail preview dialog.
+- This is cross-layer because the same request contract flows through
+  `BangumiApiService` → Riverpod provider → Add page UI state.
+
+### 2. Signatures
+
+```dart
+Future<BangumiSearchResult> searchSubjects(
+  String keyword, {
+  Map<String, Object?>? filter,
+  int limit = 20,
+  int offset = 0,
+});
+
+Future<BangumiSubjectDto> getSubject(int id);
+```
+
+### 3. Contracts
+
+- `searchSubjects(...)`
+  - endpoint: `POST /v0/search/subjects`
+  - request body:
+    - `keyword`: trimmed non-empty string
+    - `filter`: optional map; Bangumi type filters belong here
+  - query params:
+    - `limit`: clamp to `1..50`
+    - `offset`: negative values normalize to `0`
+  - Add-page default page size is `20`
+  - Add-page "All" type filter must map to `type: [1, 2, 4, 6]`
+    and must exclude `music=3`
+  - response DTO must preserve:
+    - `total`
+    - `data`
+    - `limit`
+    - `offset`
+
+- `getSubject(int id)`
+  - endpoint: `GET /v0/subjects/{id}`
+  - input must be a positive integer id
+  - service owns subject-detail cache
+  - current cache contract:
+    - in-memory cache keyed by subject id
+    - TTL: `300s`
+    - concurrent requests for the same subject share one pending future
+
+### 4. Validation & Error Matrix
+
+| Input / State | Expected Result | Error Surface |
+|---------------|-----------------|---------------|
+| `keyword.trim().isEmpty` | reject request before HTTP | `ArgumentError` |
+| `limit < 1` or `limit > 50` | normalize in service | no UI error |
+| `offset < 0` | normalize to `0` | no UI error |
+| `id <= 0` in `getSubject` | reject before HTTP | `ArgumentError` |
+| Bangumi `400 / 412` | typed request failure | `BangumiBadRequestError` |
+| Bangumi `401 / 403` | typed auth failure | `BangumiUnauthorizedError` |
+| network / timeout | typed transport failure | `BangumiNetworkError` |
+
+### 5. Good / Base / Bad Cases
+
+- Good:
+  - keyword `"eva"`, `type: [2]`, `limit: 20`, `offset: 20`
+  - returns page 2 and appends safely in UI
+- Base:
+  - keyword `"haruhi"`, no explicit `limit/offset`
+  - service uses default first page contract
+- Bad:
+  - keyword `"   "`
+  - `getSubject(0)`
+  - provider or page trying to fetch `music=3` from the Add-page filter set
+
+### 6. Tests Required
+
+- Service tests:
+  - `searchSubjects` preserves `total/data/limit/offset`
+  - `searchSubjects` passes `type: [1, 2, 4, 6]` for Add-page all-filter flows
+  - `getSubject` returns cached subject within TTL
+  - concurrent `getSubject(id)` calls do not duplicate HTTP requests
+- Assertion points:
+  - page 1 + page 2 merge without missing `offset`
+  - invalid keyword/id fails before transport
+  - typed `BangumiApiException` subclasses escape, not `DioException`
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```dart
+Future<List<dynamic>> search(String keyword) async {
+  final response = await dio.post('/v0/search/subjects', data: {'keyword': keyword});
+  return response.data['data'] as List<dynamic>;
+}
+```
+
+- loses `total/limit/offset`
+- exposes transport details to callers
+- no pagination contract
+
+#### Correct
+
+```dart
+Future<BangumiSearchResult> searchSubjects(
+  String keyword, {
+  Map<String, Object?>? filter,
+  int limit = 20,
+  int offset = 0,
+}) async {
+  final normalizedKeyword = keyword.trim();
+  if (normalizedKeyword.isEmpty) {
+    throw ArgumentError.value(keyword, 'keyword');
+  }
+
+  final response = await _client.post<Map<String, dynamic>>(
+    '/v0/search/subjects',
+    queryParameters: <String, dynamic>{
+      'limit': limit.clamp(1, 50),
+      'offset': offset < 0 ? 0 : offset,
+    },
+    data: <String, Object?>{
+      'keyword': normalizedKeyword,
+      if (filter != null && filter.isNotEmpty) 'filter': filter,
+    },
+  );
+
+  return BangumiSearchResult.fromJson(
+    Map<String, Object?>.from(response.data ?? const <String, Object?>{}),
+  );
+}
+```
+
 ## Error Handling (Network Layer)
 
 All HTTP errors are mapped to a **sealed class** hierarchy before leaving the

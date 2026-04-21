@@ -103,6 +103,153 @@ Phase 2 introduces external API integration (Bangumi). Server-state conventions:
 - Providers return `AsyncValue<ResultDto>` — UI handles `when()` for loading/data/error
 - Search is **not** streamed — `FutureProvider` or manual `AsyncNotifier` with debounce
 
+## Scenario: paginated Bangumi search state on `/add`
+
+### 1. Scope / Trigger
+
+- Trigger: Add page Bangumi search now supports debounce, filter changes,
+  infinite-scroll pagination, and load-more retry.
+- This is cross-layer because the page owns text/scroll state, while Riverpod
+  owns the server-state result pages.
+
+### 2. Signatures
+
+```dart
+final bangumiSearchProvider = AsyncNotifierProvider.autoDispose
+    .family<
+      BangumiSearchController,
+      BangumiPagedSearchState,
+      BangumiSearchRequest
+    >(BangumiSearchController.new);
+
+class BangumiSearchController
+    extends AutoDisposeFamilyAsyncNotifier<
+      BangumiPagedSearchState,
+      BangumiSearchRequest
+    > {
+  Future<void> loadMore();
+}
+```
+
+### 3. Contracts
+
+- Page-local state stays in `AddEntryPage`
+  - `TextEditingController`
+  - debounce timer
+  - filter chip / popup state
+  - `ScrollController`
+- Riverpod state owns remote result pages
+  - first-page failure uses provider `AsyncError`
+  - later-page failure must stay inside `BangumiPagedSearchState.loadMoreError`
+    so already rendered rows do not disappear
+- `BangumiPagedSearchState` must include:
+  - `total`
+  - `items`
+  - `pageSize`
+  - `isLoadingMore`
+  - `loadMoreError`
+  - derived `hasMore`
+- `loadMore()` must no-op when:
+  - no current page exists
+  - a page is already loading
+  - `hasMore == false`
+- page merge contract:
+  - append new rows
+  - keep earlier rows stable
+  - dedupe by `subject.id`
+
+### 4. Validation & Error Matrix
+
+| State | Expected Behavior | UI Result |
+|-------|-------------------|-----------|
+| no committed keyword | provider not watched | empty guidance state |
+| first-page loading | provider `AsyncLoading` | full loading empty-state |
+| first-page error | provider `AsyncError` | retryable error empty-state |
+| load-more in progress | keep rows + `isLoadingMore=true` | bottom loading footer |
+| load-more error | keep rows + save error in state | bottom retry footer |
+| `items.length >= total` | stop pagination | "all loaded" footer |
+
+### 5. Good / Base / Bad Cases
+
+- Good:
+  - user searches `"eva"`, scrolls down, page 2 appends under page 1
+- Base:
+  - one-page result set; footer reports all loaded without extra requests
+- Bad:
+  - reassigning provider to `AsyncLoading` during `loadMore()`
+  - page widget making direct `ApiService.searchSubjects(...)` calls in scroll listener
+  - duplicate rows caused by appending without `subject.id` dedupe
+
+### 6. Tests Required
+
+- Provider tests:
+  - first read loads page 1
+  - `loadMore()` appends page 2 and page 3
+  - `loadMore()` stops when `hasMore == false`
+- Widget/manual assertions:
+  - search results remain visible while later pages load
+  - bottom footer switches among loading / retry / all-loaded states
+  - changing keyword or filter resets to the new request family
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```dart
+void onScroll() async {
+  final result = await api.searchSubjects(keyword, offset: items.length);
+  setState(() {
+    items = result.data;
+  });
+}
+```
+
+- network logic leaks into the widget
+- later pages replace earlier rows
+- no shared pagination contract
+
+#### Correct
+
+```dart
+Future<void> loadMore() async {
+  final current = state.valueOrNull;
+  if (current == null || current.isLoadingMore || !current.hasMore) {
+    return;
+  }
+
+  state = AsyncData(
+    current.copyWith(isLoadingMore: true, loadMoreError: null),
+  );
+
+  try {
+    final result = await ref.read(bangumiApiServiceProvider).searchSubjects(
+      arg.keyword.trim(),
+      filter: <String, Object?>{'type': arg.filter.bangumiTypes},
+      limit: current.pageSize,
+      offset: current.items.length,
+    );
+
+    state = AsyncData(
+      current.copyWith(
+        total: result.total,
+        items: <BangumiSubjectDto>[
+          ...current.items,
+          ...result.data.where(
+            (item) => current.items.every((existing) => existing.id != item.id),
+          ),
+        ],
+        isLoadingMore: false,
+        loadMoreError: null,
+      ),
+    );
+  } catch (error) {
+    state = AsyncData(
+      current.copyWith(isLoadingMore: false, loadMoreError: error),
+    );
+  }
+}
+```
+
 ### Sync writes (push to external)
 
 - Sync is triggered by controllers after local write succeeds
