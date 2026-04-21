@@ -120,3 +120,36 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 3: 阶段2 WP1 Bangumi API client 与规范补强
+
+**Date**: 2026-04-21
+**Task**: 阶段2 WP1 Bangumi API client 与规范补强
+**Branch**: `main`
+
+### Summary
+
+补齐 architecture/backend/frontend 规范与 Bangumi 阶段 PRD，完成 Bangumi ApiClient/ApiService/DTO/mapper/providers 与测试，已通过 flutter analyze、flutter test 和真实接口冒烟。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `5924f4a` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

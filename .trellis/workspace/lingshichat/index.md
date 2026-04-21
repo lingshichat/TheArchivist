@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 2
-- **Last Active**: 2026-04-20
+- **Total Sessions**: 3
+- **Last Active**: 2026-04-21
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~122 | Active |
+| `journal-1.md` | ~155 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 3 | 2026-04-21 | 阶段2 WP1 Bangumi API client 与规范补强 | `5924f4a` | `main` |
 | 2 | 2026-04-20 | 完成 WP3 Windows 页面骨架与详情页响应式修复 | `04029af`, `347b053` | `main` |
 | 1 | 2026-04-19 | 阶段1-WP1：工程骨架与主题令牌 | `6c1bedd`, `f40cc01` | `main` |
 <!-- @@@/auto:session-history -->
