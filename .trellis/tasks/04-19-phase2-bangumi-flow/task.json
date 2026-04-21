@@ -45,9 +45,7 @@
   "commit": null,
   "pr_url": null,
   "subtasks": [],
-  "children": [
-    "04-20-phase2-wp3-binding-sync"
-  ],
+  "children": [],
   "parent": "04-18-flutter-media-tracker",
   "relatedFiles": [],
   "notes": "",
