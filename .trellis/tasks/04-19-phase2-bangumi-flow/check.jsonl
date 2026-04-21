@@ -1,0 +1,20 @@
+{"file": ".opencode/commands/trellis/finish-work.md", "reason": "Finish work checklist"}
+{"file": ".opencode/commands/trellis/check.md", "reason": "Code quality check spec"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Flutter 单仓目录边界与共享组件落点"}
+{"file": ".trellis/spec/frontend/design-system.md", "reason": "/add 与 settings 增量改造要保持 Stitch 桌面风格"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "搜索区 结果卡片 空状态和设置区块的复用规则"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Bangumi provider 和控制器需沿用 Riverpod + controller 模式"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "UI 评审基线和测试要求"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "sourceIdsJson posterUrl 和 Drift 测试约定"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Bangumi API 映射 入库 展示 同步跨层链路"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "避免重复造搜索 添加 同步映射逻辑"}
+{"file": "lib/features/add/data/add_entry_controller.dart", "reason": "本地新增条目与 activity log 的既有写入编排"}
+{"file": "lib/features/detail/data/detail_actions_controller.dart", "reason": "状态 评分 进度更新的既有控制器模式"}
+{"file": "lib/shared/data/repositories/media_repository.dart", "reason": "媒体条目创建入口 适合承接 Bangumi 映射入库"}
+{"file": "lib/shared/data/providers.dart", "reason": "统一注册 Bangumi 服务与 repository provider"}
+{"file": "lib/features/add/presentation/add_entry_page.dart", "reason": "/add 页面现有骨架 供 WP2 叠加搜索区"}
+{"file": "lib/features/settings/presentation/settings_page.dart", "reason": "设置页 Bangumi 连接区块的插入点"}
+{"file": "lib/shared/data/local_view_adapters.dart", "reason": "状态文案 媒体类型文案和海报数据适配"}
+{"file": "lib/shared/widgets/poster_art.dart", "reason": "当前海报仅占位渐变 后续接远程封面 fallback"}
+{"file": "lib/shared/widgets/local_feedback.dart", "reason": "本地轻反馈可复用到快捷添加与同步结果"}
+{"file": "test/shared/data/repository_test.dart", "reason": "Drift 内存库测试模式可复用到 Bangumi 客户端与控制器"}

@@ -1,0 +1,18 @@
+{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend development guide"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend development guide"}
+{"file": ".trellis/tasks/04-20-phase2-wp1-api-client/prd.md", "reason": "Current WP1 requirements and acceptance criteria"}
+{"file": ".trellis/tasks/04-19-phase2-bangumi-flow/prd.md", "reason": "Parent phase contract for Bangumi shared boundaries"}
+{"file": ".trellis/spec/architecture/system-boundaries.md", "reason": "ApiClient to ApiService to Provider placement and dependency direction"}
+{"file": ".trellis/spec/architecture/local-first-sync-contract.md", "reason": "Bangumi mapping shape and local-first remote-boundary rules"}
+{"file": ".trellis/spec/frontend/network-guidelines.md", "reason": "Bangumi client/service/model/provider contract and test expectations"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Typed network error mapping and local-first failure behavior"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Feature-local provider placement for Bangumi module"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Avoid duplicating mapper and helper logic across WP1 to WP3"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Cross-layer checklist for API service provider and DTO boundaries"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Quality bar for services repositories and tests"}
+{"file": "pubspec.yaml", "reason": "Current dependency set and app version for dio package and User-Agent"}
+{"file": "lib/shared/data/app_database.dart", "reason": "Drift test entrypoint and exported enum types"}
+{"file": "lib/shared/data/providers.dart", "reason": "Existing Riverpod provider style for shared dependencies"}
+{"file": "lib/features/add/data/add_entry_controller.dart", "reason": "Constructor injection and provider style used in feature data layer"}
+{"file": "test/shared/data/repository_test.dart", "reason": "Current repository test style with explicit constructors and in-memory DB"}

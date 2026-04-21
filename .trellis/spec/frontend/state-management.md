@@ -95,13 +95,34 @@ Current examples:
 
 ## Server State
 
-There is no remote/server-state layer in Phase 1.
+Phase 2 introduces external API integration (Bangumi). Server-state conventions:
 
-Current local-first pattern:
+### Network reads (search, fetch)
 
-- Local persistence comes from Drift-backed repositories
-- Sync state and remote integrations will enter through explicit providers later
-- UI must not talk directly to transport or storage details
+- External API calls go through `ApiService` methods, wrapped in Riverpod providers
+- Providers return `AsyncValue<ResultDto>` — UI handles `when()` for loading/data/error
+- Search is **not** streamed — `FutureProvider` or manual `AsyncNotifier` with debounce
+
+### Sync writes (push to external)
+
+- Sync is triggered by controllers after local write succeeds
+- Controllers call an injected `SyncService.push(...)` — they do **not** know about tokens or HTTP
+- Sync success/failure is surfaced as a light side-channel (snackbar, status chip), not as the primary action result
+- Local state is always the source of truth; remote sync is best-effort
+
+### Provider placement
+
+| Scope | Location | Examples |
+|-------|----------|---------|
+| Cross-feature (database, repos) | `lib/shared/data/providers.dart` | `appDatabaseProvider`, `mediaRepositoryProvider` |
+| Feature-local (view models, page state) | next to the feature file | `homeViewDataProvider`, `libraryItemsProvider` |
+| Integration module (API client, auth) | `lib/features/<name>/data/providers.dart` | `bangumiApiClientProvider`, `bangumiAuthProvider` |
+
+Rules:
+
+- Do not register integration-specific providers in `shared/data/providers.dart`
+- Integration providers may depend on shared providers (e.g. `appDatabaseProvider`)
+- Keep the dependency graph one-directional: `feature → shared`, never reverse
 
 ---
 
@@ -112,3 +133,5 @@ Current local-first pattern:
 - Doing multi-step writes inside button callbacks
 - Returning Drift row objects straight into shared presentation widgets
 - Duplicating route-selection logic in both shell and feature layers
+- Registering API/integration providers in `shared/data/providers.dart` (use feature-local file)
+- Letting controllers import `dio` or handle HTTP details directly

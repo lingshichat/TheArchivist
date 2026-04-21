@@ -1,0 +1,16 @@
+{"file": ".opencode/commands/trellis/finish-work.md", "reason": "Finish work checklist"}
+{"file": ".opencode/commands/trellis/check.md", "reason": "Code quality check spec"}
+{"file": ".trellis/tasks/04-20-phase2-wp1-api-client/prd.md", "reason": "Validate against current WP1 scope and acceptance criteria"}
+{"file": ".trellis/tasks/04-19-phase2-bangumi-flow/prd.md", "reason": "Validate against parent phase Bangumi contract"}
+{"file": ".trellis/spec/architecture/system-boundaries.md", "reason": "Check module placement and provider ownership"}
+{"file": ".trellis/spec/architecture/local-first-sync-contract.md", "reason": "Check local-first mapping and remote-boundary rules"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Check typed error mapping and failure handling"}
+{"file": ".trellis/spec/frontend/network-guidelines.md", "reason": "Check Bangumi client/service/model/provider contract and tests"}
+{"file": "test/shared/data/repository_test.dart", "reason": "Check new tests follow current repository-test style"}
+{"file": "pubspec.yaml", "reason": "Check dependency and version changes for dio and test packages"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Check service and repository quality bar"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Check integration provider placement and dependency graph"}
+{"file": "lib/features/add/data/add_entry_controller.dart", "reason": "Check feature data constructors follow existing style"}
+{"file": "lib/shared/data/app_database.dart", "reason": "Check enum imports and test DB usage remain consistent"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Check mapper/helper logic is not duplicated"}
+{"file": "lib/shared/data/providers.dart", "reason": "Check provider additions follow current style"}

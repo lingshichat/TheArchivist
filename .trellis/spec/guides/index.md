@@ -17,6 +17,16 @@ These guides help you **ask the right questions before coding**.
 
 ---
 
+## Architecture Gate
+
+If the work changes shared providers, sync contracts, external integrations, or
+parent/child task ownership, read `../architecture/index.md` first.
+
+Thinking guides complement architecture/backend/frontend code-specs; they do
+not replace them.
+
+---
+
 ## Available Guides
 
 | Guide | Purpose | When to Use |

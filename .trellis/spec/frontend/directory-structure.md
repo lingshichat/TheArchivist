@@ -29,13 +29,49 @@ lib/
 │   └── shell/
 │       └── app_shell_scaffold.dart
 ├── features/
-│   ├── detail/presentation/detail_page.dart
-│   ├── home/presentation/home_page.dart
-│   ├── library/presentation/library_page.dart
-│   └── settings/presentation/settings_page.dart
+│   ├── add/
+│   │   ├── data/
+│   │   │   └── add_entry_controller.dart
+│   │   └── presentation/
+│   │       └── add_page.dart
+│   ├── detail/
+│   │   ├── data/
+│   │   │   └── detail_actions_controller.dart
+│   │   └── presentation/
+│   │       └── detail_page.dart
+│   ├── home/
+│   │   └── presentation/
+│   │       └── home_page.dart
+│   ├── library/
+│   │   └── presentation/
+│   │       └── library_page.dart
+│   ├── settings/
+│   │   └── presentation/
+│   │       └── settings_page.dart
+│   └── bangumi/                        ← Phase 2 integration module
+│       └── data/
+│           ├── bangumi_api_service.dart
+│           ├── bangumi_models.dart
+│           ├── bangumi_type_mapper.dart
+│           └── providers.dart
 ├── shared/
-│   ├── demo/demo_data.dart
-│   ├── theme/app_theme.dart
+│   ├── data/
+│   │   ├── converters/
+│   │   ├── daos/
+│   │   ├── repositories/
+│   │   ├── tables/
+│   │   ├── app_database.dart
+│   │   ├── local_view_adapters.dart
+│   │   ├── providers.dart              ← global (cross-feature) providers
+│   │   ├── device_identity.dart
+│   │   ├── stream_combine.dart
+│   │   └── sync_stamp.dart
+│   ├── demo/
+│   │   └── demo_data.dart
+│   ├── network/                        ← Phase 2 transport layer
+│   │   └── bangumi_api_client.dart
+│   ├── theme/
+│   │   └── app_theme.dart
 │   └── widgets/
 │       ├── app_top_bar.dart
 │       ├── poster_card.dart
@@ -55,6 +91,20 @@ lib/
 - `features/<feature>/presentation/`
   - Owns feature-facing page composition.
   - Phase 1 keeps feature files UI-first and data-light.
+- `features/<feature>/data/`
+  - Owns feature-scoped controllers, integration services, DTOs, mappers, and providers.
+  - Controllers orchestrate repository writes and external API calls.
+  - Integration modules (e.g. `bangumi/`) follow `data/` convention for service + models + mapper + providers.
+  - **Module cohesion**: providers that are specific to one integration live in
+    `features/<integration>/data/providers.dart`, not in `shared/data/providers.dart`.
+- `shared/data/`
+  - Owns the local database (Drift), repositories, DAOs, table definitions, and converters.
+  - `shared/data/providers.dart` registers **cross-feature** providers (database, repositories).
+  - `local_view_adapters.dart` maps DB entities to stable UI models.
+- `shared/network/`
+  - Owns HTTP client instances and global interceptors (transport concerns only).
+  - Each external API gets one `*_api_client.dart`.
+  - **Never** import `package:dio` outside this directory and `features/*/data/`.
 - `shared/theme/`
   - Owns design tokens and `ThemeData`.
   - Any visual token change should start here.

@@ -64,6 +64,9 @@ python3 ./.trellis/scripts/get_context.py --mode packages
 # Read the spec index for each relevant module
 cat .trellis/spec/<package>/<layer>/index.md
 
+# For cross-layer / infra / sync / shared-provider work
+cat .trellis/spec/architecture/index.md
+
 # Always read shared guides
 cat .trellis/spec/guides/index.md
 ```
@@ -75,7 +78,8 @@ cat .trellis/spec/guides/index.md
 
 ### Step 3: Before Coding - Read Specific Guidelines (Required)
 
-Based on your task, read the **detailed** guideline files listed in each spec index's **Pre-Development Checklist**:
+Based on your task, read the **detailed** guideline files listed in each
+relevant spec index (and its **Pre-Development Checklist**, when present):
 
 ```bash
 # The index points to specific files — read those, not just the index
@@ -128,6 +132,9 @@ cat .trellis/spec/<package>/<layer>/conventions.md
 |   +-- {MM}-{DD}-{name}/
 |       +-- task.json
 |-- spec/                # [!] MUST READ before coding
+|   |-- architecture/    # Cross-layer system contracts
+|   |   |-- index.md               # Start here for infra / sync / shared boundaries
+|   |   +-- *.md                   # Topic-specific docs
 |   |-- frontend/        # Frontend guidelines (if applicable)
 |   |   |-- index.md               # Start here - guidelines index
 |   |   +-- *.md                   # Topic-specific docs
@@ -167,6 +174,9 @@ Based on what you'll develop, read the corresponding guidelines:
 # Discover available packages and spec layers
 python3 ./.trellis/scripts/get_context.py --mode packages
 
+# For cross-layer / infra / sync / shared-provider work
+cat .trellis/spec/architecture/index.md
+
 # Read spec indexes for relevant modules
 cat .trellis/spec/<package>/<layer>/index.md
 
@@ -202,7 +212,7 @@ python3 ./.trellis/scripts/task.py create "<title>" --slug <task-name>
 
 3. Write code according to guidelines
    --> Read .trellis/spec/ docs relevant to your task
-   --> For cross-layer: read .trellis/spec/guides/
+   --> For cross-layer / infra: read .trellis/spec/architecture/ + guides/
 
 4. Self-test
    --> Run project's lint/test commands (see spec docs)
@@ -291,6 +301,9 @@ workspace/
 **Structure** (Multi-doc format):
 ```
 spec/
+|-- architecture/       # Cross-layer contracts and system boundaries
+|   |-- index.md        # Start here for sync / shared-provider / phase-boundary work
+|   +-- *.md            # Topic-specific docs
 |-- frontend/           # Frontend docs (if applicable)
 |   |-- index.md        # Start here
 |   +-- *.md            # Topic-specific docs
@@ -352,6 +365,8 @@ python3 ./.trellis/scripts/task.py list-archive    # List archived tasks
 3. **After development complete**:
    - Use `/trellis:finish-work` for completion checklist
    - After fix bug, use `/trellis:break-loop` for deep analysis
+   - If the work changed infra, sync, or cross-layer contracts, update parent
+     PRDs and the relevant `.trellis/spec/` docs before marking the task done
    - Human commits after testing passes, or the AI may commit when the user has
      explicitly authorized it in the current session
    - Use `add_session.py` to record progress
@@ -376,6 +391,7 @@ python3 ./.trellis/scripts/task.py list-archive    # List archived tasks
 |-----------|-------------------|
 | Frontend work | `frontend/index.md` → relevant docs |
 | Backend work | `backend/index.md` → relevant docs |
+| Infra / Cross-Layer work | `architecture/index.md` → relevant docs + `guides/index.md` |
 | Cross-Layer Feature | `guides/cross-layer-thinking-guide.md` |
 
 ### Commit Convention

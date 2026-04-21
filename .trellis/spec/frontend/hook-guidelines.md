@@ -6,46 +6,19 @@
 
 ## Overview
 
-<!--
-Document your project's hook conventions here.
+This project uses **Flutter + Riverpod**, not React. There are no React-style hooks.
 
-Questions to answer:
-- What custom hooks do you have?
-- How do you handle data fetching?
-- What are the naming conventions?
-- How do you share stateful logic?
--->
+The Flutter equivalent of "shared stateful logic" is handled through:
 
-(To be filled by the team)
+- **Riverpod providers** for global / feature-level state
+- **Controller classes** for multi-step write orchestration
+- **Helper methods / extension methods** for reusable pure logic
 
 ---
 
-## Custom Hook Patterns
+## Status
 
-<!-- How to create and structure custom hooks -->
+**Not applicable.** This file is a placeholder for the template index.
 
-(To be filled by the team)
-
----
-
-## Data Fetching
-
-<!-- How data fetching is handled (React Query, SWR, etc.) -->
-
-(To be filled by the team)
-
----
-
-## Naming Conventions
-
-<!-- Hook naming rules (use*, etc.) -->
-
-(To be filled by the team)
-
----
-
-## Common Mistakes
-
-<!-- Hook-related mistakes your team has made -->
-
-(To be filled by the team)
+If React Native or React Web is introduced in the future, fill this file
+with actual hook conventions.
