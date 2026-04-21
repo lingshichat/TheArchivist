@@ -187,3 +187,58 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 5: 完成 WP3 Bangumi 绑定与双向同步
+
+**Date**: 2026-04-21
+**Task**: 完成 WP3 Bangumi 绑定与双向同步
+**Branch**: `main`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+### Main Changes
+
+- 完成 Bangumi OAuth / Access Token 校验、secure storage 持久化、启动恢复与断开连接。
+- 新增 Bangumi 收藏分页拉取、subject fallback、本地优先合并与 `lastSyncedAt` 回写，首轮双向同步只覆盖 `status` / `score`。
+- 设置页补齐 Bangumi 连接区块、`Sync now`、同步摘要状态；Quick Add 与详情页继续走本地写入后 push。
+- 全局轻反馈统一为右下角 toast，并补充前端规范：`Manrope` 只用于标题，不再用于 toast、按钮和正文状态文案。
+- 对齐父任务 / 子任务 PRD 与 architecture、backend、frontend 相关 spec。
+
+### Testing
+
+- [OK] `rtk pwsh -NoProfile -File '.codex-temp/flutter_with_local_appdata.ps1' analyze lib test`
+- [OK] `rtk pwsh -NoProfile -File '.codex-temp/flutter_with_local_appdata.ps1' test`
+- [OK] Windows 桌面端已实际拉起并完成 Bangumi 连接 / 同步 UI 验看
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 父任务 `04-19-phase2-bangumi-flow` 仍保留在 active tasks，后续按 phase 统一收口或归档
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `84e2905` | (see git log) |
+| `0316973` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
