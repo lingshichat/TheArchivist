@@ -1,0 +1,7 @@
+{"file": ".opencode/commands/trellis/finish-work.md", "reason": "Finish work checklist"}
+{"file": ".opencode/commands/trellis/check.md", "reason": "Code quality check spec"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "检查搜索 UI、结果卡片和空状态是否保持 Stitch 风格"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "检查 top bar/search 对齐、无重 Material 漂移和手动表单整合"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "检查 Bangumi DTO -> 本地入库 -> UI 展示链路"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "检查 sourceIdsJson、posterUrl 和本地写入测试约定"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "检查 sourceIds 解析、封面加载与状态文案是否复用已有能力"}

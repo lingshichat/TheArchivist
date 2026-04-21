@@ -1,0 +1,8 @@
+{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend development guide"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "搜索区、结果卡片、空状态和对话框要遵守 Stitch 组件合同"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Bangumi 搜索 provider、本地 UI 状态和 quick add controller 的边界"}
+{"file": ".trellis/spec/frontend/network-guidelines.md", "reason": "Bangumi 搜索继续走 ApiClient -> ApiService -> Provider 分层"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Bangumi DTO、错误类型和枚举映射要保持手写与 sealed 约定"}
+{"file": ".trellis/spec/architecture/system-boundaries.md", "reason": "搜索 UI、控制器、repository、sync service 的边界"}
+{"file": ".trellis/spec/architecture/local-first-sync-contract.md", "reason": "快捷添加需要先本地写入，再调用注入式同步服务"}
