@@ -9,6 +9,7 @@ class PosterViewData {
     required this.mediaLabel,
     required this.posterColor,
     required this.posterAccentColor,
+    this.posterUrl,
     this.subtitle,
     this.year,
     this.statusLabel,
@@ -20,6 +21,7 @@ class PosterViewData {
   final String mediaLabel;
   final Color posterColor;
   final Color posterAccentColor;
+  final String? posterUrl;
   final String? subtitle;
   final String? year;
   final String? statusLabel;

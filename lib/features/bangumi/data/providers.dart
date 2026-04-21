@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/network/bangumi_api_client.dart';
 import 'bangumi_api_service.dart';
+import 'bangumi_sync_service.dart';
 
 final bangumiTokenProvider = Provider<Future<String?> Function()>((ref) {
   return BangumiApiClient.alwaysNullTokenProvider;
@@ -20,4 +21,8 @@ final bangumiApiClientProvider = Provider<BangumiApiClient>((ref) {
 
 final bangumiApiServiceProvider = Provider<BangumiApiService>((ref) {
   return BangumiApiService(ref.watch(bangumiApiClientProvider));
+});
+
+final bangumiSyncServiceProvider = Provider<BangumiSyncService>((ref) {
+  return NoopBangumiSyncService();
 });

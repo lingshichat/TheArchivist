@@ -24,6 +24,7 @@ abstract final class LocalViewAdapters {
           mediaLabelOverride ?? mediaTypeLabel(item.mediaItem.mediaType),
       posterColor: palette.background,
       posterAccentColor: palette.foreground,
+      posterUrl: item.mediaItem.posterUrl,
       subtitle: subtitleOverride ?? item.mediaItem.subtitle,
       year: yearOverride ?? yearLabel(item.mediaItem.releaseDate),
       statusLabel: statusLabelOverride ?? statusLabel(item.userEntry?.status),

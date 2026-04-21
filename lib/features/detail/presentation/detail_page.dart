@@ -1119,15 +1119,18 @@ class _EditEntryDialogState extends State<_EditEntryDialog> {
                   TextFormField(
                     controller: _tagsController,
                     style: fieldTextStyle,
-                    decoration: decoration('Tags', hintText: 'Comma separated'),
+                    decoration: decoration(
+                      'Tags',
+                      hintText: 'Keywords, comma separated',
+                    ),
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   TextFormField(
                     controller: _shelvesController,
                     style: fieldTextStyle,
                     decoration: decoration(
-                      'Lists',
-                      hintText: 'Comma separated',
+                      'Shelves',
+                      hintText: 'Custom collections, comma separated',
                     ),
                   ),
                   const SizedBox(height: AppSpacing.xxxl),

@@ -7,6 +7,7 @@ import '../../../shared/theme/app_theme.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/poster_card.dart';
 import '../../../shared/widgets/poster_wrap.dart';
+import '../../../shared/widgets/section_header.dart';
 import '../data/library_view_data.dart';
 
 class LibraryPage extends ConsumerStatefulWidget {
@@ -109,6 +110,11 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                       onSelected: (value) =>
                           setState(() => _selectedSort = value),
                     ),
+                    FilledButton.icon(
+                      onPressed: () => context.go(AppRoutes.add),
+                      icon: const Icon(Icons.add_rounded, size: 18),
+                      label: const Text('Add Entry'),
+                    ),
                   ],
                 );
 
@@ -166,7 +172,10 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
               }
 
               return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  const SectionHeader(title: 'Archive'),
+                  const SizedBox(height: AppSpacing.xl),
                   PosterWrap(
                     items: items,
                     variant: PosterCardVariant.libraryFooter,
@@ -178,8 +187,6 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                     onItemTap: (value) =>
                         context.go(AppRoutes.detailFor(value.id)),
                   ),
-                  const SizedBox(height: 80),
-                  const Center(child: _LoadMoreButton()),
                 ],
               );
             },
@@ -335,42 +342,6 @@ class _FilterPopup<T> extends StatelessWidget {
               color: AppColors.subtleText,
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _LoadMoreButton extends StatelessWidget {
-  const _LoadMoreButton();
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () {},
-        borderRadius: BorderRadius.circular(AppRadii.card),
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.xxxl,
-            vertical: AppSpacing.md,
-          ),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppRadii.card),
-            border: Border.all(
-              color: AppColors.outlineVariant.withValues(alpha: 0.3),
-            ),
-          ),
-          child: Text(
-            'LOAD MORE ENTRIES',
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: AppColors.outline,
-              letterSpacing: 2.0,
-            ),
-          ),
         ),
       ),
     );

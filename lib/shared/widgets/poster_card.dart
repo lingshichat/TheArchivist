@@ -195,12 +195,20 @@ class _PosterCardState extends State<PosterCard> {
         ),
         if (widget.item.subtitle != null) ...[
           const SizedBox(height: AppSpacing.xs),
+          /*
+           * ========================================================================
+           * 步骤1：收紧完成区副标题样式
+           * ========================================================================
+           * 目标：
+           *   1) 避免中文副标题在 Home 完成区出现过强的斜体感
+           *   2) 保持副标题是弱化说明，而不是第二主标题
+           */
           Text(
             widget.item.subtitle!,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: theme.textTheme.bodySmall?.copyWith(
-              fontStyle: FontStyle.italic,
+              color: AppColors.onSurfaceVariant,
             ),
           ),
         ],
