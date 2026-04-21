@@ -46,7 +46,6 @@
   "pr_url": null,
   "subtasks": [],
   "children": [
-    "04-20-phase2-wp1-api-client",
     "04-20-phase2-wp2-search-ui",
     "04-20-phase2-wp3-binding-sync"
   ],
