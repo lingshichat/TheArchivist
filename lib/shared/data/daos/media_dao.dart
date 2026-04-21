@@ -4,12 +4,15 @@ import '../app_database.dart';
 import '../tables/media_items.dart';
 import '../tables/progress_entries.dart';
 import '../tables/user_entries.dart';
+import '../../utils/step_logger.dart';
 
 part 'media_dao.g.dart';
 
 @DriftAccessor(tables: [MediaItems, UserEntries, ProgressEntries])
 class MediaDao extends DatabaseAccessor<AppDatabase> with _$MediaDaoMixin {
   MediaDao(super.db);
+
+  static const StepLogger _logger = StepLogger('MediaDao');
 
   // --- Single item queries ---
 
@@ -220,6 +223,28 @@ class MediaDao extends DatabaseAccessor<AppDatabase> with _$MediaDaoMixin {
         deviceId: Value(deviceId),
       ),
     );
+  }
+
+  Future<void> markSynced(String id, DateTime syncedAt, String deviceId) async {
+    /*
+     * ========================================================================
+     * 步骤1：更新媒体条目的 lastSyncedAt
+     * ========================================================================
+     * 目标：
+     *   1) 为 pull / push 成功路径记录最近同步时间
+     *   2) 保持其他媒体业务字段不被这次标记改写
+     */
+    _logger.info('开始更新媒体条目的 lastSyncedAt...');
+
+    // 1.1 仅更新同步标记字段
+    await (update(mediaItems)..where((t) => t.id.equals(id))).write(
+      MediaItemsCompanion(
+        deviceId: Value(deviceId),
+        lastSyncedAt: Value(syncedAt),
+      ),
+    );
+
+    _logger.info('媒体条目的 lastSyncedAt 更新完成。');
   }
 }
 

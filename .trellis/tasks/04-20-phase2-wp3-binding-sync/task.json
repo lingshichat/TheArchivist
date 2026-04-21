@@ -1,9 +1,9 @@
 {
   "id": "phase2-wp3-binding-sync",
   "name": "phase2-wp3-binding-sync",
-  "title": "阶段2-WP3：Bangumi 绑定与自动同步",
-  "description": "Token存储与验证、设置页连接区块、同步引擎、同步状态反馈",
-  "status": "planning",
+  "title": "阶段2-WP3：Bangumi 绑定与双向同步",
+  "description": "Token存储与验证、设置页连接区块、Bangumi状态/评分双向同步、同步状态反馈",
+  "status": "in_progress",
   "dev_type": "fullstack",
   "scope": "bangumi-sync",
   "package": null,
@@ -15,7 +15,7 @@
   "branch": null,
   "base_branch": "main",
   "worktree_path": null,
-  "current_phase": 0,
+  "current_phase": 5,
   "next_action": [
     {
       "phase": 1,

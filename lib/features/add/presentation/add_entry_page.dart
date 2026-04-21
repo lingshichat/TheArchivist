@@ -753,7 +753,11 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
       }
 
       // 5.3 用统一轻反馈兜底错误，不打断当前搜索流
-      showLocalFeedback(context, 'Could not add this Bangumi title.');
+      showLocalFeedback(
+        context,
+        'Could not add this Bangumi title.',
+        tone: LocalFeedbackTone.error,
+      );
     } finally {
       if (mounted) {
         setState(() {
@@ -853,7 +857,11 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
       if (!mounted) {
         return;
       }
-      showLocalFeedback(context, 'Could not save the entry.');
+      showLocalFeedback(
+        context,
+        'Could not save the entry.',
+        tone: LocalFeedbackTone.error,
+      );
     } finally {
       if (mounted) {
         setState(() => _isSaving = false);

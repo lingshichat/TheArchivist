@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../features/bangumi/data/bangumi_sync_service.dart';
+import '../../../features/bangumi/data/providers.dart';
 import '../../../shared/data/app_database.dart';
 import '../../../shared/data/providers.dart';
 import '../../../shared/data/repositories/activity_log_repository.dart';
@@ -39,6 +41,7 @@ final detailActionsControllerProvider = Provider<DetailActionsController>((
     tagRepository: ref.watch(tagRepositoryProvider),
     shelfRepository: ref.watch(shelfRepositoryProvider),
     activityLogRepository: ref.watch(activityLogRepositoryProvider),
+    bangumiSyncService: ref.watch(bangumiSyncServiceProvider),
   );
 });
 
@@ -50,12 +53,14 @@ class DetailActionsController {
     required TagRepository tagRepository,
     required ShelfRepository shelfRepository,
     required ActivityLogRepository activityLogRepository,
+    required BangumiSyncService bangumiSyncService,
   }) : _mediaRepository = mediaRepository,
        _userEntryRepository = userEntryRepository,
        _progressRepository = progressRepository,
        _tagRepository = tagRepository,
        _shelfRepository = shelfRepository,
-       _activityLogRepository = activityLogRepository;
+       _activityLogRepository = activityLogRepository,
+       _bangumiSyncService = bangumiSyncService;
 
   final MediaRepository _mediaRepository;
   final UserEntryRepository _userEntryRepository;
@@ -63,11 +68,22 @@ class DetailActionsController {
   final TagRepository _tagRepository;
   final ShelfRepository _shelfRepository;
   final ActivityLogRepository _activityLogRepository;
+  final BangumiSyncService _bangumiSyncService;
 
   Future<void> applyQuickStatus(
     String mediaItemId,
     UnifiedStatus status,
   ) async {
+    /*
+     * ========================================================================
+     * 步骤1：更新详情页快捷状态并触发同步
+     * ========================================================================
+     * 目标：
+     *   1) 保持本地状态写入仍然先于远端副作用
+     *   2) 让详情页快捷动作与 Quick Add 共享同一同步合同
+     */
+
+    // 1.1 读取当前状态；未变化时直接跳过
     final currentEntry = await _userEntryRepository.getByMediaItemId(
       mediaItemId,
     );
@@ -76,13 +92,30 @@ class DetailActionsController {
       return;
     }
 
+    // 1.2 先更新本地状态与 activity log
     await _updateStatusWithLog(mediaItemId, from: currentStatus, to: status);
+
+    // 1.3 本地落库完成后再触发 Bangumi 推送
+    await _bangumiSyncService.pushCollection(
+      mediaItemId: mediaItemId,
+      status: status,
+    );
   }
 
   Future<void> saveChanges(
     String mediaItemId,
     DetailEntryUpdateInput input,
   ) async {
+    /*
+     * ========================================================================
+     * 步骤2：保存详情页编辑结果并按差异触发同步
+     * ========================================================================
+     * 目标：
+     *   1) 先完成本地状态、评分、进度、笔记等写入
+     *   2) 仅在状态或评分变化时触发一次 Bangumi 推送
+     */
+
+    // 2.1 读取本地基线数据，确定哪些字段真正发生变化
     final mediaItem = await _mediaRepository.getItem(mediaItemId);
     if (mediaItem == null) {
       throw StateError('Media item not found.');
@@ -96,7 +129,11 @@ class DetailActionsController {
     );
 
     final currentStatus = currentEntry?.status ?? UnifiedStatus.wishlist;
-    if (currentStatus != input.status) {
+    final statusChanged = currentStatus != input.status;
+    final scoreChanged = currentEntry?.score != input.score;
+
+    // 2.2 状态变化时先更新本地 user entry 和 activity log
+    if (statusChanged) {
       await _updateStatusWithLog(
         mediaItemId,
         from: currentStatus,
@@ -104,7 +141,8 @@ class DetailActionsController {
       );
     }
 
-    if (currentEntry?.score != input.score) {
+    // 2.3 评分变化时写入本地分数和日志
+    if (scoreChanged) {
       await _userEntryRepository.updateScore(mediaItemId, input.score);
       await _activityLogRepository.appendEvent(
         mediaItemId,
@@ -113,6 +151,7 @@ class DetailActionsController {
       );
     }
 
+    // 2.4 其余本地字段继续按原有差异逻辑更新
     if (!_sameProgress(
       mediaItem.mediaType,
       currentProgress,
@@ -154,6 +193,20 @@ class DetailActionsController {
 
     await _tagRepository.syncTagsForMedia(mediaItemId, input.tags);
     await _shelfRepository.syncShelvesForMedia(mediaItemId, input.shelves);
+
+    // 2.5 状态或评分变化后，再统一触发一次 Bangumi 推送
+    if (statusChanged) {
+      await _bangumiSyncService.pushCollection(
+        mediaItemId: mediaItemId,
+        status: input.status,
+        score: input.score,
+      );
+    } else if (scoreChanged) {
+      await _bangumiSyncService.pushCollection(
+        mediaItemId: mediaItemId,
+        score: input.score,
+      );
+    }
   }
 
   Future<void> delete(String mediaItemId) async {

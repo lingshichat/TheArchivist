@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../features/bangumi/data/bangumi_models.dart';
+import '../../../features/bangumi/data/bangumi_subject_mapper.dart';
 import '../../../features/bangumi/data/bangumi_sync_service.dart';
-import '../../../features/bangumi/data/bangumi_type_mapper.dart';
 import '../../../features/bangumi/data/providers.dart';
 import '../../../shared/data/app_database.dart';
 import '../../../shared/data/providers.dart';
@@ -93,19 +93,19 @@ class BangumiQuickAddController {
     _logger.info('开始映射 Bangumi Subject 并写入本地库...');
 
     // 2.1 计算本地媒体类型和基础字段
-    final mediaType = BangumiTypeMapper.toMediaType(
-      subject.type,
-      totalEpisodes: subject.totalEpisodes,
-    );
+    final mediaDraft = BangumiSubjectMapper.toLocalMediaDraft(subject);
     final mediaId = await _mediaRepository.createItem(
-      mediaType: mediaType,
-      title: _buildTitle(subject),
-      subtitle: _buildSubtitle(subject),
-      posterUrl: _buildPosterUrl(subject),
-      releaseDate: _parseReleaseDate(subject.date),
-      overview: _normalizeOptional(subject.summary),
+      mediaType: mediaDraft.mediaType,
+      title: mediaDraft.title,
+      subtitle: mediaDraft.subtitle,
+      posterUrl: mediaDraft.posterUrl,
+      releaseDate: mediaDraft.releaseDate,
+      overview: mediaDraft.overview,
       sourceIdsJson: SourceIdMap.encode(<String, String>{'bangumi': bangumiId}),
-      totalEpisodes: mediaType == MediaType.tv ? subject.totalEpisodes : null,
+      runtimeMinutes: mediaDraft.runtimeMinutes,
+      totalEpisodes: mediaDraft.totalEpisodes,
+      totalPages: mediaDraft.totalPages,
+      estimatedPlayHours: mediaDraft.estimatedPlayHours,
     );
 
     // 2.2 把默认 wishlist user entry 更新成用户选择状态
@@ -120,7 +120,7 @@ class BangumiQuickAddController {
       payload: <String, Object?>{
         'source': 'bangumi',
         'bangumiId': bangumiId,
-        'title': _buildTitle(subject),
+        'title': mediaDraft.title,
         'status': status.name,
       },
     );
@@ -145,66 +145,5 @@ class BangumiQuickAddController {
 
     _logger.info('Bangumi 同步 hook 调用完成。');
     return BangumiQuickAddResult(mediaId: mediaId, alreadyExists: false);
-  }
-
-  String _buildTitle(BangumiSubjectDto subject) {
-    final normalizedName = _normalizeOptional(subject.name);
-    if (normalizedName != null) {
-      return normalizedName;
-    }
-
-    return _normalizeOptional(subject.nameCn) ?? 'Bangumi #${subject.id}';
-  }
-
-  String? _buildSubtitle(BangumiSubjectDto subject) {
-    final normalizedNameCn = _normalizeOptional(subject.nameCn);
-    if (normalizedNameCn == null) {
-      return null;
-    }
-
-    final normalizedName = _normalizeOptional(subject.name);
-    if (normalizedNameCn == normalizedName) {
-      return null;
-    }
-
-    return normalizedNameCn;
-  }
-
-  String? _buildPosterUrl(BangumiSubjectDto subject) {
-    return _normalizeOptional(subject.images.common) ??
-        _normalizeOptional(subject.images.large) ??
-        _normalizeOptional(subject.images.medium) ??
-        _normalizeOptional(subject.images.grid) ??
-        _normalizeOptional(subject.images.small);
-  }
-
-  DateTime? _parseReleaseDate(String? rawDate) {
-    final normalizedDate = _normalizeOptional(rawDate);
-    if (normalizedDate == null) {
-      return null;
-    }
-
-    final parts = normalizedDate.split('-');
-    final year = int.tryParse(parts[0]);
-    if (year == null) {
-      return null;
-    }
-
-    final month = parts.length > 1 ? int.tryParse(parts[1]) ?? 1 : 1;
-    final day = parts.length > 2 ? int.tryParse(parts[2]) ?? 1 : 1;
-
-    try {
-      return DateTime(year, month.clamp(1, 12), day.clamp(1, 31));
-    } on ArgumentError {
-      return DateTime(year);
-    }
-  }
-
-  String? _normalizeOptional(String? value) {
-    final normalizedValue = value?.trim();
-    if (normalizedValue == null || normalizedValue.isEmpty) {
-      return null;
-    }
-    return normalizedValue;
   }
 }

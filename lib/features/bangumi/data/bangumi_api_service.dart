@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 
 import '../../../shared/network/bangumi_api_client.dart';
 import 'bangumi_models.dart';
+import 'bangumi_type_mapper.dart';
 
 class BangumiApiService {
   BangumiApiService(
@@ -81,6 +82,51 @@ class BangumiApiService {
       () => _client.get<Map<String, dynamic>>('/v0/me'),
     );
     return BangumiUserDto.fromJson(
+      Map<String, Object?>.from(response.data ?? const <String, Object?>{}),
+    );
+  }
+
+  Future<BangumiCollectionPage> listCollections(
+    String username, {
+    int limit = 30,
+    int offset = 0,
+    int? subjectType,
+  }) async {
+    /*
+     * ========================================================================
+     * 步骤1：拉取 Bangumi 用户收藏列表
+     * ========================================================================
+     * 目标：
+     *   1) 为首次导入、启动恢复、手动同步提供统一分页入口
+     *   2) 在网络层外继续暴露稳定的 DTO 列表合同
+     */
+
+    // 1.1 归一化用户名和类型过滤，非法输入在发请求前直接拒绝
+    final normalizedUsername = username.trim();
+    if (normalizedUsername.isEmpty) {
+      throw ArgumentError.value(
+        username,
+        'username',
+        'Bangumi username cannot be empty.',
+      );
+    }
+
+    final normalizedSubjectType = _normalizeSubjectType(subjectType);
+
+    // 1.2 发起分页请求，并保留列表项里的 subject / status / score 字段
+    final response = await _runRequest(
+      () => _client.get<Map<String, dynamic>>(
+        '/v0/users/$normalizedUsername/collections',
+        queryParameters: _compactMap(<String, Object?>{
+          'limit': limit <= 0 ? 30 : limit.clamp(1, 50),
+          'offset': offset < 0 ? 0 : offset,
+          'subject_type': normalizedSubjectType,
+        }),
+      ),
+    );
+
+    // 1.3 把分页响应转换成类型化 Page DTO，供 pull 层继续翻页
+    return BangumiCollectionPage.fromJson(
       Map<String, Object?>.from(response.data ?? const <String, Object?>{}),
     );
   }
@@ -185,6 +231,22 @@ class BangumiApiService {
         .toList(growable: false);
 
     return normalized.isEmpty ? null : normalized;
+  }
+
+  int? _normalizeSubjectType(int? subjectType) {
+    if (subjectType == null) {
+      return null;
+    }
+
+    if (!BangumiTypeMapper.supportedSubjectTypes.contains(subjectType)) {
+      throw ArgumentError.value(
+        subjectType,
+        'subjectType',
+        'Unsupported Bangumi subject type filter.',
+      );
+    }
+
+    return subjectType;
   }
 
   Future<T> _runRequest<T>(Future<T> Function() action) async {

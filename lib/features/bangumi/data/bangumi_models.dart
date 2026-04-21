@@ -274,6 +274,40 @@ class BangumiCollectionDto {
   }
 }
 
+class BangumiCollectionPage {
+  const BangumiCollectionPage({
+    required this.total,
+    required this.data,
+    required this.limit,
+    required this.offset,
+  });
+
+  factory BangumiCollectionPage.fromJson(Map<String, Object?> json) {
+    return BangumiCollectionPage(
+      total: _asInt(json['total']) ?? 0,
+      data: _asList(
+        json['data'],
+      ).map(BangumiCollectionDto.fromJson).toList(growable: false),
+      limit: _asInt(json['limit']) ?? 0,
+      offset: _asInt(json['offset']) ?? 0,
+    );
+  }
+
+  final int total;
+  final List<BangumiCollectionDto> data;
+  final int limit;
+  final int offset;
+
+  Map<String, Object?> toJson() {
+    return <String, Object?>{
+      'total': total,
+      'data': data.map((item) => item.toJson()).toList(growable: false),
+      'limit': limit,
+      'offset': offset,
+    };
+  }
+}
+
 Map<String, Object?>? _asMap(Object? value) {
   if (value is Map<String, Object?>) {
     return value;

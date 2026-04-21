@@ -1,0 +1,17 @@
+{"file": ".opencode/commands/trellis/finish-work.md", "reason": "Finish work checklist"}
+{"file": ".opencode/commands/trellis/check.md", "reason": "Code quality check spec"}
+{"file": ".trellis/spec/architecture/system-boundaries.md", "reason": "检查 provider 与 service 边界"}
+{"file": ".trellis/spec/architecture/local-first-sync-contract.md", "reason": "检查本地优先不回滚"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "检查 Riverpod provider 放置"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "检查设置页组件风格"}
+{"file": ".trellis/spec/frontend/design-system.md", "reason": "检查 settings 样式一致性"}
+{"file": ".trellis/spec/frontend/network-guidelines.md", "reason": "检查网络层 token 与错误映射"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "检查 typed error"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "检查无敏感日志"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "检查 controller/service/repository 边界"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "检查数据流闭环"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "检查是否复用已有模式"}
+{"file": "lib/features/bangumi/data/providers.dart", "reason": "校验 integration provider 依赖"}
+{"file": "lib/features/bangumi/data/bangumi_sync_service.dart", "reason": "校验同步服务行为"}
+{"file": "lib/features/detail/data/detail_actions_controller.dart", "reason": "校验详情页同步触发"}
+{"file": "lib/features/settings/presentation/settings_page.dart", "reason": "校验设置页连接区块"}

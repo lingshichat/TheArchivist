@@ -1,0 +1,20 @@
+{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend development guide"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend development guide"}
+{"file": ".trellis/spec/architecture/system-boundaries.md", "reason": "跨层 provider 与 service 边界"}
+{"file": ".trellis/spec/architecture/local-first-sync-contract.md", "reason": "本地优先与远端副作用合同"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Riverpod auth 与 sync feedback 状态模式"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "设置页连接区块与轻反馈视觉合同"}
+{"file": ".trellis/spec/frontend/design-system.md", "reason": "Settings 桌面布局与样式基线"}
+{"file": ".trellis/spec/frontend/network-guidelines.md", "reason": "token callback 与 ApiClient/Service 分层"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "sync typed error 处理"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "禁止打印 token 与原始响应"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "controller/service/repository 职责边界"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "梳理绑定与同步链路"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "复用现有 controller/provider 模式"}
+{"file": "lib/features/bangumi/data/providers.dart", "reason": "Bangumi integration provider 注册点"}
+{"file": "lib/features/bangumi/data/bangumi_sync_service.dart", "reason": "同步服务当前占位实现"}
+{"file": "lib/features/add/data/bangumi_quick_add_controller.dart", "reason": "Quick Add 已有 sync hook 模式"}
+{"file": "lib/features/detail/data/detail_actions_controller.dart", "reason": "详情页状态与评分更新入口"}
+{"file": "lib/features/settings/presentation/settings_page.dart", "reason": "设置页连接区块插入点"}
+{"file": "lib/shared/widgets/local_feedback.dart", "reason": "统一轻反馈入口"}

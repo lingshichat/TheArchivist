@@ -1,5 +1,6 @@
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:record_anywhere/features/bangumi/data/bangumi_sync_service.dart';
 
 import 'package:record_anywhere/features/add/data/add_entry_controller.dart';
 import 'package:record_anywhere/features/detail/data/detail_actions_controller.dart';
@@ -19,6 +20,7 @@ void main() {
   late TagRepository tagRepo;
   late ShelfRepository shelfRepo;
   late ActivityLogRepository activityLogRepo;
+  late _FakeBangumiSyncService bangumiSyncService;
   late AddEntryController addEntryController;
   late DetailActionsController detailActionsController;
 
@@ -30,6 +32,7 @@ void main() {
     tagRepo = TagRepository(db);
     shelfRepo = ShelfRepository(db);
     activityLogRepo = ActivityLogRepository(db);
+    bangumiSyncService = _FakeBangumiSyncService();
     addEntryController = AddEntryController(
       mediaRepository: mediaRepo,
       tagRepository: tagRepo,
@@ -43,6 +46,7 @@ void main() {
       tagRepository: tagRepo,
       shelfRepository: shelfRepo,
       activityLogRepository: activityLogRepo,
+      bangumiSyncService: bangumiSyncService,
     );
   });
 
@@ -377,4 +381,106 @@ void main() {
       expect(deletedItem.deletedAt, isNotNull);
     });
   });
+
+  group('Bangumi sync hook', () {
+    test('quick status change triggers one Bangumi push', () async {
+      final mediaId = await mediaRepo.createItem(
+        mediaType: MediaType.tv,
+        title: 'Synced Show',
+        sourceIdsJson: '{"bangumi":"42"}',
+      );
+
+      await detailActionsController.applyQuickStatus(
+        mediaId,
+        UnifiedStatus.inProgress,
+      );
+
+      expect(bangumiSyncService.calls, hasLength(1));
+      expect(bangumiSyncService.calls.single.mediaItemId, mediaId);
+      expect(bangumiSyncService.calls.single.status, UnifiedStatus.inProgress);
+      expect(bangumiSyncService.calls.single.score, isNull);
+    });
+
+    test('saveChanges pushes once when both status and score change', () async {
+      final mediaId = await mediaRepo.createItem(
+        mediaType: MediaType.movie,
+        title: 'Synced Movie',
+        sourceIdsJson: '{"bangumi":"7"}',
+      );
+
+      await detailActionsController.saveChanges(
+        mediaId,
+        const DetailEntryUpdateInput(
+          mediaType: MediaType.movie,
+          status: UnifiedStatus.done,
+          score: 9,
+          progressValue: null,
+          notes: null,
+          tags: <String>[],
+          shelves: <String>[],
+        ),
+      );
+
+      expect(bangumiSyncService.calls, hasLength(1));
+      expect(bangumiSyncService.calls.single.mediaItemId, mediaId);
+      expect(bangumiSyncService.calls.single.status, UnifiedStatus.done);
+      expect(bangumiSyncService.calls.single.score, 9);
+    });
+
+    test(
+      'saveChanges pushes score-only update when status stays the same',
+      () async {
+        final mediaId = await mediaRepo.createItem(
+          mediaType: MediaType.movie,
+          title: 'Scored Sync Movie',
+          sourceIdsJson: '{"bangumi":"9"}',
+        );
+
+        await detailActionsController.saveChanges(
+          mediaId,
+          const DetailEntryUpdateInput(
+            mediaType: MediaType.movie,
+            status: UnifiedStatus.wishlist,
+            score: 8,
+            progressValue: null,
+            notes: null,
+            tags: <String>[],
+            shelves: <String>[],
+          ),
+        );
+
+        expect(bangumiSyncService.calls, hasLength(1));
+        expect(bangumiSyncService.calls.single.mediaItemId, mediaId);
+        expect(bangumiSyncService.calls.single.status, isNull);
+        expect(bangumiSyncService.calls.single.score, 8);
+      },
+    );
+  });
+}
+
+class _FakeBangumiSyncService implements BangumiSyncService {
+  final List<_SyncCall> calls = <_SyncCall>[];
+
+  @override
+  Future<void> pushCollection({
+    required String mediaItemId,
+    UnifiedStatus? status,
+    int? score,
+  }) async {
+    calls.add(
+      _SyncCall(mediaItemId: mediaItemId, status: status, score: score),
+    );
+  }
+}
+
+class _SyncCall {
+  const _SyncCall({
+    required this.mediaItemId,
+    required this.status,
+    required this.score,
+  });
+
+  final String mediaItemId;
+  final UnifiedStatus? status;
+  final int? score;
 }

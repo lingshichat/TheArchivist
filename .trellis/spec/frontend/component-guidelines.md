@@ -231,6 +231,12 @@ Container(
 
 - `Manrope` leads titles, section heads, and hero text.
 - `Inter` leads metadata, controls, and utility copy.
+- `Manrope` is title-only:
+  - route/page titles
+  - section headers
+  - dialog/card titles
+- Feedback bubbles, snackbar/toast copy, button labels, inline sync state, and
+  form/helper text stay on `Inter`.
 - Category-like labels should stay uppercase and tracked.
 
 ---

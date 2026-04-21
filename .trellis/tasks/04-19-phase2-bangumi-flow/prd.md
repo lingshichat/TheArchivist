@@ -2,7 +2,7 @@
 
 ## 目标
 
-打通"Bangumi 搜索 → 快捷添加 → 本地保存 → 自动同步"的核心使用体验。
+打通"Bangumi 搜索 → 快捷添加 → 本地保存 → 双向同步"的核心使用体验。
 
 ## 前置依赖
 
@@ -22,7 +22,8 @@
 * 搜索结果卡片直接添加
 * 添加前状态选择层
 * Bangumi 可选绑定（设置页入口，Access Token 存储）
-* 状态、评分、进度自动同步（本地 → Bangumi）
+* 状态、评分双向同步（Bangumi <-> 本地）
+* 首次导入已有 Bangumi 收藏
 * 封面图从占位色升级为远程图片
 
 ## 不包含
@@ -30,9 +31,11 @@
 * 多源聚合搜索
 * WebDAV / S3-compatible 跨端同步
 * 冲突副本查看界面
-* Bangumi → 本地 的全量拉取导入（首轮只做推送）
 * Bangumi 的剧集 / 页数 / 时长进度推送
+* Bangumi 的剧集 / 页数 / 时长进度拉取
 * 私人笔记、自定义标签、自定义列表回写 Bangumi
+* 私人笔记、自定义标签、自定义列表从 Bangumi 拉回本地
+* 远端取消收藏 / 删除 -> 本地自动删除或自动降级
 * 音乐类条目（Bangumi SubjectType=3 不映射）
 
 ---
@@ -55,14 +58,17 @@
 * 本地写入永远先于远端同步，远端失败不回滚本地
 * Bangumi 绑定是增强能力，不是使用前置条件
 * WP2 / WP4 只调用注入式 `BangumiSyncService`，不读取 token，不直接调用 API client
-* WP3 独占 token 存储、绑定状态判断、远端同步结果反馈
-* 阶段2首轮只推送 Bangumi 收藏状态和评分；剧集 / 页数 / 时长进度推送留后续 follow-up
+* WP3 独占 token 存储、绑定状态判断、双向同步编排、远端同步结果反馈
+* 阶段2首轮双向同步只覆盖 Bangumi 收藏状态和评分
+* 首次导入、启动恢复回拉、手动同步都归 WP3
+* 剧集 / 页数 / 时长进度的 pull / push 留后续 follow-up
+* pull 遇到本地脏数据时遵守 local-first，本地优先，不做复杂冲突中心
 
 子任务分工：
 
 * WP1：网络基础设施、DTO、类型映射、service/provider
 * WP2：搜索 UI、快捷添加、本地写入、同步 hook 调用
-* WP3：账号绑定、secure storage、`BangumiSyncService` 实现、同步反馈
+* WP3：账号绑定、secure storage、pull / push 同步、同步反馈与摘要状态
 
 如果任一 WP 需要修改这些共享边界，必须先改本父任务 PRD，再改对应 spec。
 
@@ -90,6 +96,7 @@ API 方法清单：
 | `searchSubjects` | `POST /v0/search/subjects` | 搜索条目 |
 | `getSubject` | `GET /v0/subjects/{id}` | 条目详情 |
 | `getMe` | `GET /v0/me` | 验证 token |
+| `listCollections` | `GET /v0/users/{name}/collections` | 分页拉取用户收藏列表 |
 | `updateCollection` | `POST /v0/users/-/collections/{id}` | 更新收藏状态+评分 |
 | `patchCollection` | `PATCH /v0/users/-/collections/{id}` | 部分更新 |
 | `getCollection` | `GET /v0/users/{name}/collections/{id}` | 获取远程收藏状态 |
@@ -151,6 +158,8 @@ Bangumi CollectionType → 本地 UnifiedStatus：
 * 用户输入 Access Token（从 `https://next.bgm.tv/demo/access-token` 获取）
 * 验证：调用 `GET /v0/me` 确认 token 有效
 * 展示已连接账号信息：用户名、头像
+* 已连接态展示最近一次同步摘要与时间
+* 提供 `Sync now` 入口
 * 支持断开重连
 * Token 存储：使用 `flutter_secure_storage` 加密存储
 * Provider：`bangumiAuthProvider` — `AsyncValue<BangumiAuth?>`
@@ -160,24 +169,42 @@ Bangumi 绑定规则（遵守父 PRD）：
 * 未绑定时搜索可用（搜索不需要认证）
 * 未绑定时同步静默跳过，不打扰本地操作
 
-### R6 自动同步引擎（本地 → Bangumi）
+### R6 双向同步引擎（Bangumi <-> 本地）
 
-同步触发时机：
+#### Pull 触发时机
+
+* 首次连接成功后自动拉取一次 Bangumi 收藏
+* 应用启动恢复有效会话后后台拉取一次
+* 用户点击 `Sync now` 时手动拉取一次
+
+#### Pull 范围
+
+* 首批只拉取：
+  * 收藏状态
+  * 评分
+* 使用 `sourceIdsJson.bangumi` 与本地条目对齐
+* 本地不存在时创建条目并落库基础元数据
+* 本地已存在时按 local-first 规则合并
+* 本地有脏改动时，pull 不覆盖本地状态 / 评分
+
+#### Push 触发时机
+
 * 快捷添加新条目后（若已绑定）
 * 详情页修改状态 / 评分后（若已绑定）
 
 同步策略：
 * 本地写入优先，同步是异步后台动作
 * UI 优先反馈"已保存到本地"
-* 同步成功后轻反馈"已同步到 Bangumi"
-* 同步失败时：本地记录保留，只做轻提示和失败记录
+* Push 成功后轻反馈"已同步到 Bangumi"
+* Pull 走摘要反馈或区块内状态，不逐条 toast
+* pull / push 失败时：本地记录保留，只做轻提示和失败摘要
 * 不回滚本地数据
 * 不引入独立 sync queue 表、待同步列表或专门重试队列
 
 同步字段范围：
 * 状态（`UnifiedStatus` → `CollectionType`）
 * 评分（0-10 整数）
-* **本阶段不同步**：剧集 / 页数 / 时长进度
+* **本阶段不同步 / 不拉取**：剧集 / 页数 / 时长进度
 * **不同步**：笔记、标签、自定义列表、review、favorite
 
 同步前提条件：
@@ -201,7 +228,8 @@ Bangumi 搜索结果和快捷添加会带来真实封面 URL：
 * 搜索无结果
 * 网络不可用时的搜索错误状态
 * Bangumi 连接验证失败
-* 同步失败待重试
+* 首次导入 / 手动同步的摘要状态
+* 手动同步失败的轻量错误态
 
 ---
 
@@ -217,7 +245,13 @@ Bangumi 搜索结果和快捷添加会带来真实封面 URL：
 * [ ] 已在库的条目在搜索结果中显示当前状态标签
 * [ ] "手动创建"入口仍可正常使用
 * [ ] 设置页可输入 Bangumi Access Token 并验证
+* [ ] 连接成功后会自动把 Bangumi 已有收藏导入本地
+* [ ] 启动恢复有效会话后会后台拉取一次 Bangumi 收藏
+* [ ] 设置页已连接态可手动触发 `Sync now`
 * [ ] 绑定后快捷添加和修改状态/评分自动推送到 Bangumi
+* [ ] 本地不存在的 Bangumi 收藏会创建为本地条目
+* [ ] 本地已有 Bangumi 映射的条目不会重复创建
+* [ ] 本地有脏改动时，远端 pull 不覆盖本地状态/评分
 * [ ] 同步失败时本地记录不受影响
 * [ ] 封面图正常加载，加载失败时 fallback 到占位色
 
@@ -227,6 +261,8 @@ Bangumi 搜索结果和快捷添加会带来真实封面 URL：
 * [ ] `posterUrl` 从 Bangumi `image.common` 写入
 * [ ] `sourceIdsJson` 格式为 `{"bangumi": "<subject_id>"}`
 * [ ] 快捷添加的条目元数据完整（标题、副标题、年份、简介、集数等）
+* [ ] 导入的 Bangumi 条目元数据完整（标题、副标题、年份、简介、集数等）
+* [ ] 双向同步首批字段只覆盖 `status` / `score`
 
 ### 质量验收
 
@@ -234,7 +270,7 @@ Bangumi 搜索结果和快捷添加会带来真实封面 URL：
 * [ ] `flutter test` 通过
 * [ ] Bangumi API 客户端有基础单元测试
 * [ ] 类型映射有单元测试
-* [ ] 同步引擎有 mock 测试
+* [ ] pull / push 同步引擎有 mock 测试
 
 ---
 
@@ -261,14 +297,15 @@ Bangumi 搜索结果和快捷添加会带来真实封面 URL：
 * 封面图加载（`cached_network_image`）
 * 搜索空状态和错误状态
 
-### WP3：Bangumi 绑定与自动同步
+### WP3：Bangumi 绑定与双向同步
 
 * `flutter_secure_storage` 依赖
 * Token 存储与验证
 * `bangumiAuthProvider`
 * 设置页 Bangumi 连接区块
-* 同步引擎：监听本地变更 → 推送到 Bangumi
-* 同步状态轻反馈
+* pull / push 同步引擎
+* 首次导入、启动恢复回拉、手动同步
+* 同步状态轻反馈 + 摘要状态
 * 同步失败标记与静默处理
 
 ---
@@ -283,13 +320,17 @@ Bangumi 搜索结果和快捷添加会带来真实封面 URL：
 
 **Consequences**：首页/库页空状态的"添加"动作不需改路由；用户心智模型不变。
 
-### D2 首轮同步只做推送，不做全量拉取
+### D2 首轮同步升级为“状态 / 评分”的双向同步
 
-**Context**：Bangumi 的 `GET /v0/users/{name}/collections` 可以拉取用户完整收藏列表，但全量导入涉及去重、冲突、进度映射等复杂逻辑。
+**Context**：已有 Bangumi 用户绑定账号后，如果本地仍然是空库，阶段2 的体验是不完整的；但一次把进度、删除联动、冲突中心全做完又会超出当前 phase。
 
-**Decision**：WP4 只做本地 → Bangumi 的推送同步。Bangumi → 本地的全量导入留给后续 `followup` 任务。
+**Decision**：阶段2 把同步边界收敛为“状态 / 评分”的双向同步：
 
-**Consequences**：本轮同步链路更短、更稳定；已有 Bangumi 数据的用户需等后续版本导入。
+* pull：首次导入、启动恢复回拉、手动同步
+* push：Quick Add 与详情页状态 / 评分改动后推送
+* 仍不做进度双向同步、远端删除联动、复杂冲突中心
+
+**Consequences**：已有 Bangumi 用户能立即导入现有收藏；实现量仍可控；后续扩进度时还能沿用同一套 auth / pull / push 基础设施。
 
 ### D3 封面图用 `cached_network_image`，不额外设计图片管理
 
@@ -299,11 +340,11 @@ Bangumi 搜索结果和快捷添加会带来真实封面 URL：
 
 **Consequences**：最小改动实现封面加载；图片缓存由库管理；Phase 3 不需要重新设计图片层。
 
-### D4 同步失败只做轻提示，不引入复杂重试队列
+### D4 同步失败只做轻提示 / 摘要，不引入复杂重试队列
 
 **Context**：父 PRD 的长期方向包含待同步状态和重试入口，但这类同步运维能力更适合放到阶段4统一收口。
 
-**Decision**：首轮只做轻量处理：同步失败时保留本地写入，只给轻提示和失败记录，不引入独立 sync queue 表、待同步列表或专门重试队列。
+**Decision**：首轮只做轻量处理：同步失败时保留本地写入，只给轻提示和失败摘要，不引入独立 sync queue 表、待同步列表或专门重试队列。
 
 **Consequences**：实现简单；失败运维能力会弱一些，留给 Phase 4 / follow-up 统一补齐。
 

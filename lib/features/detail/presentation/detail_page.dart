@@ -85,7 +85,11 @@ class _DetailPageState extends ConsumerState<DetailPage> {
       showLocalFeedback(context, 'Saved locally.');
     } catch (error) {
       if (mounted) {
-        showLocalFeedback(context, 'Could not update the entry.');
+        showLocalFeedback(
+          context,
+          'Could not update the entry.',
+          tone: LocalFeedbackTone.error,
+        );
       }
     } finally {
       if (mounted) {
@@ -118,7 +122,11 @@ class _DetailPageState extends ConsumerState<DetailPage> {
       showLocalFeedback(context, 'Saved locally.');
     } catch (error) {
       if (mounted) {
-        showLocalFeedback(context, 'Could not save changes.');
+        showLocalFeedback(
+          context,
+          'Could not save changes.',
+          tone: LocalFeedbackTone.error,
+        );
       }
     } finally {
       if (mounted) {
@@ -166,7 +174,11 @@ class _DetailPageState extends ConsumerState<DetailPage> {
       context.go(AppRoutes.library);
     } catch (error) {
       if (mounted) {
-        showLocalFeedback(context, 'Could not delete the entry.');
+        showLocalFeedback(
+          context,
+          'Could not delete the entry.',
+          tone: LocalFeedbackTone.error,
+        );
       }
     } finally {
       if (mounted) {

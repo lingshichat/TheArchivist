@@ -57,6 +57,13 @@ class MediaRepository {
 class BangumiApiService {
   Future<BangumiSearchResult> searchSubjects(String keyword, {...});
 }
+
+abstract class BangumiPullService {
+  Future<BangumiPullSummary> pullCollections({
+    required String username,
+    required BangumiSyncTrigger trigger,
+  });
+}
 ```
 
 Representative automation boundary:
@@ -75,6 +82,11 @@ Representative automation boundary:
   - page composition, local UI state, user interaction wiring
 - `lib/features/<feature>/data/`
   - controllers, feature-local providers, integration DTOs/services/mappers
+- `lib/features/bangumi/data/`
+  - Bangumi auth controller
+  - Bangumi pull / push services
+  - Bangumi sync status / summary providers
+  - Bangumi DTOs / mappers / API service
 - `lib/shared/data/`
   - Drift tables, DAOs, repositories, cross-feature providers, local adapters
 - `lib/shared/network/`
@@ -99,6 +111,8 @@ Rules:
   controllers
 - `shared/data/providers.dart` owns only cross-feature providers
 - integration-specific providers stay in `features/<integration>/data/`
+- settings-page-triggered Bangumi sync flows go through Bangumi feature
+  providers/services, not repositories or raw API calls
 - shared widgets consume stable view data, not raw Drift rows
 - shell geometry belongs in `app/shell/`, not scattered through page files
 
@@ -116,6 +130,8 @@ Rules:
 | New page-level mutation flow | feature controller + provider | page imports DAO directly |
 | New external API client | `lib/shared/network/` + `features/<integration>/data/` | client lives in widget / page file |
 | New integration provider | `features/<integration>/data/providers.dart` | provider added to `shared/data/providers.dart` |
+| New sync summary / auth status provider | `features/bangumi/data/providers.dart` | summary provider added to `shared/data/providers.dart` |
+| Settings-triggered Bangumi sync action | Bangumi feature controller / service | settings page imports repository or API client directly |
 | Shared DB-to-UI mapping | `lib/shared/data/local_view_adapters.dart` or feature adapter | shared widget reads Drift row directly |
 | Shell width / header geometry change | `lib/app/shell/` | feature page redefines shell chrome |
 | Reused Python helper | `.trellis/scripts/common/` | copy-pasted into multiple entry scripts |
@@ -126,6 +142,7 @@ Rules:
 
 - Bangumi transport lives in `shared/network/`
 - Bangumi service / models / mapper / providers live in `features/bangumi/data/`
+- Bangumi pull summary state also lives in `features/bangumi/data/`
 - UI reads `AsyncValue` or view data and triggers controllers only
 
 #### Base
@@ -138,6 +155,7 @@ Rules:
 - A page imports Drift DAOs
 - `dio` leaks into widgets
 - feature-specific providers pollute `shared/data/providers.dart`
+- settings page starts batch pull logic by calling repositories directly
 - long-lived shell or sync decisions exist only inside one child task PRD
 
 ### 6. Tests Required

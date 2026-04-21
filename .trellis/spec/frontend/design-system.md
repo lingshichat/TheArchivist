@@ -171,6 +171,15 @@ Reject if the page feels:
 
 - Use `Manrope` for display and headline roles.
 - Use `Inter` for body, metadata, controls, and labels.
+- Keep `Manrope` scoped to actual title semantics only:
+  - page titles
+  - section titles
+  - card/dialog titles
+- Do not use `Manrope` for:
+  - toast / snackbar copy
+  - inline status text
+  - button labels
+  - form fields or helper text
 - Metadata labels should look cataloged: compact, uppercase, tracked.
 - Never use pure black text; use `onSurface`.
 

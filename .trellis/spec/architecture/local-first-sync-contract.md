@@ -15,8 +15,8 @@ That means:
 - storage adapters and external platforms are integration boundaries, not
   product-state owners
 
-This contract applies to Bangumi push sync now and to WebDAV / S3-compatible
-device sync later.
+This contract applies to Bangumi status/score pull+push sync now and to WebDAV /
+S3-compatible device sync later.
 
 ---
 
@@ -29,6 +29,7 @@ Use this contract when changing any of:
 - repository write paths
 - sync metadata fields
 - remote push hooks
+- remote pull / import hooks
 - external mapping storage
 - cross-device sync strategy
 - conflict handling
@@ -75,6 +76,27 @@ abstract class BangumiSyncService {
 }
 ```
 
+Approved remote pull boundary for Bangumi:
+
+```dart
+enum BangumiSyncTrigger { postConnect, startupRestore, manual }
+
+class BangumiPullSummary {
+  final int importedCount;
+  final int updatedCount;
+  final int skippedCount;
+  final int localWinsCount;
+  final int failedCount;
+}
+
+abstract class BangumiPullService {
+  Future<BangumiPullSummary> pullCollections({
+    required String username,
+    required BangumiSyncTrigger trigger,
+  });
+}
+```
+
 Minimum sync metadata for sync-capable entities:
 
 ```text
@@ -92,6 +114,8 @@ lastSyncedAt
 - Local DB writes happen first and complete independently
 - Remote sync must not wrap the local write in an all-or-nothing workflow
 - Remote failures never roll back local state
+- Remote pull reconciles local state after auth/session checks; it does not
+  replace the local DB as runtime truth
 
 #### Mapping contract
 
@@ -109,8 +133,34 @@ lastSyncedAt
 
 - repositories stamp sync-capable fields
 - pages must not stamp `updatedAt`, `syncVersion`, or `deviceId`
+- sync services / coordinators may mark `lastSyncedAt` only after a successful
+  pull-apply or push-commit path
 - phase-level fixes to device identity must happen through shared helpers, not
   one-off per-repository overrides
+
+#### Pull / merge contract
+
+- Pull is allowed only for Bangumi-supported fields in the active phase
+- Current Bangumi pull scope is:
+  - `status`
+  - `score`
+- Current Bangumi pull explicitly excludes:
+  - progress fields
+  - notes / tags / shelves / favorite / review
+  - remote delete / uncollect -> local delete behavior
+- Pull matches rows by `sourceIdsJson.bangumi`
+- When no local row exists for the Bangumi subject id:
+  - create local item + local user entry
+  - hydrate metadata from subject payload or follow-up `getSubject(...)`
+- When a local row exists:
+  - clean local row -> remote status/score may update local row
+  - dirty local row -> local state wins; remote row must not overwrite it
+- Current dirty-row minimum signal:
+  - `updatedAt > lastSyncedAt`
+  - or `lastSyncedAt == null` and the local row already contains a deliberate
+    status / score
+- `localWins` is a reconciliation outcome, not a fatal error
+- Pull summary is a batch result; do not emit one blocking UI event per row
 
 #### Adapter boundary
 
@@ -125,6 +175,8 @@ lastSyncedAt
 |------|-------------------|-----------|
 | Local create succeeds, user not bound to Bangumi | local record persists, remote push is a no-op | action is blocked on auth |
 | Local status change succeeds, remote push times out | local state persists, light failure feedback only | local state is rolled back |
+| Post-connect pull finds remote item not in local DB | create local item + entry from Bangumi mapping | require manual pre-creation |
+| Startup pull finds local row dirty and remote row differs | keep local status/score, count `localWins` | remote pull blindly overwrites local row |
 | Media item has no Bangumi mapping | skip Bangumi push | code guesses or fabricates a subject ID |
 | Cross-device sync target has newer text field | apply conflict policy and keep conflict copy where required | remote overwrite silently drops local text |
 | Adding a new provider mapping | extend `sourceIdsJson` object | add another unrelated mapping store |
@@ -136,16 +188,20 @@ lastSyncedAt
 - quick add writes local item, local entry, activity log, then triggers injected
   sync service
 - remote adapters receive already-committed local state
+- post-connect pull imports Bangumi rows that do not yet exist locally
+- startup pull updates clean local rows but leaves dirty local rows untouched
 
 #### Base
 
-- phase 2 sync covers status and score only, with progress deferred explicitly
+- phase 2 pull+push covers status and score only, with progress deferred explicitly
 
 #### Bad
 
 - remote API call is required before the local record is created
 - repository write path depends on network availability
 - Bangumi auth logic leaks into WP2 UI code
+- pull path overwrites local dirty rows without checking `lastSyncedAt`
+- pull path treats remote uncollect as an instruction to delete the local row
 
 ### 6. Tests Required
 
@@ -156,39 +212,46 @@ lastSyncedAt
   - unbound auth -> no-op
   - missing mapping -> no-op
   - remote failure -> local state unchanged
+  - post-connect pull imports remote-only rows
+  - dirty local row -> `localWins` and no overwrite
+  - successful pull / push updates `lastSyncedAt` for affected local rows
 - Manual review:
   - local-first rule still holds across quick add and detail mutations
-  - remote sync logic is injected behind service boundaries
+  - remote pull / push logic is injected behind service boundaries
 
 ### 7. Wrong vs Correct
 
 #### Wrong
 
 ```dart
-Future<void> addFromSearchResult(...) async {
-  await bangumiApiService.updateCollection(...);
-  await mediaRepository.createItem(...);
+Future<void> reconcileFromBangumi(RemoteRow row) async {
+  await userEntryRepository.updateStatus(row.mediaItemId, row.status);
 }
 ```
 
 Why it is wrong:
 
-- remote availability blocks the primary product action
-- local-first guarantees are broken
+- blindly applying remote state ignores local dirty checks
+- local-first guarantees are broken for pull reconciliation
 
 #### Correct
 
 ```dart
-final mediaItemId = await mediaRepository.createItem(...);
-await activityLogRepository.appendEvent(mediaItemId, ActivityEvent.added);
-await bangumiSyncService.pushCollection(
-  mediaItemId: mediaItemId,
-  status: status,
-);
+final isDirty =
+    localEntry.lastSyncedAt == null ||
+    localEntry.updatedAt.isAfter(localEntry.lastSyncedAt!);
+
+if (isDirty) {
+  summary.localWinsCount += 1;
+  return;
+}
+
+await userEntryRepository.applyRemoteStatusAndScore(...);
+await syncStampRepository.markLastSyncedAt(...);
 ```
 
 Why it is correct:
 
-- local write is authoritative
-- remote push is isolated and can fail independently
-- future retry / queue logic can be added without changing the local write model
+- local state remains authoritative during conflict
+- pull applies only when the local row is safe to update
+- future retry / queue logic can still be added without changing the write model

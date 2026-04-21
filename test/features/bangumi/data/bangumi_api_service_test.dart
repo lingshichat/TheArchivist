@@ -275,5 +275,53 @@ void main() {
       expect(collection.tags, containsAll(<String>['mecha', 'classic']));
       expect(collection.subject?.name, 'Eva');
     });
+
+    test('listCollections parses typed collection rows', () async {
+      adapter.onGet(
+        '/v0/users/lingshi/collections',
+        (server) => server.reply(200, <String, Object?>{
+          'total': 1,
+          'limit': 30,
+          'offset': 0,
+          'data': <Object?>[
+            <String, Object?>{
+              'subject_id': 42,
+              'type': 2,
+              'rate': 8,
+              'updated_at': '2026-04-21T12:00:00+08:00',
+              'subject': <String, Object?>{
+                'id': 42,
+                'type': 2,
+                'name': 'Eva',
+              },
+            },
+          ],
+        }),
+        queryParameters: <String, Object?>{
+          'limit': 30,
+          'offset': 0,
+          'subject_type': 2,
+        },
+      );
+
+      final page = await service.listCollections('lingshi', subjectType: 2);
+
+      expect(page.total, 1);
+      expect(page.data, hasLength(1));
+      expect(page.data.single.subjectId, 42);
+      expect(page.data.single.type, 2);
+      expect(page.data.single.subject?.name, 'Eva');
+    });
+
+    test('listCollections rejects empty username before transport', () async {
+      expect(service.listCollections('   '), throwsArgumentError);
+    });
+
+    test('listCollections rejects unsupported subject type', () async {
+      expect(
+        service.listCollections('lingshi', subjectType: 3),
+        throwsArgumentError,
+      );
+    });
   });
 }

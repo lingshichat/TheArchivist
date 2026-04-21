@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../shared/theme/app_theme.dart';
+import 'bangumi_connection_section.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -9,26 +10,17 @@ class SettingsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        return Stack(
-          children: [
-            SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.xxxl,
-                AppSpacing.xxxl,
-                AppSpacing.xxxl,
-                96,
-              ),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: _SettingsContent(maxWidth: constraints.maxWidth),
-              ),
-            ),
-            Positioned(
-              right: AppSpacing.xxxl,
-              bottom: AppSpacing.xxl,
-              child: const _SaveToast(),
-            ),
-          ],
+        return SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.xxxl,
+            AppSpacing.xxxl,
+            AppSpacing.xxxl,
+            96,
+          ),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: _SettingsContent(maxWidth: constraints.maxWidth),
+          ),
         );
       },
     );
@@ -58,6 +50,8 @@ class _SettingsContent extends StatelessWidget {
       children: const [
         _LocalDataSection(),
         SizedBox(height: 48),
+        BangumiConnectionSection(),
+        SizedBox(height: 32),
         _SyncSection(),
         SizedBox(height: 32),
         _AboutSection(),
@@ -776,50 +770,6 @@ class _DataButton extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _SaveToast extends StatelessWidget {
-  const _SaveToast();
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.xl,
-        vertical: AppSpacing.md,
-      ),
-      decoration: BoxDecoration(
-        color: AppColors.onSurface,
-        borderRadius: BorderRadius.circular(AppRadii.pill),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.16),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(
-            Icons.check_circle,
-            size: 16,
-            color: AppColors.accentContainer,
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Text(
-            'All changes saved to local archive.',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: AppColors.surfaceContainerLowest,
-            ),
-          ),
-        ],
       ),
     );
   }

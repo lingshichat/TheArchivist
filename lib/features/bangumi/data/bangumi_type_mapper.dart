@@ -1,6 +1,8 @@
 import '../../../shared/data/app_database.dart';
 
 abstract final class BangumiTypeMapper {
+  static const List<int> supportedSubjectTypes = <int>[1, 2, 4, 6];
+
   static MediaType toMediaType(int subjectType, {int? totalEpisodes}) {
     switch (subjectType) {
       case 1:

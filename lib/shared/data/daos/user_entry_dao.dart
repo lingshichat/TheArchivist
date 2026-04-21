@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 
 import '../app_database.dart';
 import '../tables/user_entries.dart';
+import '../../utils/step_logger.dart';
 
 part 'user_entry_dao.g.dart';
 
@@ -9,6 +10,8 @@ part 'user_entry_dao.g.dart';
 class UserEntryDao extends DatabaseAccessor<AppDatabase>
     with _$UserEntryDaoMixin {
   UserEntryDao(super.db);
+
+  static const StepLogger _logger = StepLogger('UserEntryDao');
 
   Stream<UserEntry?> watchByMediaItemId(String mediaItemId) {
     return (select(
@@ -88,5 +91,33 @@ class UserEntryDao extends DatabaseAccessor<AppDatabase>
         deviceId: Value(deviceId),
       ),
     );
+  }
+
+  Future<void> markSynced(
+    String mediaItemId,
+    DateTime syncedAt,
+    String deviceId,
+  ) async {
+    /*
+     * ========================================================================
+     * 步骤1：更新用户条目的 lastSyncedAt
+     * ========================================================================
+     * 目标：
+     *   1) 为状态 / 评分的 pull、push 记录最近同步时间
+     *   2) 不让单纯的同步标记污染业务字段
+     */
+    _logger.info('开始更新用户条目的 lastSyncedAt...');
+
+    // 1.1 仅更新同步标记字段
+    await (update(
+      userEntries,
+    )..where((t) => t.mediaItemId.equals(mediaItemId))).write(
+      UserEntriesCompanion(
+        deviceId: Value(deviceId),
+        lastSyncedAt: Value(syncedAt),
+      ),
+    );
+
+    _logger.info('用户条目的 lastSyncedAt 更新完成。');
   }
 }

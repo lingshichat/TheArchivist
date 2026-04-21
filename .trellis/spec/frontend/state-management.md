@@ -257,6 +257,129 @@ Future<void> loadMore() async {
 - Sync success/failure is surfaced as a light side-channel (snackbar, status chip), not as the primary action result
 - Local state is always the source of truth; remote sync is best-effort
 
+## Scenario: Bangumi auth + sync summary state on Settings
+
+### 1. Scope / Trigger
+
+- Trigger: Bangumi binding now includes post-connect import, startup restore
+  reconciliation, and manual `Sync now`.
+- This is cross-layer because settings-page UI depends on auth state,
+  background sync state, and summary counts produced by Bangumi feature
+  services.
+
+### 2. Signatures
+
+```dart
+final bangumiAuthProvider =
+    AsyncNotifierProvider<BangumiAuthController, BangumiAuth?>(
+      BangumiAuthController.new,
+    );
+
+final bangumiSyncStatusProvider = NotifierProvider<
+  BangumiSyncStatusController,
+  BangumiSyncStatus
+>(BangumiSyncStatusController.new);
+
+enum BangumiSyncTrigger { postConnect, startupRestore, manual }
+
+class BangumiSyncStatus {
+  final bool isRunning;
+  final BangumiSyncTrigger? activeTrigger;
+  final DateTime? lastCompletedAt;
+  final BangumiPullSummary? lastSummary;
+}
+```
+
+### 3. Contracts
+
+- `bangumiAuthProvider`
+  - owns token restore / validation state
+  - exposes only account summary needed by UI
+  - does not expose raw token
+- `bangumiSyncStatusProvider`
+  - owns batch sync progress + last summary
+  - must be feature-local in `features/bangumi/data/providers.dart`
+  - must not live in `shared/data/providers.dart`
+- settings-page local state keeps only:
+  - text controller content
+  - pending button state before provider settles
+- provider state owns:
+  - auth loading / error / connected data
+  - currently running sync trigger
+  - last sync summary counts
+- trigger behavior:
+  - `postConnect` may show one summary feedback after completion
+  - `startupRestore` updates provider state silently by default
+  - `manual` may show one summary feedback after completion
+- batch pull summary is not streamed row-by-row to the page
+
+### 4. Validation & Error Matrix
+
+| State | Expected Behavior | UI Result |
+|-------|-------------------|-----------|
+| auth restore loading | `bangumiAuthProvider` is `AsyncLoading` | disable connect/disconnect actions |
+| post-connect sync running | `bangumiSyncStatus.isRunning=true` | show "syncing" state in section |
+| startup sync running | provider updates silently | no toast storm |
+| manual sync success | save `lastSummary` + `lastCompletedAt` | one summary feedback + refreshed section |
+| manual sync failure | keep last good summary, expose latest error state via controller/status | inline state or one light feedback |
+
+### 5. Good / Base / Bad Cases
+
+- Good:
+  - settings page reads `bangumiAuthProvider` and `bangumiSyncStatusProvider`
+    to render connected state + last summary
+- Base:
+  - startup restore kicks off background sync without blocking the whole app
+- Bad:
+  - page stores imported/updated counts in local `setState`
+  - page loops over pull rows and emits one snackbar per item
+  - API client is called directly from button handlers
+
+### 6. Tests Required
+
+- Provider tests:
+  - auth restore reaches connected state without exposing raw token
+  - manual sync updates `lastSummary` and `lastCompletedAt`
+  - startup sync sets `activeTrigger=startupRestore`
+- Widget/manual assertions:
+  - connected settings section shows summary counts
+  - `Sync now` disables while sync is running
+  - startup restore does not spam per-item feedback
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```dart
+class _SettingsState extends State<SettingsPage> {
+  int importedCount = 0;
+
+  Future<void> onSyncNow() async {
+    final rows = await api.listCollections(username);
+    setState(() => importedCount = rows.length);
+  }
+}
+```
+
+- page owns integration state directly
+- no reusable sync-summary contract
+- impossible to coordinate startup/manual triggers consistently
+
+#### Correct
+
+```dart
+final status = ref.watch(bangumiSyncStatusProvider);
+
+await ref.read(bangumiPullServiceProvider).pullCollections(
+  username: auth.username!,
+  trigger: BangumiSyncTrigger.manual,
+);
+```
+
+- page stays presentation-first
+- Bangumi feature providers own auth + sync state
+- manual and background sync reuse one contract
+
 ### Provider placement
 
 | Scope | Location | Examples |

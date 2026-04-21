@@ -89,7 +89,9 @@ class BangumiApiService {
   Future<BangumiSearchResult> searchSubjects(String keyword, {/* filters */});
   Future<BangumiSubjectDto> getSubject(int id);
   Future<BangumiUserDto> getMe();
+  Future<List<BangumiCollectionDto>> listCollections(String username, {/* paging/filter */});
   Future<void> updateCollection(int subjectId, {/* fields */});
+  Future<BangumiCollectionDto> getCollection(String username, int subjectId);
   // ...
 }
 ```
@@ -239,6 +241,139 @@ Future<BangumiSearchResult> searchSubjects(
   return BangumiSearchResult.fromJson(
     Map<String, Object?>.from(response.data ?? const <String, Object?>{}),
   );
+}
+```
+
+## Scenario: Bangumi collection pull for post-connect / startup / manual sync
+
+### 1. Scope / Trigger
+
+- Trigger: Bangumi binding now includes collection import after connect,
+  background reconciliation after startup restore, and manual `Sync now`.
+- This is cross-layer because one request contract flows through
+  `BangumiApiService` → Bangumi pull service → local merge logic → settings-page
+  summary state.
+
+### 2. Signatures
+
+```dart
+Future<List<BangumiCollectionDto>> listCollections(
+  String username, {
+  int limit = 30,
+  int offset = 0,
+  List<int>? subjectTypes,
+});
+
+Future<BangumiCollectionDto> getCollection(String username, int subjectId);
+```
+
+### 3. Contracts
+
+- `listCollections(...)`
+  - endpoint: `GET /v0/users/{username}/collections`
+  - input:
+    - `username`: trimmed non-empty string
+    - `limit`: normalized to a safe positive page size
+    - `offset`: negative values normalize to `0`
+    - `subjectTypes`: current phase allows only Bangumi subject types
+      `1 / 2 / 4 / 6`
+  - current phase contract:
+    - exclude `music=3`
+    - preserve collection row fields:
+      - `subjectId`
+      - `type`
+      - `rate`
+      - `updatedAt`
+      - optional embedded `subject`
+  - service may return a typed page list even if the API omits some subject
+    fields; callers are allowed to follow up with `getSubject(id)` to hydrate
+    metadata for local item creation
+
+- `getCollection(username, subjectId)`
+  - endpoint: `GET /v0/users/{username}/collections/{id}`
+  - used for subject-specific reconciliation or targeted refresh
+
+### 4. Validation & Error Matrix
+
+| Input / State | Expected Result | Error Surface |
+|---------------|-----------------|---------------|
+| `username.trim().isEmpty` | reject before HTTP | `ArgumentError` |
+| `limit <= 0` | normalize in service | no UI error |
+| `offset < 0` | normalize to `0` | no UI error |
+| unsupported subject type in filter | reject before HTTP | `ArgumentError` |
+| Bangumi `401 / 403` | typed auth failure | `BangumiUnauthorizedError` |
+| Bangumi `404` for one collection | typed missing-row failure | `BangumiNotFoundError` |
+| network / timeout during page pull | typed transport failure | `BangumiNetworkError` |
+
+### 5. Good / Base / Bad Cases
+
+- Good:
+  - `listCollections('alice', limit: 30, offset: 0, subjectTypes: [1, 2, 4, 6])`
+  - page is parsed into `BangumiCollectionDto` rows for merge/import
+- Base:
+  - `listCollections('alice')`
+  - service uses default page contract and still excludes unsupported media at
+    the feature boundary
+- Bad:
+  - `listCollections('   ')`
+  - passing unsupported subject type `3`
+  - settings page calling the raw client directly and parsing JSON in UI
+
+### 6. Tests Required
+
+- Service tests:
+  - invalid username fails before transport
+  - negative offset is normalized
+  - unsupported subject type filter fails before transport
+  - embedded `subject` is preserved in parsed DTO rows
+  - typed `BangumiApiException` subclasses escape, not `DioException`
+- Integration-leaning tests:
+  - page 1 + page 2 can be concatenated without losing `subjectId`
+  - callers can fall back to `getSubject(id)` when `subject == null`
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```dart
+Future<List<dynamic>> listCollections(String username) async {
+  final response = await dio.get('/v0/users/$username/collections');
+  return response.data as List<dynamic>;
+}
+```
+
+- exposes transport objects
+- loses DTO contract for merge/import
+- lets invalid username and filter rules leak outward
+
+#### Correct
+
+```dart
+Future<List<BangumiCollectionDto>> listCollections(
+  String username, {
+  int limit = 30,
+  int offset = 0,
+  List<int>? subjectTypes,
+}) async {
+  final normalizedUsername = username.trim();
+  if (normalizedUsername.isEmpty) {
+    throw ArgumentError.value(username, 'username');
+  }
+
+  final response = await _client.get<List<dynamic>>(
+    '/v0/users/$normalizedUsername/collections',
+    queryParameters: <String, dynamic>{
+      'limit': limit <= 0 ? 30 : limit,
+      'offset': offset < 0 ? 0 : offset,
+      if (subjectTypes != null && subjectTypes.isNotEmpty)
+        'subject_type': subjectTypes,
+    },
+  );
+
+  return (response.data ?? const <dynamic>[])
+      .whereType<Map<String, dynamic>>()
+      .map((json) => BangumiCollectionDto.fromJson(Map<String, Object?>.from(json)))
+      .toList(growable: false);
 }
 ```
 
