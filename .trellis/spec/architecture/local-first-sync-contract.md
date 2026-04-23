@@ -127,6 +127,39 @@ class SyncStatusRepository {
 }
 ```
 
+Approved engine / adapter signatures for device sync WP2:
+
+```dart
+class SyncSummary {
+  final int queuedCount;
+  final int pushedCount;
+  final int deletedCount;
+  final int pullAppliedCount;
+  final int pullSkippedCount;
+  final int localWinsCount;
+  final int failedCount;
+  final String? lastErrorSummary;
+}
+
+abstract class SyncStorageAdapter {
+  Future<List<SyncStorageRecordRef>> listRecords();
+  Future<String> readText(String key);
+  Future<void> writeText({required String key, required String content});
+  Future<void> writeTombstone({
+    required String key,
+    required String content,
+  });
+  Future<void> delete(String key);
+}
+
+class SyncEngine {
+  Future<SyncSummary> runSync({
+    required SyncStorageAdapter adapter,
+    int batchSize = 100,
+  });
+}
+```
+
 ### 3. Contracts
 
 #### Runtime truth
@@ -227,6 +260,37 @@ class SyncStatusRepository {
 - settings or future sync UI may read this snapshot, but queue/status ownership
   stays in sync data layer
 
+#### Device sync engine contract
+
+- WP2 owns the reusable push / pull orchestration for cross-device sync
+- push order is:
+  - `enqueuePendingChanges(...)`
+  - encode current local rows to `SyncEntityEnvelope`
+  - write entity record or tombstone through `SyncStorageAdapter`
+  - mark local rows synced only after remote write succeeds
+  - mark queue row completed only after local sync stamp succeeds
+- pull order is:
+  - list remote records from adapter
+  - sort by dependency-safe entity order before apply
+  - decode remote text to `SyncEntityEnvelope`
+  - evaluate merge in engine/codecs, not in adapter
+  - call repository `applyRemoteSnapshot(...)` style entrypoints only when remote wins
+- storage adapter stays transport-only:
+  - no repository imports
+  - no field-level merge
+  - no UI state writes
+- current remote object layout is:
+  - entity record -> `entities/<entityType>/<entityId>.json`
+  - tombstone -> `tombstones/<entityType>/<entityId>.json`
+- current join-entity logical IDs are composed in engine/codec, not guessed by adapters:
+  - tag link -> `<mediaItemId>::<tagId>`
+  - shelf link -> `<mediaItemId>::<shelfListId>`
+- current merge baseline is last-modified-wins for scalar / structural entities:
+  - remote newer than local -> apply remote
+  - local newer than remote -> `localWins`
+  - same timestamp -> `skip`
+- tombstone apply must preserve local soft-delete semantics; cross-device sync must not hard-delete business rows
+
 ### 4. Validation & Error Matrix
 
 | Case | Expected behavior | Reject if |
@@ -242,6 +306,10 @@ class SyncStatusRepository {
 | Dirty scan sees soft-deleted row | queue row uses `delete` operation | code hard-deletes row and loses replay signal |
 | Same dirty row is scanned twice before completion | unfinished queue row is reused | duplicate unfinished queue rows are inserted |
 | Settings page needs sync health summary | read persisted status snapshot | page queries queue tables directly and reconstructs state ad hoc |
+| Device sync push writes remote entity successfully | local `lastSyncedAt` updates and queue row completes | queue row completes before remote write succeeds |
+| Device sync pull sees older remote row | keep local row and count `localWins` or `skip` | stale remote row overwrites newer local state |
+| Device sync pull sees tombstone | apply repository soft delete / detached state | engine hard-deletes runtime rows |
+| WebDAV / S3 adapter is added later | adapter only implements storage contract | adapter invents a second engine-facing interface |
 
 ### 5. Good / Base / Bad Cases
 

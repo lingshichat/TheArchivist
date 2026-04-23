@@ -10,11 +10,8 @@ class ProgressRepository {
   final DeviceIdentityService _deviceIdentityService;
   static const StepLogger _logger = StepLogger('ProgressRepository');
 
-  ProgressRepository(
-    this._db, {
-    DeviceIdentityService? deviceIdentityService,
-  }) : _deviceIdentityService =
-           deviceIdentityService ?? DeviceIdentityService();
+  ProgressRepository(this._db, {DeviceIdentityService? deviceIdentityService})
+    : _deviceIdentityService = deviceIdentityService ?? DeviceIdentityService();
 
   Stream<ProgressEntry?> watchByMediaItemId(String mediaItemId) {
     return _db.progressDao.watchByMediaItemId(mediaItemId);
@@ -102,6 +99,51 @@ class ProgressRepository {
     );
 
     _logger.info('远端回拉进度应用完成。');
+  }
+
+  Future<void> applyRemoteSnapshot({
+    required String mediaItemId,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    int? currentEpisode,
+    int? currentPage,
+    double? currentMinutes,
+    double? completionRatio,
+    DateTime? deletedAt,
+    int syncVersion = 0,
+    DateTime? lastSyncedAt,
+  }) async {
+    /*
+     * ========================================================================
+     * 步骤2：应用跨设备同步进度快照
+     * ========================================================================
+     * 目标：
+     *   1) 让 sync engine 能按远端快照补建或覆盖 progress 行
+     *   2) 保留远端的 updatedAt / deletedAt / lastSyncedAt 语义
+     */
+    _logger.info('开始应用跨设备同步进度快照...');
+
+    // 2.1 优先复用 mediaItemId 下已有行，避免撞唯一键
+    final existing = await _db.progressDao.getByMediaItemId(mediaItemId);
+    final deviceId = await _getDeviceId();
+    await _db.progressDao.upsert(
+      ProgressEntriesCompanion.insert(
+        id: existing?.id ?? DeviceIdentityService.generate(),
+        mediaItemId: mediaItemId,
+        currentEpisode: Value(currentEpisode),
+        currentPage: Value(currentPage),
+        currentMinutes: Value(currentMinutes),
+        completionRatio: Value(completionRatio),
+        createdAt: createdAt,
+        updatedAt: updatedAt,
+        deletedAt: Value(deletedAt),
+        syncVersion: Value(syncVersion),
+        deviceId: Value(deviceId),
+        lastSyncedAt: Value(lastSyncedAt),
+      ),
+    );
+
+    _logger.info('跨设备同步进度快照应用完成。');
   }
 
   Future<void> markSynced(String mediaItemId, DateTime syncedAt) async {

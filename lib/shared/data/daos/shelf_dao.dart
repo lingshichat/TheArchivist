@@ -45,15 +45,12 @@ class ShelfDao extends DatabaseAccessor<AppDatabase> with _$ShelfDaoMixin {
     return Future.value();
   }
 
-  Future<void> detach(
-    String mediaItemId,
-    String shelfListId,
-    String deviceId,
-  ) {
+  Future<void> detach(String mediaItemId, String shelfListId, String deviceId) {
     return softDetach(
       mediaItemId: mediaItemId,
       shelfListId: shelfListId,
       deviceId: deviceId,
+      updatedAt: DateTime.now(),
       syncedAt: null,
     );
   }
@@ -63,6 +60,7 @@ class ShelfDao extends DatabaseAccessor<AppDatabase> with _$ShelfDaoMixin {
     required String shelfListId,
     required String id,
     required String deviceId,
+    required DateTime updatedAt,
     required DateTime? syncedAt,
   }) async {
     /*
@@ -80,7 +78,6 @@ class ShelfDao extends DatabaseAccessor<AppDatabase> with _$ShelfDaoMixin {
       mediaItemId: mediaItemId,
       shelfListId: shelfListId,
     );
-    final now = DateTime.now();
     if (existing == null) {
       // 1.2 不存在时直接插入新关联
       await into(mediaItemShelves).insert(
@@ -88,8 +85,8 @@ class ShelfDao extends DatabaseAccessor<AppDatabase> with _$ShelfDaoMixin {
           id: id,
           mediaItemId: mediaItemId,
           shelfListId: shelfListId,
-          createdAt: now,
-          updatedAt: now,
+          createdAt: updatedAt,
+          updatedAt: updatedAt,
           deletedAt: const Value(null),
           deviceId: Value(deviceId),
           lastSyncedAt: Value(syncedAt),
@@ -104,7 +101,7 @@ class ShelfDao extends DatabaseAccessor<AppDatabase> with _$ShelfDaoMixin {
       mediaItemShelves,
     )..where((t) => t.id.equals(existing.id))).write(
       MediaItemShelvesCompanion(
-        updatedAt: Value(now),
+        updatedAt: Value(updatedAt),
         deletedAt: const Value(null),
         deviceId: Value(deviceId),
         lastSyncedAt: Value(syncedAt),
@@ -118,6 +115,7 @@ class ShelfDao extends DatabaseAccessor<AppDatabase> with _$ShelfDaoMixin {
     required String mediaItemId,
     required String shelfListId,
     required String deviceId,
+    required DateTime updatedAt,
     required DateTime? syncedAt,
   }) async {
     /*
@@ -131,19 +129,19 @@ class ShelfDao extends DatabaseAccessor<AppDatabase> with _$ShelfDaoMixin {
     _logger.info('开始软删除书架关联...');
 
     // 2.1 仅更新删除标记与同步相关字段
-    final now = DateTime.now();
     await (update(mediaItemShelves)..where(
-      (t) =>
-          t.mediaItemId.equals(mediaItemId) &
-          t.shelfListId.equals(shelfListId),
-    )).write(
-      MediaItemShelvesCompanion(
-        updatedAt: Value(now),
-        deletedAt: Value(now),
-        deviceId: Value(deviceId),
-        lastSyncedAt: Value(syncedAt),
-      ),
-    );
+          (t) =>
+              t.mediaItemId.equals(mediaItemId) &
+              t.shelfListId.equals(shelfListId),
+        ))
+        .write(
+          MediaItemShelvesCompanion(
+            updatedAt: Value(updatedAt),
+            deletedAt: Value(updatedAt),
+            deviceId: Value(deviceId),
+            lastSyncedAt: Value(syncedAt),
+          ),
+        );
 
     _logger.info('书架关联软删除完成。');
   }
@@ -166,15 +164,16 @@ class ShelfDao extends DatabaseAccessor<AppDatabase> with _$ShelfDaoMixin {
 
     // 3.1 仅更新同步标记字段
     await (update(mediaItemShelves)..where(
-      (t) =>
-          t.mediaItemId.equals(mediaItemId) &
-          t.shelfListId.equals(shelfListId),
-    )).write(
-      MediaItemShelvesCompanion(
-        deviceId: Value(deviceId),
-        lastSyncedAt: Value(syncedAt),
-      ),
-    );
+          (t) =>
+              t.mediaItemId.equals(mediaItemId) &
+              t.shelfListId.equals(shelfListId),
+        ))
+        .write(
+          MediaItemShelvesCompanion(
+            deviceId: Value(deviceId),
+            lastSyncedAt: Value(syncedAt),
+          ),
+        );
 
     _logger.info('书架关联的 lastSyncedAt 更新完成。');
   }
@@ -214,9 +213,10 @@ class ShelfDao extends DatabaseAccessor<AppDatabase> with _$ShelfDaoMixin {
     required String shelfListId,
   }) {
     return (select(mediaItemShelves)..where(
-      (t) =>
-          t.mediaItemId.equals(mediaItemId) &
-          t.shelfListId.equals(shelfListId),
-    )).getSingleOrNull();
+          (t) =>
+              t.mediaItemId.equals(mediaItemId) &
+              t.shelfListId.equals(shelfListId),
+        ))
+        .getSingleOrNull();
   }
 }

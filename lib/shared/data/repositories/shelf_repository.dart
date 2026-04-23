@@ -11,8 +11,7 @@ class ShelfRepository {
   static const StepLogger _logger = StepLogger('ShelfRepository');
 
   ShelfRepository(this._db, {DeviceIdentityService? deviceIdentityService})
-    : _deviceIdentityService =
-          deviceIdentityService ?? DeviceIdentityService();
+    : _deviceIdentityService = deviceIdentityService ?? DeviceIdentityService();
 
   Stream<List<ShelfList>> watchAll() => _db.shelfDao.watchAll();
 
@@ -46,6 +45,45 @@ class ShelfRepository {
     return id;
   }
 
+  Future<void> applyRemoteSnapshot({
+    required String shelfListId,
+    required String name,
+    required ShelfKind kind,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    DateTime? deletedAt,
+    int syncVersion = 0,
+    DateTime? lastSyncedAt,
+  }) async {
+    /*
+     * ========================================================================
+     * 步骤1：应用跨设备同步书架快照
+     * ========================================================================
+     * 目标：
+     *   1) 让 sync engine 能按远端快照补建或覆盖书架定义
+     *   2) 保留远端的 createdAt / updatedAt / deletedAt / lastSyncedAt 语义
+     */
+    _logger.info('开始应用跨设备同步书架快照...');
+
+    // 1.1 用统一 upsert 入口覆盖书架定义
+    final deviceId = await _getDeviceId();
+    await _db.shelfDao.upsert(
+      ShelfListsCompanion.insert(
+        id: shelfListId,
+        name: name,
+        kind: kind,
+        createdAt: createdAt,
+        updatedAt: updatedAt,
+        deletedAt: Value(deletedAt),
+        syncVersion: Value(syncVersion),
+        deviceId: Value(deviceId),
+        lastSyncedAt: Value(lastSyncedAt),
+      ),
+    );
+
+    _logger.info('跨设备同步书架快照应用完成。');
+  }
+
   Future<void> attachToMedia(String mediaItemId, String shelfListId) async {
     final deviceId = await _getDeviceId();
     await _db.shelfDao.attachOrRestore(
@@ -53,6 +91,7 @@ class ShelfRepository {
       shelfListId: shelfListId,
       id: DeviceIdentityService.generate(),
       deviceId: deviceId,
+      updatedAt: SyncStampDecorator.now(),
       syncedAt: null,
     );
   }
@@ -116,6 +155,7 @@ class ShelfRepository {
   Future<void> applyRemoteAttachment({
     required String mediaItemId,
     required String shelfListId,
+    String? linkId,
     required DateTime syncedAt,
   }) async {
     /*
@@ -133,8 +173,9 @@ class ShelfRepository {
     await _db.shelfDao.attachOrRestore(
       mediaItemId: mediaItemId,
       shelfListId: shelfListId,
-      id: DeviceIdentityService.generate(),
+      id: linkId ?? DeviceIdentityService.generate(),
       deviceId: deviceId,
+      updatedAt: syncedAt,
       syncedAt: syncedAt,
     );
 
@@ -162,6 +203,7 @@ class ShelfRepository {
       mediaItemId: mediaItemId,
       shelfListId: shelfListId,
       deviceId: deviceId,
+      updatedAt: syncedAt,
       syncedAt: syncedAt,
     );
 
@@ -193,6 +235,44 @@ class ShelfRepository {
     );
 
     _logger.info('书架关联同步时间标记完成。');
+  }
+
+  Future<void> markSynced(String shelfListId, DateTime syncedAt) async {
+    /*
+     * ========================================================================
+     * 步骤4：标记书架定义最近一次同步时间
+     * ========================================================================
+     * 目标：
+     *   1) 为书架定义的 push / pull 成功路径记录 lastSyncedAt
+     *   2) 不改写书架名称与类型
+     */
+    _logger.info('开始标记书架定义同步时间...');
+
+    // 4.1 仅更新书架定义同步标记字段
+    final existing = await (_db.select(
+      _db.shelfLists,
+    )..where((t) => t.id.equals(shelfListId))).getSingleOrNull();
+    if (existing == null) {
+      _logger.info('书架定义同步时间标记完成。');
+      return;
+    }
+
+    final deviceId = await _getDeviceId();
+    await _db.shelfDao.upsert(
+      ShelfListsCompanion.insert(
+        id: existing.id,
+        name: existing.name,
+        kind: existing.kind,
+        createdAt: existing.createdAt,
+        updatedAt: existing.updatedAt,
+        deletedAt: Value(existing.deletedAt),
+        syncVersion: Value(existing.syncVersion),
+        deviceId: Value(deviceId),
+        lastSyncedAt: Value(syncedAt),
+      ),
+    );
+
+    _logger.info('书架定义同步时间标记完成。');
   }
 
   Future<String> _getDeviceId() async {

@@ -50,6 +50,7 @@ class TagDao extends DatabaseAccessor<AppDatabase> with _$TagDaoMixin {
       mediaItemId: mediaItemId,
       tagId: tagId,
       deviceId: deviceId,
+      updatedAt: DateTime.now(),
       syncedAt: null,
     );
   }
@@ -59,6 +60,7 @@ class TagDao extends DatabaseAccessor<AppDatabase> with _$TagDaoMixin {
     required String tagId,
     required String id,
     required String deviceId,
+    required DateTime updatedAt,
     required DateTime? syncedAt,
   }) async {
     /*
@@ -73,7 +75,6 @@ class TagDao extends DatabaseAccessor<AppDatabase> with _$TagDaoMixin {
 
     // 1.1 先查是否已有同 mediaItem/tag 的 join 行
     final existing = await _findLink(mediaItemId: mediaItemId, tagId: tagId);
-    final now = DateTime.now();
     if (existing == null) {
       // 1.2 不存在时直接插入新关联
       await into(mediaItemTags).insert(
@@ -81,8 +82,8 @@ class TagDao extends DatabaseAccessor<AppDatabase> with _$TagDaoMixin {
           id: id,
           mediaItemId: mediaItemId,
           tagId: tagId,
-          createdAt: now,
-          updatedAt: now,
+          createdAt: updatedAt,
+          updatedAt: updatedAt,
           deletedAt: const Value(null),
           deviceId: Value(deviceId),
           lastSyncedAt: Value(syncedAt),
@@ -95,7 +96,7 @@ class TagDao extends DatabaseAccessor<AppDatabase> with _$TagDaoMixin {
     // 1.3 已存在时恢复软删并刷新同步字段
     await (update(mediaItemTags)..where((t) => t.id.equals(existing.id))).write(
       MediaItemTagsCompanion(
-        updatedAt: Value(now),
+        updatedAt: Value(updatedAt),
         deletedAt: const Value(null),
         deviceId: Value(deviceId),
         lastSyncedAt: Value(syncedAt),
@@ -109,6 +110,7 @@ class TagDao extends DatabaseAccessor<AppDatabase> with _$TagDaoMixin {
     required String mediaItemId,
     required String tagId,
     required String deviceId,
+    required DateTime updatedAt,
     required DateTime? syncedAt,
   }) async {
     /*
@@ -122,17 +124,17 @@ class TagDao extends DatabaseAccessor<AppDatabase> with _$TagDaoMixin {
     _logger.info('开始软删除标签关联...');
 
     // 2.1 仅更新删除标记与同步相关字段
-    final now = DateTime.now();
     await (update(mediaItemTags)..where(
-      (t) => t.mediaItemId.equals(mediaItemId) & t.tagId.equals(tagId),
-    )).write(
-      MediaItemTagsCompanion(
-        updatedAt: Value(now),
-        deletedAt: Value(now),
-        deviceId: Value(deviceId),
-        lastSyncedAt: Value(syncedAt),
-      ),
-    );
+          (t) => t.mediaItemId.equals(mediaItemId) & t.tagId.equals(tagId),
+        ))
+        .write(
+          MediaItemTagsCompanion(
+            updatedAt: Value(updatedAt),
+            deletedAt: Value(updatedAt),
+            deviceId: Value(deviceId),
+            lastSyncedAt: Value(syncedAt),
+          ),
+        );
 
     _logger.info('标签关联软删除完成。');
   }
@@ -155,13 +157,14 @@ class TagDao extends DatabaseAccessor<AppDatabase> with _$TagDaoMixin {
 
     // 3.1 仅更新同步标记字段
     await (update(mediaItemTags)..where(
-      (t) => t.mediaItemId.equals(mediaItemId) & t.tagId.equals(tagId),
-    )).write(
-      MediaItemTagsCompanion(
-        deviceId: Value(deviceId),
-        lastSyncedAt: Value(syncedAt),
-      ),
-    );
+          (t) => t.mediaItemId.equals(mediaItemId) & t.tagId.equals(tagId),
+        ))
+        .write(
+          MediaItemTagsCompanion(
+            deviceId: Value(deviceId),
+            lastSyncedAt: Value(syncedAt),
+          ),
+        );
 
     _logger.info('标签关联的 lastSyncedAt 更新完成。');
   }
@@ -169,8 +172,8 @@ class TagDao extends DatabaseAccessor<AppDatabase> with _$TagDaoMixin {
   Stream<List<Tag>> watchByMediaItemId(String mediaItemId) {
     final query =
         select(tags).join([
-          innerJoin(mediaItemTags, mediaItemTags.tagId.equalsExp(tags.id)),
-        ])
+            innerJoin(mediaItemTags, mediaItemTags.tagId.equalsExp(tags.id)),
+          ])
           ..where(mediaItemTags.mediaItemId.equals(mediaItemId))
           ..where(mediaItemTags.deletedAt.isNull())
           ..where(tags.deletedAt.isNull());
@@ -181,8 +184,8 @@ class TagDao extends DatabaseAccessor<AppDatabase> with _$TagDaoMixin {
   Future<List<Tag>> getByMediaItemId(String mediaItemId) {
     final query =
         select(tags).join([
-          innerJoin(mediaItemTags, mediaItemTags.tagId.equalsExp(tags.id)),
-        ])
+            innerJoin(mediaItemTags, mediaItemTags.tagId.equalsExp(tags.id)),
+          ])
           ..where(mediaItemTags.mediaItemId.equals(mediaItemId))
           ..where(mediaItemTags.deletedAt.isNull())
           ..where(tags.deletedAt.isNull());
@@ -195,7 +198,8 @@ class TagDao extends DatabaseAccessor<AppDatabase> with _$TagDaoMixin {
     required String tagId,
   }) {
     return (select(mediaItemTags)..where(
-      (t) => t.mediaItemId.equals(mediaItemId) & t.tagId.equals(tagId),
-    )).getSingleOrNull();
+          (t) => t.mediaItemId.equals(mediaItemId) & t.tagId.equals(tagId),
+        ))
+        .getSingleOrNull();
   }
 }

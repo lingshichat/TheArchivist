@@ -67,7 +67,9 @@ class SyncEntityEnvelope {
 
   static SyncEntityEnvelope fromJsonString(String jsonString) {
     return fromJson(
-      Map<String, Object?>.from(jsonDecode(jsonString) as Map<Object?, Object?>),
+      Map<String, Object?>.from(
+        jsonDecode(jsonString) as Map<Object?, Object?>,
+      ),
     );
   }
 
@@ -98,7 +100,11 @@ class SyncChangeCandidate {
 
   bool get needsSync {
     if (deletedAt != null) {
-      return true;
+      if (lastSyncedAt == null) {
+        return true;
+      }
+
+      return deletedAt!.isAfter(lastSyncedAt!);
     }
 
     if (lastSyncedAt == null) {

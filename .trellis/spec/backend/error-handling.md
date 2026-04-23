@@ -95,6 +95,95 @@ This project is **local-first**. Rules for sync-related errors:
 - Sync errors produce light UI feedback (snackbar / status chip), not blocking dialogs
 - Detailed error states (pending sync, retry) are deferred to Phase 4
 
+## Scenario: Device sync engine outcomes
+
+### 1. Scope / Trigger
+
+- Trigger: WP2 introduces a reusable cross-device sync engine for WebDAV /
+  S3-compatible adapters
+- This changes error boundaries because queue replay, transport failure, decode
+  failure, and partial batch failure now share one engine entrypoint
+
+### 2. Signatures
+
+```dart
+sealed class SyncException implements Exception {
+  final String message;
+  const SyncException(this.message);
+}
+
+final class SyncNetworkException extends SyncException { ... }
+final class SyncAuthException extends SyncException { ... }
+final class SyncRemoteNotFoundException extends SyncException { ... }
+final class SyncFormatException extends SyncException { ... }
+final class SyncPartialBatchException extends SyncException {
+  final int failedCount;
+}
+
+class SyncSummary {
+  final int queuedCount;
+  final int pushedCount;
+  final int deletedCount;
+  final int pullAppliedCount;
+  final int pullSkippedCount;
+  final int localWinsCount;
+  final int failedCount;
+  final String? lastErrorSummary;
+}
+```
+
+### 3. Contracts
+
+- engine path
+  - transport/raw parse errors must be mapped to `SyncException` subclasses
+  - engine updates queue retry/error summary on failed push items
+  - engine must continue batch processing on recoverable row failures
+  - engine may stop early on auth failure
+- local-first rule
+  - push failure keeps committed local DB rows
+  - pull failure keeps current local DB rows
+  - partial batch failure does not roll back successful rows from the same batch
+- state contract
+  - `lastErrorSummary` stores one compact summary string
+  - `failedCount` is batch-level accounting, not UI spam count
+  - `localWins` is reconciliation, not fatal error
+- adapters
+  - adapters throw typed sync-domain errors or mapped infrastructure errors only
+  - adapters must not throw generic `Exception('sync failed')`
+
+### 4. Validation & Error Matrix
+
+| Context | Error / Outcome | Expected Behavior | Reject if |
+|---------|------------------|------------------|-----------|
+| push write times out | `SyncNetworkException` | local row stays, queue retry count +1 | local row rolled back |
+| adapter auth expired | `SyncAuthException` | batch stops early, summary records one auth failure | engine keeps hammering all remaining rows |
+| remote key missing on delete cleanup | `SyncRemoteNotFoundException` | treat as non-fatal cleanup miss | whole batch fails |
+| remote JSON invalid | `SyncFormatException` | count failed row, keep processing next rows | malformed row crashes entire sync run |
+| pull sees newer local row | `localWins` / `skip` | local row preserved | stale remote row overwrites local state |
+| mixed batch success/failure | `SyncPartialBatchException` or summary failure counts | success rows remain applied | success rows rolled back because one row failed |
+
+### 5. Good / Base / Bad Cases
+
+- Good:
+  - one failed push row increments retry state and leaves queue row pending
+  - stale remote row is ignored without turning the whole sync red
+- Base:
+  - one malformed remote record counts as failed and the batch continues
+- Bad:
+  - adapter throws bare `Exception(...)`
+  - engine clears queue rows even though remote write failed
+  - pull failure hard-resets local rows to some previous snapshot
+
+### 6. Tests Required
+
+- push-path tests:
+  - failure keeps local row and queue retry state
+  - successful push marks synced and completes queue row
+- pull-path tests:
+  - tombstone propagates as soft delete / detachment
+  - stale remote row does not overwrite newer local row
+  - end-to-end fake adapter batch covers media / entry / progress / tag / shelf links
+
 ## Scenario: Bangumi pull / push sync outcomes
 
 ### 1. Scope / Trigger

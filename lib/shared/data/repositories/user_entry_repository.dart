@@ -9,11 +9,8 @@ class UserEntryRepository {
   final DeviceIdentityService _deviceIdentityService;
   static const StepLogger _logger = StepLogger('UserEntryRepository');
 
-  UserEntryRepository(
-    this._db, {
-    DeviceIdentityService? deviceIdentityService,
-  }) : _deviceIdentityService =
-           deviceIdentityService ?? DeviceIdentityService();
+  UserEntryRepository(this._db, {DeviceIdentityService? deviceIdentityService})
+    : _deviceIdentityService = deviceIdentityService ?? DeviceIdentityService();
 
   Stream<UserEntry?> watchByMediaItemId(String mediaItemId) {
     return _db.userEntryDao.watchByMediaItemId(mediaItemId);
@@ -127,6 +124,59 @@ class UserEntryRepository {
     );
 
     _logger.info('远端回拉状态和评分应用完成。');
+  }
+
+  Future<void> applyRemoteSnapshot({
+    required String mediaItemId,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    required UnifiedStatus status,
+    int? score,
+    String? review,
+    String? notes,
+    required bool favorite,
+    required int reconsumeCount,
+    DateTime? startedAt,
+    DateTime? finishedAt,
+    DateTime? deletedAt,
+    int syncVersion = 0,
+    DateTime? lastSyncedAt,
+  }) async {
+    /*
+     * ========================================================================
+     * 步骤2：应用跨设备同步用户条目快照
+     * ========================================================================
+     * 目标：
+     *   1) 让 sync engine 能按远端快照补建或覆盖 user entry
+     *   2) 保留远端的 startedAt / finishedAt / deletedAt / lastSyncedAt 语义
+     */
+    _logger.info('开始应用跨设备同步用户条目快照...');
+
+    // 2.1 优先复用 mediaItemId 下已有行，避免撞唯一键
+    final existing = await _db.userEntryDao.getByMediaItemId(mediaItemId);
+    final deviceId = await _getDeviceId();
+    await _db.userEntryDao.upsert(
+      UserEntriesCompanion.insert(
+        id: existing?.id ?? DeviceIdentityService.generate(),
+        mediaItemId: mediaItemId,
+        status: Value(status),
+        score: Value(score),
+        review: Value(review),
+        notes: Value(notes),
+        favorite: Value(favorite),
+        reconsumeCount: Value(reconsumeCount),
+        startedAt: Value(startedAt),
+        finishedAt: Value(finishedAt),
+        createdAt: createdAt,
+        updatedAt: updatedAt,
+        deletedAt: Value(deletedAt),
+        syncVersion: Value(syncVersion),
+        deviceId: Value(deviceId),
+        lastSyncedAt: Value(lastSyncedAt),
+      ),
+    );
+
+    _logger.info('跨设备同步用户条目快照应用完成。');
   }
 
   Future<void> markSynced(String mediaItemId, DateTime syncedAt) async {

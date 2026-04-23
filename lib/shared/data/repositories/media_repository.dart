@@ -13,8 +13,7 @@ class MediaRepository {
   static const StepLogger _logger = StepLogger('MediaRepository');
 
   MediaRepository(this._db, {DeviceIdentityService? deviceIdentityService})
-    : _deviceIdentityService =
-          deviceIdentityService ?? DeviceIdentityService();
+    : _deviceIdentityService = deviceIdentityService ?? DeviceIdentityService();
 
   // --- Home page ---
 
@@ -54,6 +53,11 @@ class MediaRepository {
   Future<MediaItem?> getItem(String id) async {
     final query = _db.select(_db.mediaItems)
       ..where((t) => t.id.equals(id) & t.deletedAt.isNull());
+    return query.getSingleOrNull();
+  }
+
+  Future<MediaItem?> getItemIncludingDeleted(String id) async {
+    final query = _db.select(_db.mediaItems)..where((t) => t.id.equals(id));
     return query.getSingleOrNull();
   }
 
@@ -202,6 +206,63 @@ class MediaRepository {
     _logger.info('远端回拉媒体元数据写入完成。');
   }
 
+  Future<void> applyRemoteSnapshot({
+    required String mediaItemId,
+    required MediaType mediaType,
+    required String title,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    String? subtitle,
+    String? posterUrl,
+    DateTime? releaseDate,
+    String? overview,
+    String? sourceIdsJson,
+    int? runtimeMinutes,
+    int? totalEpisodes,
+    int? totalPages,
+    double? estimatedPlayHours,
+    DateTime? deletedAt,
+    int syncVersion = 0,
+    DateTime? lastSyncedAt,
+  }) async {
+    /*
+     * ========================================================================
+     * 步骤3：应用跨设备同步媒体快照
+     * ========================================================================
+     * 目标：
+     *   1) 让 sync engine 能按远端快照补建或覆盖媒体条目
+     *   2) 保留远端的 createdAt / updatedAt / deletedAt / lastSyncedAt 语义
+     */
+    _logger.info('开始应用跨设备同步媒体快照...');
+
+    // 3.1 用统一 upsert 入口补建或覆盖媒体条目
+    final deviceId = await _getDeviceId();
+    await _db.mediaDao.upsertItem(
+      MediaItemsCompanion.insert(
+        id: mediaItemId,
+        mediaType: mediaType,
+        title: title,
+        subtitle: Value(subtitle),
+        posterUrl: Value(posterUrl),
+        releaseDate: Value(releaseDate),
+        overview: Value(overview),
+        sourceIdsJson: Value(sourceIdsJson ?? '{}'),
+        runtimeMinutes: Value(runtimeMinutes),
+        totalEpisodes: Value(totalEpisodes),
+        totalPages: Value(totalPages),
+        estimatedPlayHours: Value(estimatedPlayHours),
+        createdAt: createdAt,
+        updatedAt: updatedAt,
+        deletedAt: Value(deletedAt),
+        syncVersion: Value(syncVersion),
+        deviceId: Value(deviceId),
+        lastSyncedAt: Value(lastSyncedAt),
+      ),
+    );
+
+    _logger.info('跨设备同步媒体快照应用完成。');
+  }
+
   Future<void> markSynced(String mediaItemId, DateTime syncedAt) async {
     /*
      * ========================================================================
@@ -214,7 +275,7 @@ class MediaRepository {
     _logger.info('开始标记媒体条目同步时间...');
 
     // 3.1 读取现有条目；缺失时直接跳过
-    final existing = await getItem(mediaItemId);
+    final existing = await getItemIncludingDeleted(mediaItemId);
     if (existing == null) {
       _logger.info('媒体条目同步时间标记完成。');
       return;
