@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 8
+- **Total Sessions**: 9
 - **Last Active**: 2026-04-23
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~371 | Active |
+| `journal-1.md` | ~404 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 9 | 2026-04-23 | 完成 WebDAV 适配器 | `6edbbe46c485d1ce88b294a71357ac6da69d553c` | `main` |
 | 8 | 2026-04-23 | 完成 WP2 同步引擎内核 | `e44798b` | `main` |
 | 7 | 2026-04-23 | 阶段3-WP1 收口并切换到 WP2 | - | `main` |
 | 6 | 2026-04-21 | 完成阶段2 Bangumi 搜索、快捷添加与同步 | `5924f4a`, `208004e`, `84e2905`, `578cb2a` | `main` |

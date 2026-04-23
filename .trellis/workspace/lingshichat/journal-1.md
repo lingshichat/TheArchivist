@@ -369,3 +369,36 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 9: 完成 WebDAV 适配器
+
+**Date**: 2026-04-23
+**Task**: 完成 WebDAV 适配器
+**Branch**: `main`
+
+### Summary
+
+新增 WebDAV transport client 和 storage adapter，接入 sync providers，补齐 typed error 映射、单测、spec 与任务材料。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `6edbbe46c485d1ce88b294a71357ac6da69d553c` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
