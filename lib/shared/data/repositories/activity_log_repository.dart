@@ -8,8 +8,13 @@ import '../sync_stamp.dart';
 
 class ActivityLogRepository {
   final AppDatabase _db;
+  final DeviceIdentityService _deviceIdentityService;
 
-  ActivityLogRepository(this._db);
+  ActivityLogRepository(
+    this._db, {
+    DeviceIdentityService? deviceIdentityService,
+  }) : _deviceIdentityService =
+           deviceIdentityService ?? DeviceIdentityService();
 
   Stream<List<ActivityLog>> watchByMediaItemId(String mediaItemId) {
     return _db.activityLogDao.watchByMediaItemId(mediaItemId);
@@ -36,5 +41,7 @@ class ActivityLogRepository {
     );
   }
 
-  Future<String> _getDeviceId() async => '';
+  Future<String> _getDeviceId() async {
+    return _deviceIdentityService.getOrCreateCurrentDeviceId();
+  }
 }

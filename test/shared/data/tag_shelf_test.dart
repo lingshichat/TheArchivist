@@ -1,8 +1,9 @@
-import 'package:drift/drift.dart';
+import 'package:drift/drift.dart' as drift;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:record_anywhere/shared/data/app_database.dart';
+import 'package:record_anywhere/shared/data/device_identity.dart';
 import 'package:record_anywhere/shared/data/repositories/media_repository.dart';
 import 'package:record_anywhere/shared/data/repositories/shelf_repository.dart';
 import 'package:record_anywhere/shared/data/repositories/tag_repository.dart';
@@ -12,12 +13,22 @@ void main() {
   late MediaRepository mediaRepo;
   late TagRepository tagRepo;
   late ShelfRepository shelfRepo;
+  late DeviceIdentityService deviceIdentityService;
 
   setUp(() {
     db = AppDatabase.forTesting(NativeDatabase.memory());
-    mediaRepo = MediaRepository(db);
-    tagRepo = TagRepository(db);
-    shelfRepo = ShelfRepository(db);
+    deviceIdentityService = DeviceIdentityService(
+      store: InMemoryDeviceIdentityStore(deviceId: 'test-device-id'),
+    );
+    mediaRepo = MediaRepository(
+      db,
+      deviceIdentityService: deviceIdentityService,
+    );
+    tagRepo = TagRepository(db, deviceIdentityService: deviceIdentityService);
+    shelfRepo = ShelfRepository(
+      db,
+      deviceIdentityService: deviceIdentityService,
+    );
   });
 
   tearDown(() async {
@@ -47,9 +58,13 @@ void main() {
       final tags = await db.tagDao.watchByMediaItemId(mediaId).first;
       expect(tags, hasLength(1));
       expect(tags.first.name, 'Classic');
+
+      final links = await db.select(db.mediaItemTags).get();
+      expect(links.single.deviceId, 'test-device-id');
+      expect(links.single.deletedAt, isNull);
     });
 
-    test('detachFromMedia removes link', () async {
+    test('detachFromMedia soft deletes link', () async {
       final mediaId = await mediaRepo.createItem(
         mediaType: MediaType.movie,
         title: 'Untag Movie',
@@ -61,6 +76,11 @@ void main() {
 
       final tags = await db.tagDao.watchByMediaItemId(mediaId).first;
       expect(tags, isEmpty);
+
+      final links = await db.select(db.mediaItemTags).get();
+      expect(links, hasLength(1));
+      expect(links.single.deletedAt, isNotNull);
+      expect(links.single.deviceId, 'test-device-id');
     });
 
     test('soft-deleted tags are excluded from watchAll', () async {
@@ -69,12 +89,34 @@ void main() {
 
       // Manually soft-delete via DAO
       await (db.update(db.tags)..where((t) => t.id.equals(tagId))).write(
-        TagsCompanion(deletedAt: Value(DateTime.now())),
+        TagsCompanion(deletedAt: drift.Value(DateTime.now())),
       );
 
       final tags = await db.tagDao.watchAll().first;
       expect(tags, hasLength(1));
       expect(tags.first.name, 'Active');
+    });
+
+    test('applyRemoteAttachment restores a soft-deleted tag link', () async {
+      final mediaId = await mediaRepo.createItem(
+        mediaType: MediaType.movie,
+        title: 'Retagged Movie',
+      );
+      final tagId = await tagRepo.createTag(name: 'Classic');
+
+      await tagRepo.attachToMedia(mediaId, tagId);
+      await tagRepo.detachFromMedia(mediaId, tagId);
+      await tagRepo.applyRemoteAttachment(
+        mediaItemId: mediaId,
+        tagId: tagId,
+        syncedAt: DateTime(2026, 4, 22, 11, 0),
+      );
+
+      final tags = await db.tagDao.watchByMediaItemId(mediaId).first;
+      final links = await db.select(db.mediaItemTags).get();
+      expect(tags, hasLength(1));
+      expect(links.single.deletedAt, isNull);
+      expect(links.single.lastSyncedAt, DateTime(2026, 4, 22, 11, 0));
     });
   });
 
@@ -104,9 +146,13 @@ void main() {
       final shelves = await db.shelfDao.watchByMediaItemId(mediaId).first;
       expect(shelves, hasLength(1));
       expect(shelves.first.name, 'Reading List');
+
+      final links = await db.select(db.mediaItemShelves).get();
+      expect(links.single.deviceId, 'test-device-id');
+      expect(links.single.deletedAt, isNull);
     });
 
-    test('detachFromMedia removes link', () async {
+    test('detachFromMedia soft deletes link', () async {
       final mediaId = await mediaRepo.createItem(
         mediaType: MediaType.game,
         title: 'Unshelved Game',
@@ -118,6 +164,33 @@ void main() {
 
       final shelves = await db.shelfDao.watchByMediaItemId(mediaId).first;
       expect(shelves, isEmpty);
+
+      final links = await db.select(db.mediaItemShelves).get();
+      expect(links, hasLength(1));
+      expect(links.single.deletedAt, isNotNull);
+      expect(links.single.deviceId, 'test-device-id');
+    });
+
+    test('applyRemoteAttachment restores a soft-deleted shelf link', () async {
+      final mediaId = await mediaRepo.createItem(
+        mediaType: MediaType.game,
+        title: 'Restored Game',
+      );
+      final shelfId = await shelfRepo.createShelf(name: 'Backlog');
+
+      await shelfRepo.attachToMedia(mediaId, shelfId);
+      await shelfRepo.detachFromMedia(mediaId, shelfId);
+      await shelfRepo.applyRemoteAttachment(
+        mediaItemId: mediaId,
+        shelfListId: shelfId,
+        syncedAt: DateTime(2026, 4, 22, 11, 0),
+      );
+
+      final shelves = await db.shelfDao.watchByMediaItemId(mediaId).first;
+      final links = await db.select(db.mediaItemShelves).get();
+      expect(shelves, hasLength(1));
+      expect(links.single.deletedAt, isNull);
+      expect(links.single.lastSyncedAt, DateTime(2026, 4, 22, 11, 0));
     });
   });
 }

@@ -5,6 +5,7 @@ import 'package:record_anywhere/features/bangumi/data/bangumi_sync_service.dart'
 import 'package:record_anywhere/features/add/data/add_entry_controller.dart';
 import 'package:record_anywhere/features/detail/data/detail_actions_controller.dart';
 import 'package:record_anywhere/shared/data/app_database.dart';
+import 'package:record_anywhere/shared/data/device_identity.dart';
 import 'package:record_anywhere/shared/data/repositories/activity_log_repository.dart';
 import 'package:record_anywhere/shared/data/repositories/media_repository.dart';
 import 'package:record_anywhere/shared/data/repositories/progress_repository.dart';
@@ -20,18 +21,37 @@ void main() {
   late TagRepository tagRepo;
   late ShelfRepository shelfRepo;
   late ActivityLogRepository activityLogRepo;
+  late DeviceIdentityService deviceIdentityService;
   late _FakeBangumiSyncService bangumiSyncService;
   late AddEntryController addEntryController;
   late DetailActionsController detailActionsController;
 
   setUp(() {
     db = AppDatabase.forTesting(NativeDatabase.memory());
-    mediaRepo = MediaRepository(db);
-    userEntryRepo = UserEntryRepository(db);
-    progressRepo = ProgressRepository(db);
-    tagRepo = TagRepository(db);
-    shelfRepo = ShelfRepository(db);
-    activityLogRepo = ActivityLogRepository(db);
+    deviceIdentityService = DeviceIdentityService(
+      store: InMemoryDeviceIdentityStore(deviceId: 'test-device-id'),
+    );
+    mediaRepo = MediaRepository(
+      db,
+      deviceIdentityService: deviceIdentityService,
+    );
+    userEntryRepo = UserEntryRepository(
+      db,
+      deviceIdentityService: deviceIdentityService,
+    );
+    progressRepo = ProgressRepository(
+      db,
+      deviceIdentityService: deviceIdentityService,
+    );
+    tagRepo = TagRepository(db, deviceIdentityService: deviceIdentityService);
+    shelfRepo = ShelfRepository(
+      db,
+      deviceIdentityService: deviceIdentityService,
+    );
+    activityLogRepo = ActivityLogRepository(
+      db,
+      deviceIdentityService: deviceIdentityService,
+    );
     bangumiSyncService = _FakeBangumiSyncService();
     addEntryController = AddEntryController(
       mediaRepository: mediaRepo,
@@ -70,6 +90,8 @@ void main() {
       final entry = await db.userEntryDao.getByMediaItemId(id);
       expect(entry, isNotNull);
       expect(entry!.status, UnifiedStatus.wishlist);
+      expect(item.deviceId, 'test-device-id');
+      expect(entry.deviceId, 'test-device-id');
     });
 
     test('softDelete hides item from queries', () async {
@@ -277,6 +299,28 @@ void main() {
 
       final progress = await db.progressDao.getByMediaItemId(id);
       expect(progress!.currentPage, 100);
+      expect(progress.deviceId, 'test-device-id');
+    });
+
+    test('applyRemoteProgress writes synced progress state', () async {
+      final id = await mediaRepo.createItem(
+        mediaType: MediaType.tv,
+        title: 'Remote Progress Show',
+      );
+
+      await progressRepo.applyRemoteProgress(
+        id,
+        currentEpisode: 12,
+        completionRatio: 0.8,
+        syncedAt: DateTime(2026, 4, 22, 10, 0),
+      );
+
+      final progress = await db.progressDao.getByMediaItemId(id);
+      expect(progress, isNotNull);
+      expect(progress!.currentEpisode, 12);
+      expect(progress.completionRatio, 0.8);
+      expect(progress.lastSyncedAt, DateTime(2026, 4, 22, 10, 0));
+      expect(progress.deviceId, 'test-device-id');
     });
   });
 

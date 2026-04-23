@@ -6,9 +6,14 @@ import '../../utils/step_logger.dart';
 
 class UserEntryRepository {
   final AppDatabase _db;
+  final DeviceIdentityService _deviceIdentityService;
   static const StepLogger _logger = StepLogger('UserEntryRepository');
 
-  UserEntryRepository(this._db);
+  UserEntryRepository(
+    this._db, {
+    DeviceIdentityService? deviceIdentityService,
+  }) : _deviceIdentityService =
+           deviceIdentityService ?? DeviceIdentityService();
 
   Stream<UserEntry?> watchByMediaItemId(String mediaItemId) {
     return _db.userEntryDao.watchByMediaItemId(mediaItemId);
@@ -149,5 +154,7 @@ class UserEntryRepository {
     _logger.info('用户条目同步时间标记完成。');
   }
 
-  Future<String> _getDeviceId() async => '';
+  Future<String> _getDeviceId() async {
+    return _deviceIdentityService.getOrCreateCurrentDeviceId();
+  }
 }

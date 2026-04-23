@@ -4,6 +4,7 @@ import 'package:record_anywhere/features/add/data/bangumi_quick_add_controller.d
 import 'package:record_anywhere/features/bangumi/data/bangumi_models.dart';
 import 'package:record_anywhere/features/bangumi/data/bangumi_sync_service.dart';
 import 'package:record_anywhere/shared/data/app_database.dart';
+import 'package:record_anywhere/shared/data/device_identity.dart';
 import 'package:record_anywhere/shared/data/repositories/activity_log_repository.dart';
 import 'package:record_anywhere/shared/data/repositories/media_repository.dart';
 import 'package:record_anywhere/shared/data/repositories/user_entry_repository.dart';
@@ -14,14 +15,27 @@ void main() {
   late MediaRepository mediaRepository;
   late UserEntryRepository userEntryRepository;
   late ActivityLogRepository activityLogRepository;
+  late DeviceIdentityService deviceIdentityService;
   late _FakeBangumiSyncService syncService;
   late BangumiQuickAddController controller;
 
   setUp(() {
     db = AppDatabase.forTesting(NativeDatabase.memory());
-    mediaRepository = MediaRepository(db);
-    userEntryRepository = UserEntryRepository(db);
-    activityLogRepository = ActivityLogRepository(db);
+    deviceIdentityService = DeviceIdentityService(
+      store: InMemoryDeviceIdentityStore(deviceId: 'test-device-id'),
+    );
+    mediaRepository = MediaRepository(
+      db,
+      deviceIdentityService: deviceIdentityService,
+    );
+    userEntryRepository = UserEntryRepository(
+      db,
+      deviceIdentityService: deviceIdentityService,
+    );
+    activityLogRepository = ActivityLogRepository(
+      db,
+      deviceIdentityService: deviceIdentityService,
+    );
     syncService = _FakeBangumiSyncService();
     controller = BangumiQuickAddController(
       mediaRepository: mediaRepository,

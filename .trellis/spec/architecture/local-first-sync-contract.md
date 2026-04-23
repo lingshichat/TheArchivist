@@ -107,6 +107,26 @@ deviceId
 lastSyncedAt
 ```
 
+Approved local queue/status signatures for device sync WP1:
+
+```dart
+class SyncQueueRepository {
+  Future<List<SyncChangeCandidate>> listChangeCandidates({int limit = 100});
+  Future<List<SyncQueueItem>> enqueuePendingChanges({int limit = 100});
+  Future<SyncQueueItem> enqueue({...});
+}
+
+class SyncStatusRepository {
+  Future<void> setStatus({
+    required bool isRunning,
+    required int pendingCount,
+    String? lastErrorSummary,
+    DateTime? lastCompletedAt,
+    bool hasConflicts = false,
+  });
+}
+```
+
 ### 3. Contracts
 
 #### Runtime truth
@@ -169,6 +189,44 @@ lastSyncedAt
 - These concerns stay separate even if both are "remote"
 - Storage targets are transport/storage media; conflict policy stays in app code
 
+#### Device queue / dirty-scan contract
+
+- WP1 owns the shared local queue and minimal status snapshot for device sync
+- `DeviceIdentityService` is the only approved source for stable current-device
+  identity; repositories and queue code must not fabricate fallback `deviceId`
+  strings
+- dirty-scan uses the persisted sync metadata already stamped on local tables;
+  it does not infer change state from UI memory
+- current minimum dirty signal for cross-device sync is:
+  - `lastSyncedAt == null`
+  - `updatedAt > lastSyncedAt`
+  - `deletedAt != null`
+- `listChangeCandidates(...)` scans all sync-capable local tables and returns
+  domain-neutral candidates; it must stay storage-agnostic and must not include
+  WebDAV / S3 path logic
+- `enqueuePendingChanges(...)` converts dirty candidates to queue rows:
+  - non-deleted candidate -> `upsert`
+  - soft-deleted candidate -> `delete`
+- queue rows are the minimal replay contract:
+  - `entityType`
+  - `entityId`
+  - `operation`
+  - `lastAttemptedAt`
+  - `retryCount`
+  - `errorSummary`
+  - `completedAt`
+  - `deviceId`
+- queue dedupe is per unfinished `(entityType, entityId, operation)` tuple
+- minimal sync status is persisted separately from queue rows and currently
+  tracks:
+  - `isRunning`
+  - `lastCompletedAt`
+  - `lastErrorSummary`
+  - `pendingCount`
+  - `hasConflicts`
+- settings or future sync UI may read this snapshot, but queue/status ownership
+  stays in sync data layer
+
 ### 4. Validation & Error Matrix
 
 | Case | Expected behavior | Reject if |
@@ -180,6 +238,10 @@ lastSyncedAt
 | Media item has no Bangumi mapping | skip Bangumi push | code guesses or fabricates a subject ID |
 | Cross-device sync target has newer text field | apply conflict policy and keep conflict copy where required | remote overwrite silently drops local text |
 | Adding a new provider mapping | extend `sourceIdsJson` object | add another unrelated mapping store |
+| Dirty scan sees local row with `lastSyncedAt == null` | candidate is enqueued for device sync | row is silently skipped because no remote metadata exists yet |
+| Dirty scan sees soft-deleted row | queue row uses `delete` operation | code hard-deletes row and loses replay signal |
+| Same dirty row is scanned twice before completion | unfinished queue row is reused | duplicate unfinished queue rows are inserted |
+| Settings page needs sync health summary | read persisted status snapshot | page queries queue tables directly and reconstructs state ad hoc |
 
 ### 5. Good / Base / Bad Cases
 
@@ -190,10 +252,14 @@ lastSyncedAt
 - remote adapters receive already-committed local state
 - post-connect pull imports Bangumi rows that do not yet exist locally
 - startup pull updates clean local rows but leaves dirty local rows untouched
+- WP1 queue scan returns local dirty rows without knowing transport details
+- queue enqueue maps soft delete to `delete` and normal mutations to `upsert`
 
 #### Base
 
 - phase 2 pull+push covers status and score only, with progress deferred explicitly
+- minimal status snapshot reports queue-backed `pendingCount` without exposing a
+  full retry center yet
 
 #### Bad
 
@@ -202,12 +268,21 @@ lastSyncedAt
 - Bangumi auth logic leaks into WP2 UI code
 - pull path overwrites local dirty rows without checking `lastSyncedAt`
 - pull path treats remote uncollect as an instruction to delete the local row
+- queue contract stores WebDAV/S3-specific paths instead of neutral entity keys
+- feature pages infer dirty state themselves instead of reusing queue scan
 
 ### 6. Tests Required
 
 - Repository tests for create / update paths:
   - sync fields stamped by repository layer
   - `sourceIdsJson` persists expected provider mapping shape
+- Device-sync queue tests:
+  - `DeviceIdentityService` persists and reuses stable current device id
+  - dirty scan returns candidates for never-synced, updated-after-sync, and
+    soft-deleted rows
+  - repeated enqueue of the same unfinished candidate reuses one queue row
+  - dirty enqueue maps soft delete to `delete`
+  - status snapshot persists `isRunning`, `pendingCount`, and last summary data
 - Sync-service tests:
   - unbound auth -> no-op
   - missing mapping -> no-op
@@ -255,3 +330,25 @@ Why it is correct:
 - local state remains authoritative during conflict
 - pull applies only when the local row is safe to update
 - future retry / queue logic can still be added without changing the write model
+
+#### Wrong
+
+```dart
+final queueRows = <Map<String, Object?>>[];
+if (entity.deletedAt != null) {
+  queueRows.add({'webdavPath': '/deleted/${entity.id}.json'});
+}
+```
+
+#### Correct
+
+```dart
+final candidates = await syncQueueRepository.listChangeCandidates();
+await syncQueueRepository.enqueuePendingChanges();
+```
+
+Why it is correct:
+
+- queue contract stays transport-neutral
+- dirty detection is centralized and reusable
+- WebDAV / S3 adapters can consume the same queue later without redefinition

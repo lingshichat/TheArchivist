@@ -5,6 +5,7 @@ import 'package:record_anywhere/features/bangumi/data/bangumi_models.dart';
 import 'package:record_anywhere/features/bangumi/data/bangumi_pull_service.dart';
 import 'package:record_anywhere/features/bangumi/data/bangumi_sync_status.dart';
 import 'package:record_anywhere/shared/data/app_database.dart';
+import 'package:record_anywhere/shared/data/device_identity.dart';
 import 'package:record_anywhere/shared/data/repositories/media_repository.dart';
 import 'package:record_anywhere/shared/data/repositories/user_entry_repository.dart';
 import 'package:record_anywhere/shared/data/source_id_map.dart';
@@ -14,11 +15,21 @@ void main() {
   late AppDatabase db;
   late MediaRepository mediaRepository;
   late UserEntryRepository userEntryRepository;
+  late DeviceIdentityService deviceIdentityService;
 
   setUp(() {
     db = AppDatabase.forTesting(NativeDatabase.memory());
-    mediaRepository = MediaRepository(db);
-    userEntryRepository = UserEntryRepository(db);
+    deviceIdentityService = DeviceIdentityService(
+      store: InMemoryDeviceIdentityStore(deviceId: 'test-device-id'),
+    );
+    mediaRepository = MediaRepository(
+      db,
+      deviceIdentityService: deviceIdentityService,
+    );
+    userEntryRepository = UserEntryRepository(
+      db,
+      deviceIdentityService: deviceIdentityService,
+    );
   });
 
   tearDown(() async {

@@ -6,6 +6,8 @@ import 'daos/activity_log_dao.dart';
 import 'daos/media_dao.dart';
 import 'daos/progress_dao.dart';
 import 'daos/shelf_dao.dart';
+import 'daos/sync_queue_dao.dart';
+import 'daos/sync_status_dao.dart';
 import 'daos/tag_dao.dart';
 import 'daos/user_entry_dao.dart';
 import 'tables/activity_logs.dart';
@@ -15,11 +17,15 @@ import 'tables/media_item_tags.dart';
 import 'tables/media_items.dart';
 import 'tables/progress_entries.dart';
 import 'tables/shelf_lists.dart';
+import 'tables/sync_queue_entries.dart';
+import 'tables/sync_status_entries.dart';
 import 'tables/tags.dart';
 import 'tables/user_entries.dart';
 
 export 'tables/enums.dart';
 export 'tables/shelf_lists.dart' show ShelfKind;
+export 'tables/sync_queue_entries.dart';
+export 'tables/sync_status_entries.dart';
 
 part 'app_database.g.dart';
 
@@ -33,8 +39,19 @@ part 'app_database.g.dart';
     MediaItemTags,
     MediaItemShelves,
     ActivityLogs,
+    SyncQueueEntries,
+    SyncStatusEntries,
   ],
-  daos: [ActivityLogDao, MediaDao, UserEntryDao, ProgressDao, TagDao, ShelfDao],
+  daos: [
+    ActivityLogDao,
+    MediaDao,
+    UserEntryDao,
+    ProgressDao,
+    TagDao,
+    ShelfDao,
+    SyncQueueDao,
+    SyncStatusDao,
+  ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
@@ -42,7 +59,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -50,6 +67,12 @@ class AppDatabase extends _$AppDatabase {
       await m.createAll();
       await customSelect('PRAGMA foreign_keys = ON').get();
       await customSelect('PRAGMA journal_mode = WAL').get();
+    },
+    onUpgrade: (Migrator m, int from, int to) async {
+      if (from < 2) {
+        await m.createTable(syncQueueEntries);
+        await m.createTable(syncStatusEntries);
+      }
     },
   );
 }

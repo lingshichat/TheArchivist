@@ -9,9 +9,12 @@ import '../../utils/step_logger.dart';
 
 class MediaRepository {
   final AppDatabase _db;
+  final DeviceIdentityService _deviceIdentityService;
   static const StepLogger _logger = StepLogger('MediaRepository');
 
-  MediaRepository(this._db);
+  MediaRepository(this._db, {DeviceIdentityService? deviceIdentityService})
+    : _deviceIdentityService =
+          deviceIdentityService ?? DeviceIdentityService();
 
   // --- Home page ---
 
@@ -225,7 +228,6 @@ class MediaRepository {
   }
 
   Future<String> _getDeviceId() async {
-    // TODO: read from persisted device identity
-    return '';
+    return _deviceIdentityService.getOrCreateCurrentDeviceId();
   }
 }
