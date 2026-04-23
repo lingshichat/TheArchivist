@@ -1,0 +1,6 @@
+{"file": ".opencode/commands/trellis/finish-work.md", "reason": "Finish work checklist"}
+{"file": ".opencode/commands/trellis/check.md", "reason": "Code quality check spec"}
+{"file": ".trellis/spec/architecture/local-first-sync-contract.md", "reason": "review adapter 是否仍然 storage-only 且路径布局未漂移"}
+{"file": ".trellis/spec/frontend/network-guidelines.md", "reason": "review Dio client 模式、请求头和网络层错误映射"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "review typed SyncException 映射和 auth/network/notFound 处理"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "review integration 边界、provider 放置和测试覆盖"}

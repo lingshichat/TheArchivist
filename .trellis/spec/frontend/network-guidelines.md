@@ -342,6 +342,139 @@ Future<List<dynamic>> listCollections(String username) async {
 }
 ```
 
+## Scenario: WebDAV transport client for device-sync adapters
+
+### 1. Scope / Trigger
+
+- Trigger: phase 3 adds a reusable WebDAV storage adapter under
+  `features/sync/data/`, while transport details stay in
+  `shared/network/webdav_api_client.dart`.
+- This is cross-layer because the same raw request contract flows through
+  `WebDavApiClient` → `WebDavStorageAdapter` → `SyncStorageAdapter` consumers.
+
+### 2. Signatures
+
+```dart
+class WebDavAuth {
+  final String username;
+  final String password;
+}
+
+class WebDavApiClient {
+  Future<Response<String>> propfind(
+    String path, {
+    String depth = '1',
+    String? body,
+  });
+
+  Future<Response<String>> getText(String path);
+  Future<Response<String>> putText(
+    String path, {
+    required String content,
+    String contentType = 'application/json; charset=utf-8',
+  });
+  Future<Response<String>> deleteResource(String path);
+  Future<Response<String>> createCollection(String path);
+}
+```
+
+### 3. Contracts
+
+- `WebDavApiClient`
+  - lives in `shared/network/`
+  - owns `Dio` config, auth/header injection, and `DioException` →
+    `WebDavApiException` mapping
+  - returns raw `Response<String>` only; no repository imports and no merge logic
+- headers / response mode
+  - default `Accept` is `*/*`
+  - default `responseType` is `ResponseType.plain`
+  - `PROPFIND` adds:
+    - method `PROPFIND`
+    - header `Depth`
+    - header `Content-Type: application/xml; charset=utf-8`
+  - `MKCOL` uses method `MKCOL`
+- auth
+  - credentials come from `Future<WebDavAuth?> Function() authProvider`
+  - client injects `Authorization: Basic <base64(username:password)>`
+  - unauthenticated calls remove the authorization header instead of caching
+    stale credentials in the client
+- path normalization
+  - client base url keeps a trailing slash
+  - request paths stay relative and trim empty path segments
+  - adapter/object layout stays under the sync contract:
+    - `entities/<entityType>/<entityId>.json`
+    - `tombstones/<entityType>/<entityId>.json`
+
+### 4. Validation & Error Matrix
+
+| Request / State | Expected Result | Error Surface |
+|-----------------|-----------------|---------------|
+| `propfind('entities', depth: 'infinity')` | raw XML string response | `WebDavApiException` subclasses |
+| `createCollection('record-anywhere-sync/entities')` | sends `MKCOL` | `WebDavApiException` subclasses |
+| missing credentials from `authProvider` | request proceeds without `Authorization` header | no client-side error |
+| `401 / 403` | typed auth failure | `WebDavUnauthorizedError` |
+| `404` | typed missing-resource failure | `WebDavNotFoundError` |
+| `429` / `5xx` | typed server failure | `WebDavServerError` |
+| timeout / socket failure | typed transport failure | `WebDavNetworkError` |
+
+### 5. Good / Base / Bad Cases
+
+- Good:
+  - `propfind('record-anywhere-sync/entities', depth: 'infinity')`
+  - `putText('entities/mediaItem/a.json', content: jsonText)`
+  - `createCollection('record-anywhere-sync/entities/mediaItem')`
+- Base:
+  - `getText('entities/mediaItem/a.json')`
+  - relative path is normalized and returned as plain text
+- Bad:
+  - widget/service calling `dio.request(method: 'PROPFIND', ...)` directly
+  - adapter returning repository/domain objects from the network client
+  - storing username/password directly on pages instead of using `authProvider`
+
+### 6. Tests Required
+
+- client / adapter tests:
+  - `list/read/write/delete/tombstone` flow against mocked transport
+  - `401` maps to auth failure
+  - `404` maps to not-found failure
+  - `5xx` maps to server failure
+  - repeated directory creation tolerates server `405` / `409`
+- mock assertion points:
+  - custom WebDAV verbs (`MKCOL`, `PROPFIND`) are intercepted explicitly; do
+    not rely on `http_mock_adapter` `RequestMethods.forName(...)` for unknown verbs
+  - text-body reads use `text/plain` style mock headers when the expected result
+    is raw string content, so tests do not accidentally JSON-encode the payload
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```dart
+await dio.request(
+  '/remote.php/dav/files/demo/entities',
+  options: Options(method: 'PROPFIND'),
+);
+```
+
+- transport leaks outside `shared/network/`
+- no shared auth/header/error contract
+- hard to reuse from the sync adapter
+
+#### Correct
+
+```dart
+final response = await webDavApiClient.propfind(
+  'record-anywhere-sync/entities',
+  depth: 'infinity',
+);
+
+final xml = response.data ?? '';
+```
+
+- transport stays in the client layer
+- auth and typed error mapping are centralized
+- adapter can stay storage-only
+
 - exposes transport objects
 - loses DTO contract for merge/import
 - lets invalid username and filter rules leak outward

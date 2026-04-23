@@ -1,0 +1,11 @@
+{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend development guide"}
+{"file": ".trellis/spec/architecture/index.md", "reason": "WebDAV 适配器触及共享 sync 边界，先锁定架构入口"}
+{"file": ".trellis/spec/architecture/local-first-sync-contract.md", "reason": "适配器必须复用 SyncStorageAdapter contract 和统一远端对象布局"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "决定 shared/network 与 features/sync/data 的文件归属"}
+{"file": ".trellis/spec/architecture/system-boundaries.md", "reason": "确认 transport/client/provider 的放置边界"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "WebDAV HTTP/IO 错误要映射成 SyncException"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "同步与 integration 代码要保持 typed error 和 local-first 语义"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "适配器连着 engine、codec、provider、transport，先过跨层检查"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "优先复用 Bangumi client 测试模式和 sync 现有 helper"}
+{"file": ".trellis/spec/frontend/network-guidelines.md", "reason": "复用现有 Dio client 与 sealed exception 模式"}

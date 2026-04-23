@@ -15,6 +15,10 @@ final class SyncAuthException extends SyncException {
   const SyncAuthException(super.message);
 }
 
+final class SyncServerException extends SyncException {
+  const SyncServerException(super.message);
+}
+
 final class SyncRemoteNotFoundException extends SyncException {
   const SyncRemoteNotFoundException(super.message);
 }

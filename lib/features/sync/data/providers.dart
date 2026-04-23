@@ -1,10 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/data/providers.dart';
+import '../../../shared/network/webdav_api_client.dart';
 import 'sync_codec.dart';
 import 'sync_engine.dart';
 import 'sync_queue.dart';
 import 'sync_status.dart';
+import 'webdav_storage_adapter.dart';
 
 export 'sync_codec.dart';
 export 'sync_engine.dart';
@@ -15,6 +17,7 @@ export 'sync_queue.dart';
 export 'sync_status.dart';
 export 'sync_storage_adapter.dart';
 export 'sync_summary.dart';
+export 'webdav_storage_adapter.dart';
 
 final syncQueueRepositoryProvider = Provider<SyncQueueRepository>((ref) {
   return SyncQueueRepository(
@@ -54,3 +57,27 @@ final syncEngineProvider = Provider<SyncEngine>((ref) {
     codec: ref.watch(syncCodecProvider),
   );
 });
+
+final webDavApiClientProvider =
+    Provider.family<WebDavApiClient, WebDavStorageAdapterConfig>((ref, config) {
+      return WebDavApiClient(
+        baseUri: config.baseUri,
+        authProvider: () async {
+          return WebDavAuth(
+            username: config.username,
+            password: config.password,
+          );
+        },
+      );
+    });
+
+final webDavStorageAdapterProvider =
+    Provider.family<WebDavStorageAdapter, WebDavStorageAdapterConfig>((
+      ref,
+      config,
+    ) {
+      return WebDavStorageAdapter(
+        client: ref.watch(webDavApiClientProvider(config)),
+        rootPath: config.rootPath,
+      );
+    });

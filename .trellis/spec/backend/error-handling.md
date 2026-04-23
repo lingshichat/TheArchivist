@@ -114,6 +114,7 @@ sealed class SyncException implements Exception {
 
 final class SyncNetworkException extends SyncException { ... }
 final class SyncAuthException extends SyncException { ... }
+final class SyncServerException extends SyncException { ... }
 final class SyncRemoteNotFoundException extends SyncException { ... }
 final class SyncFormatException extends SyncException { ... }
 final class SyncPartialBatchException extends SyncException {
@@ -139,6 +140,8 @@ class SyncSummary {
   - engine updates queue retry/error summary on failed push items
   - engine must continue batch processing on recoverable row failures
   - engine may stop early on auth failure
+  - adapter-side `5xx` / `429` / generic server rejection must map to
+    `SyncServerException`
 - local-first rule
   - push failure keeps committed local DB rows
   - pull failure keeps current local DB rows
@@ -157,6 +160,7 @@ class SyncSummary {
 |---------|------------------|------------------|-----------|
 | push write times out | `SyncNetworkException` | local row stays, queue retry count +1 | local row rolled back |
 | adapter auth expired | `SyncAuthException` | batch stops early, summary records one auth failure | engine keeps hammering all remaining rows |
+| adapter returns `5xx` / `429` | `SyncServerException` | row stays pending, summary records one server failure | server rejection escapes as raw `DioException` |
 | remote key missing on delete cleanup | `SyncRemoteNotFoundException` | treat as non-fatal cleanup miss | whole batch fails |
 | remote JSON invalid | `SyncFormatException` | count failed row, keep processing next rows | malformed row crashes entire sync run |
 | pull sees newer local row | `localWins` / `skip` | local row preserved | stale remote row overwrites local state |
@@ -178,6 +182,7 @@ class SyncSummary {
 
 - push-path tests:
   - failure keeps local row and queue retry state
+  - server rejection maps to `SyncServerException`
   - successful push marks synced and completes queue row
 - pull-path tests:
   - tombstone propagates as soft delete / detachment
