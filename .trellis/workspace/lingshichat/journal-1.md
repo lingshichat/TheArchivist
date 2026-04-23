@@ -336,3 +336,36 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 8: 完成 WP2 同步引擎内核
+
+**Date**: 2026-04-23
+**Task**: 完成 WP2 同步引擎内核
+**Branch**: `main`
+
+### Summary
+
+完成阶段3-WP2：落地 sync engine、codec、storage adapter contract、typed error、summary 与 fake adapter 测试；补齐相关 architecture/backend spec；flutter test test/features/sync/data/sync_engine_test.dart 和目标 Dart analyze 通过。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `e44798b` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
