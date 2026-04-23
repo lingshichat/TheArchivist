@@ -1,0 +1,11 @@
+{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend development guide"}
+{"file": ".trellis/spec/architecture/local-first-sync-contract.md", "reason": "storage-only adapter、对象 key 布局与 engine contract"}
+{"file": ".trellis/spec/architecture/system-boundaries.md", "reason": "provider 与 feature data 归属"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "adapter/provider 文件归属"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "保持 storage-only 边界与 local-first contract"}
+{"file": "lib/features/sync/data/sync_storage_adapter.dart", "reason": "统一 adapter contract"}
+{"file": "lib/features/sync/data/webdav_storage_adapter.dart", "reason": "WebDAV adapter 结构与错误边界样板"}
+{"file": "lib/features/sync/data/providers.dart", "reason": "sync feature provider 出口样板"}
+{"file": ".trellis/tasks/04-22-phase3-wp4-s3-adapter/prd.md", "reason": "WP4 总体目标与 acceptance criteria"}
+{"file": ".trellis/tasks/04-22-phase3-wp4-s3-adapter/research.md", "reason": "S3 配置、分页与 provider 落点研究"}

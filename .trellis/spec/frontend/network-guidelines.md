@@ -475,6 +475,162 @@ final xml = response.data ?? '';
 - auth and typed error mapping are centralized
 - adapter can stay storage-only
 
+## Scenario: S3-compatible transport client for device-sync adapters
+
+### 1. Scope / Trigger
+
+- Trigger: phase 3 adds a reusable S3-compatible storage adapter under
+  `features/sync/data/`, while transport details stay in
+  `shared/network/s3_api_client.dart`.
+- This is cross-layer because the same raw request contract flows through
+  `S3ApiClient` → `S3StorageAdapter` → `SyncStorageAdapter` consumers.
+
+### 2. Signatures
+
+```dart
+enum S3AddressingStyle { pathStyle, virtualHostedStyle }
+
+class S3Credentials {
+  final String accessKey;
+  final String secretKey;
+  final String? sessionToken;
+}
+
+class S3RequestConfig {
+  final Uri endpoint;
+  final String region;
+  final String bucket;
+  final String rootPrefix;
+  final S3AddressingStyle addressingStyle;
+}
+
+sealed class S3ApiException implements Exception {
+  final String message;
+}
+
+final class S3NetworkError extends S3ApiException { ... }
+final class S3UnauthorizedError extends S3ApiException { ... }
+final class S3NotFoundError extends S3ApiException { ... }
+final class S3ServerError extends S3ApiException { ... }
+final class S3UnknownError extends S3ApiException { ... }
+
+class S3ApiClient {
+  Future<Response<String>> listObjectsV2({
+    required String prefix,
+    String? continuationToken,
+  });
+
+  Future<Response<String>> getText(String key);
+  Future<Response<String>> putText(
+    String key, {
+    required String content,
+    String contentType = 'application/json; charset=utf-8',
+  });
+  Future<Response<String>> deleteObject(String key);
+}
+```
+
+### 3. Contracts
+
+- `S3ApiClient`
+  - lives in `shared/network/`
+  - owns request signing, host/path construction, and raw HTTP calls
+  - returns raw `Response<String>` only; no repository imports and no merge logic
+- auth / signing
+  - request auth uses Signature Version 4 for service `s3`
+  - credentials come from an injected provider or config object, not widgets
+  - temporary credentials include the session token header when present
+- object API boundary
+  - current phase uses only:
+    - `ListObjectsV2`
+    - `GetObject`
+    - `PutObject`
+    - `DeleteObject`
+  - current phase does not include bucket create/delete, multipart upload, or
+    presigned URL flows
+- addressing and key layout
+  - request builder supports both `pathStyle` and `virtualHostedStyle`
+  - bucket, root prefix, and object key composition stay inside client/adapter code
+  - adapter/object layout stays under the sync contract:
+    - `entities/<entityType>/<entityId>.json`
+    - `tombstones/<entityType>/<entityId>.json`
+- response handling
+  - `ListObjectsV2` XML is parsed defensively because a `200 OK` response can still
+    contain XML that callers must validate
+  - pagination stays hidden from `SyncStorageAdapter` consumers; repeated
+    `ContinuationToken` calls are an adapter/client detail
+
+### 4. Validation & Error Matrix
+
+| Request / State | Expected Result | Error Surface |
+|-----------------|-----------------|---------------|
+| `listObjectsV2(prefix: 'entities/')` | raw XML response for one page | `S3ApiException` subclasses |
+| `listObjectsV2(...)` with `IsTruncated=true` | caller continues with `NextContinuationToken` | no partial first-page result leak |
+| `getText('entities/mediaItem/a.json')` | raw text body | `S3ApiException` subclasses |
+| `putText('entities/mediaItem/a.json', ...)` | signed object write | `S3ApiException` subclasses |
+| `deleteObject('entities/mediaItem/a.json')` | signed object delete | `S3ApiException` subclasses |
+| missing session token | request is sent without `x-amz-security-token` | no client-side failure |
+| `401 / 403` or signature rejection | typed auth failure | `S3UnauthorizedError` |
+| `404` / `NoSuchKey` | typed missing-resource failure | `S3NotFoundError` |
+| `429` / `5xx` | typed server failure | `S3ServerError` |
+| timeout / socket failure | typed transport failure | `S3NetworkError` |
+
+### 5. Good / Base / Bad Cases
+
+- Good:
+  - `listObjectsV2(prefix: 'record-anywhere-sync/entities/')`
+  - `putText('entities/mediaItem/a.json', content: jsonText)`
+  - same config can switch between `pathStyle` and `virtualHostedStyle`
+- Base:
+  - `getText('entities/mediaItem/a.json')`
+  - one empty prefix page returns an empty record list instead of an exception
+- Bad:
+  - widget/service building canonical request strings directly
+  - adapter importing an S3 SDK model type into engine-facing code
+  - storing bucket/endpoint/signing rules in pages instead of config/client code
+
+### 6. Tests Required
+
+- client / adapter tests:
+  - `list/read/write/delete/tombstone` flow against mocked transport
+  - truncated list response follows `NextContinuationToken`
+  - `401 / 403` maps to auth failure
+  - `404` maps to not-found failure
+  - `5xx` maps to server failure
+  - both `pathStyle` and `virtualHostedStyle` request builders produce the expected
+    host/path layout
+- mock assertion points:
+  - signed request tests assert the final host/path/query shape, not just the HTTP method
+  - text-body reads stay plain text so tests do not accidentally JSON-encode the payload
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```dart
+final response = await dio.get(
+  'https://example-s3.local/my-bucket/entities/mediaItem/a.json',
+  options: Options(
+    headers: {'Authorization': 'manual-signature'},
+  ),
+);
+```
+
+- transport leaks outside `shared/network/`
+- signing logic is copy-pasted and untestable
+- bucket/path rules drift away from adapter config
+
+#### Correct
+
+```dart
+final response = await s3ApiClient.getText('entities/mediaItem/a.json');
+final body = response.data ?? '';
+```
+
+- transport stays in the client layer
+- signing and typed error mapping are centralized
+- adapter can stay storage-only and engine-facing
+
 - exposes transport objects
 - loses DTO contract for merge/import
 - lets invalid username and filter rules leak outward

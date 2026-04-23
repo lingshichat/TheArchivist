@@ -1,13 +1,16 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/data/providers.dart';
+import '../../../shared/network/s3_api_client.dart';
 import '../../../shared/network/webdav_api_client.dart';
+import 's3_storage_adapter.dart';
 import 'sync_codec.dart';
 import 'sync_engine.dart';
 import 'sync_queue.dart';
 import 'sync_status.dart';
 import 'webdav_storage_adapter.dart';
 
+export 's3_storage_adapter.dart';
 export 'sync_codec.dart';
 export 'sync_engine.dart';
 export 'sync_exception.dart';
@@ -79,5 +82,33 @@ final webDavStorageAdapterProvider =
       return WebDavStorageAdapter(
         client: ref.watch(webDavApiClientProvider(config)),
         rootPath: config.rootPath,
+      );
+    });
+
+final s3ApiClientProvider =
+    Provider.family<S3ApiClient, S3StorageAdapterConfig>((ref, config) {
+      return S3ApiClient(
+        requestConfig: S3RequestConfig(
+          endpoint: config.endpoint,
+          region: config.region,
+          bucket: config.bucket,
+          rootPrefix: config.rootPrefix,
+          addressingStyle: config.addressingStyle,
+        ),
+        credentialsProvider: () async {
+          return S3Credentials(
+            accessKey: config.accessKey,
+            secretKey: config.secretKey,
+            sessionToken: config.sessionToken,
+          );
+        },
+      );
+    });
+
+final s3StorageAdapterProvider =
+    Provider.family<S3StorageAdapter, S3StorageAdapterConfig>((ref, config) {
+      return S3StorageAdapter(
+        client: ref.watch(s3ApiClientProvider(config)),
+        rootPrefix: config.rootPrefix,
       );
     });

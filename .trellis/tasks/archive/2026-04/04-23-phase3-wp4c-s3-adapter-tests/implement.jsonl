@@ -1,0 +1,9 @@
+{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend development guide"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "测试需要覆盖 typed error 映射与批次失败约束"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "测试面与断言粒度要求"}
+{"file": ".trellis/spec/frontend/network-guidelines.md", "reason": "S3 / WebDAV transport mock 约束"}
+{"file": "test/features/sync/data/webdav_storage_adapter_test.dart", "reason": "WebDAV adapter 测试样板"}
+{"file": "test/features/sync/data/sync_engine_test.dart", "reason": "in-memory adapter / sync contract 样板"}
+{"file": ".trellis/tasks/04-22-phase3-wp4-s3-adapter/prd.md", "reason": "WP4 测试 acceptance criteria"}
+{"file": ".trellis/tasks/04-22-phase3-wp4-s3-adapter/research.md", "reason": "S3 测试关注点：分页、签名、幂等、错误映射"}

@@ -1,0 +1,9 @@
+{"file": ".opencode/commands/trellis/finish-work.md", "reason": "Finish work checklist"}
+{"file": ".opencode/commands/trellis/check.md", "reason": "Code quality check spec"}
+{"file": ".trellis/spec/architecture/local-first-sync-contract.md", "reason": "sync adapter、S3 config、分页与远端对象布局 contract"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "transport error 需要映射成 typed sync/domain error"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "shared/network 文件归属"}
+{"file": ".trellis/spec/frontend/network-guidelines.md", "reason": "WebDAV transport 样板与 S3 transport 场景约束"}
+{"file": "lib/shared/network/webdav_api_client.dart", "reason": "Dio client、header 注入与 typed exception 样板"}
+{"file": ".trellis/tasks/04-22-phase3-wp4-s3-adapter/prd.md", "reason": "WP4 总体目标与 acceptance criteria"}
+{"file": ".trellis/tasks/04-22-phase3-wp4-s3-adapter/research.md", "reason": "S3 选型、SigV4、分页与寻址研究"}

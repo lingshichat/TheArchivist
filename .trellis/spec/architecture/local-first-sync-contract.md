@@ -158,6 +158,19 @@ class SyncEngine {
     int batchSize = 100,
   });
 }
+
+enum S3AddressingStyle { pathStyle, virtualHostedStyle }
+
+class S3StorageAdapterConfig {
+  final Uri endpoint;
+  final String region;
+  final String bucket;
+  final String rootPrefix;
+  final String accessKey;
+  final String secretKey;
+  final String? sessionToken;
+  final S3AddressingStyle addressingStyle;
+}
 ```
 
 ### 3. Contracts
@@ -279,6 +292,17 @@ class SyncEngine {
   - no repository imports
   - no field-level merge
   - no UI state writes
+- current S3-compatible adapter boundary is:
+  - object APIs only: `ListObjectsV2`, `GetObject`, `PutObject`, `DeleteObject`
+  - request signing uses SigV4 for service `s3`
+  - adapter config carries explicit `endpoint`, `region`, `bucket`, `rootPrefix`,
+    credentials, and `addressingStyle`
+  - widgets / settings forms may collect these values later, but the adapter owns
+    how they become host/path/query details
+  - `listRecords()` hides remote pagination and must continue until the full
+    result set is collected
+  - current phase does not include bucket create/delete, multipart upload, or
+    presigned URL workflows
 - current remote object layout is:
   - entity record -> `entities/<entityType>/<entityId>.json`
   - tombstone -> `tombstones/<entityType>/<entityId>.json`
@@ -310,6 +334,7 @@ class SyncEngine {
 | Device sync pull sees older remote row | keep local row and count `localWins` or `skip` | stale remote row overwrites newer local state |
 | Device sync pull sees tombstone | apply repository soft delete / detached state | engine hard-deletes runtime rows |
 | WebDAV / S3 adapter is added later | adapter only implements storage contract | adapter invents a second engine-facing interface |
+| S3 list response is truncated | adapter continues with continuation token(s) | adapter returns only the first 1000 objects |
 
 ### 5. Good / Base / Bad Cases
 
