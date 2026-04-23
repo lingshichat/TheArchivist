@@ -46,7 +46,6 @@
   "pr_url": null,
   "subtasks": [],
   "children": [
-    "04-22-phase3-wp3-webdav-adapter",
     "04-22-phase3-wp4-s3-adapter",
     "04-22-phase3-wp5-conflict-status"
   ],
