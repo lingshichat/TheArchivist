@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 6
-- **Last Active**: 2026-04-21
+- **Total Sessions**: 7
+- **Last Active**: 2026-04-23
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~301 | Active |
+| `journal-1.md` | ~338 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 7 | 2026-04-23 | 阶段3-WP1 收口并切换到 WP2 | - | `main` |
 | 6 | 2026-04-21 | 完成阶段2 Bangumi 搜索、快捷添加与同步 | `5924f4a`, `208004e`, `84e2905`, `578cb2a` | `main` |
 | 5 | 2026-04-21 | 完成 WP3 Bangumi 绑定与双向同步 | `84e2905`, `0316973` | `main` |
 | 4 | 2026-04-21 | 完成 WP2 Bangumi 搜索 UI 与快捷添加 | `208004e`, `3b539c2` | `main` |

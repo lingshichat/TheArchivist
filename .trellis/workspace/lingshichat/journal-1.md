@@ -299,3 +299,40 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 7: 阶段3-WP1 收口并切换到 WP2
+
+**Date**: 2026-04-23
+**Task**: 阶段3-WP1 收口并切换到 WP2
+**Branch**: `main`
+
+### Summary
+
+收口 WP1，补规范，归档任务并切到 WP2。
+
+### Main Changes
+
+- 完成阶段3-WP1：同步对象模型、本地待同步队列、最小同步状态与设备身份持久化。
+- 补齐本地变更扫描与批量入队入口。
+- 验证通过：flutter analyze lib test、flutter test、定向同步单测。
+- 更新 local-first-sync-contract 规范，固化队列、脏扫描与最小状态合同。
+- 已归档 WP1，当前任务切到 WP2。
+- 本次 journal 不绑定代码 commit；代码与 spec 仍留在工作区。
+
+
+### Git Commits
+
+(No commits - planning session)
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

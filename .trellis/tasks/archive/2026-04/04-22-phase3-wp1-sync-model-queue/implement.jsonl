@@ -1,0 +1,10 @@
+{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend development guide"}
+{"file": ".trellis/spec/architecture/local-first-sync-contract.md", "reason": "WP1 needs sync ownership and local-first rules"}
+{"file": ".trellis/spec/architecture/system-boundaries.md", "reason": "WP1 adds sync feature module and providers"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "WP1 touches device identity persistence and sync-capable data contracts"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "WP1 adds non-UI sync files"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "WP1 defines sync queue and state error surfaces"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "WP1 changes repositories and providers"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "WP1 spans data, feature, provider and status layers"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "WP1 should avoid duplicating sync stamping and queue logic"}
