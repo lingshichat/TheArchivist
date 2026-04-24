@@ -402,3 +402,36 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 10: Phase3 WP5 conflict status
+
+**Date**: 2026-04-24
+**Task**: Phase3 WP5 conflict status
+**Branch**: `main`
+
+### Summary
+
+Added persisted text conflict copies, minimal sync status display, regression coverage, and Drift raw SQL guidance.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `160cb17` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
