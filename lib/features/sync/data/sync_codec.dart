@@ -8,10 +8,12 @@ import '../../../shared/data/repositories/shelf_repository.dart';
 import '../../../shared/data/repositories/tag_repository.dart';
 import '../../../shared/data/repositories/user_entry_repository.dart';
 import '../../../shared/utils/step_logger.dart';
+import 'sync_conflict.dart';
 import 'sync_exception.dart';
 import 'sync_merge_policy.dart';
 import 'sync_models.dart';
 import 'sync_queue.dart';
+import 'sync_status.dart';
 import 'sync_storage_adapter.dart';
 
 class SyncApplyOutcome {
@@ -42,6 +44,8 @@ class SyncCodec {
     required TagRepository tagRepository,
     required ShelfRepository shelfRepository,
     required ActivityLogRepository activityLogRepository,
+    SyncConflictRepository? conflictRepository,
+    SyncStatusController? statusController,
     SyncMergePolicy mergePolicy = const SyncMergePolicy(),
     StepLogger? logger,
   }) : _database = database,
@@ -51,6 +55,8 @@ class SyncCodec {
        _tagRepository = tagRepository,
        _shelfRepository = shelfRepository,
        _activityLogRepository = activityLogRepository,
+       _conflictRepository = conflictRepository,
+       _statusController = statusController,
        _mergePolicy = mergePolicy,
        _logger = logger ?? const StepLogger('SyncCodec');
 
@@ -61,6 +67,8 @@ class SyncCodec {
   final TagRepository _tagRepository;
   final ShelfRepository _shelfRepository;
   final ActivityLogRepository _activityLogRepository;
+  final SyncConflictRepository? _conflictRepository;
+  final SyncStatusController? _statusController;
   final SyncMergePolicy _mergePolicy;
   final StepLogger _logger;
 
@@ -183,7 +191,10 @@ class SyncCodec {
     );
 
     if (decision == SyncMergeDecision.applyRemote) {
+      await _recordTextConflictsIfNeeded(envelope, localState);
       await _applyEnvelope(envelope);
+    } else {
+      await _recordTextConflictsIfNeeded(envelope, localState);
     }
 
     _logger.info('远端同步快照应用完成。');
@@ -730,6 +741,87 @@ class SyncCodec {
           lastSyncedAt: envelope.updatedAt,
         );
     }
+  }
+
+  Future<void> _recordTextConflictsIfNeeded(
+    SyncEntityEnvelope envelope,
+    SyncLocalState? localState,
+  ) async {
+    final conflictRepository = _conflictRepository;
+    if (conflictRepository == null ||
+        envelope.entityType != SyncEntityType.userEntry ||
+        localState == null ||
+        localState.deviceId == envelope.deviceId) {
+      return;
+    }
+
+    final localEntry = await _database.userEntryDao.getByMediaItemId(
+      envelope.entityId,
+    );
+    if (localEntry == null || !_isIndependentTextChange(localEntry, envelope)) {
+      return;
+    }
+
+    final hasNotesConflict = await _recordTextConflict(
+      conflictRepository: conflictRepository,
+      envelope: envelope,
+      localEntry: localEntry,
+      fieldName: 'notes',
+    );
+    final hasReviewConflict = await _recordTextConflict(
+      conflictRepository: conflictRepository,
+      envelope: envelope,
+      localEntry: localEntry,
+      fieldName: 'review',
+    );
+
+    if (hasNotesConflict || hasReviewConflict) {
+      await _statusController?.markHasConflicts();
+    }
+  }
+
+  bool _isIndependentTextChange(
+    UserEntry localEntry,
+    SyncEntityEnvelope envelope,
+  ) {
+    final lastSyncedAt = localEntry.lastSyncedAt;
+    if (lastSyncedAt == null) {
+      return true;
+    }
+
+    return localEntry.updatedAt.isAfter(lastSyncedAt) &&
+        envelope.updatedAt.isAfter(lastSyncedAt);
+  }
+
+  Future<bool> _recordTextConflict({
+    required SyncConflictRepository conflictRepository,
+    required SyncEntityEnvelope envelope,
+    required UserEntry localEntry,
+    required String fieldName,
+  }) async {
+    final localValue = switch (fieldName) {
+      'notes' => localEntry.notes,
+      'review' => localEntry.review,
+      _ => throw SyncFormatException('Unsupported text conflict field.'),
+    };
+    final remoteValue = _optionalString(envelope.payload, fieldName);
+
+    if (localValue == remoteValue) {
+      return false;
+    }
+
+    await conflictRepository.recordTextConflict(
+      entityType: envelope.entityType,
+      entityId: envelope.entityId,
+      fieldName: fieldName,
+      localValue: localValue,
+      remoteValue: remoteValue,
+      localUpdatedAt: localEntry.updatedAt,
+      remoteUpdatedAt: envelope.updatedAt,
+      localDeviceId: localEntry.deviceId,
+      remoteDeviceId: envelope.deviceId,
+    );
+    return true;
   }
 
   String _composeLinkId(String left, String right) => '$left::$right';

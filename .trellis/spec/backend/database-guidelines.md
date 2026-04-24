@@ -102,6 +102,17 @@ UI -> Riverpod providers -> repositories -> DAOs -> Drift tables
 
 ---
 
+## Raw Drift SQL
+
+- `Variable<T>` uses a non-nullable type argument even when the value may be
+  null. For nullable text bindings, use `Variable<String>(maybeNullValue)`,
+  not `Variable<String?>(maybeNullValue)`.
+- Keep the SQL placeholder count and `variables` list count aligned in the same
+  edit. Nullable columns still need an explicit variable slot when the value is
+  null.
+
+---
+
 ## WP4 Local Record Contracts
 
 - `watchLibrary` accepts `types` so one tab can represent multiple media types

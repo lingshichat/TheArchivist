@@ -93,6 +93,17 @@ class SyncStatusRepository {
     _logger.info('最小同步状态快照写入完成。');
   }
 
+  Future<void> setHasConflicts(bool hasConflicts) async {
+    final current = await readStatus();
+    await setStatus(
+      isRunning: current.isRunning,
+      pendingCount: current.pendingCount,
+      lastErrorSummary: current.lastErrorSummary,
+      lastCompletedAt: current.lastCompletedAt,
+      hasConflicts: hasConflicts,
+    );
+  }
+
   SyncStatusState _mapOrDefaultState(SyncStatusEntry? row) {
     if (row == null) {
       return const SyncStatusState();
@@ -131,9 +142,13 @@ class SyncStatusController extends StateNotifier<SyncStatusState> {
   final SyncStatusRepository _statusRepository;
   final SyncQueueRepository _queueRepository;
   final StepLogger _logger;
+  bool _hasLocalMutation = false;
 
   Future<void> _initialize() async {
     final currentState = await _statusRepository.readStatus();
+    if (_hasLocalMutation) {
+      return;
+    }
     state = currentState;
   }
 
@@ -149,6 +164,7 @@ class SyncStatusController extends StateNotifier<SyncStatusState> {
     _logger.info('开始刷新同步待处理数量...');
 
     // 1.1 读取队列待处理条目数量并回写状态
+    _hasLocalMutation = true;
     final pendingCount = await _queueRepository.watchPendingCount().first;
     state = state.copyWith(pendingCount: pendingCount);
     await _statusRepository.setStatus(
@@ -174,6 +190,7 @@ class SyncStatusController extends StateNotifier<SyncStatusState> {
     _logger.info('开始标记同步开始...');
 
     // 2.1 读取最新待处理数量并写入运行中状态
+    _hasLocalMutation = true;
     final pendingCount = await _queueRepository.watchPendingCount().first;
     state = state.copyWith(
       isRunning: true,
@@ -202,6 +219,7 @@ class SyncStatusController extends StateNotifier<SyncStatusState> {
     _logger.info('开始标记同步结束...');
 
     // 3.1 读取最新待处理数量并写入完成快照
+    _hasLocalMutation = true;
     final pendingCount = await _queueRepository.watchPendingCount().first;
     final completedAt = SyncStampDecorator.now();
     state = state.copyWith(
@@ -219,6 +237,30 @@ class SyncStatusController extends StateNotifier<SyncStatusState> {
     );
 
     _logger.info('同步结束标记完成。');
+  }
+
+  Future<void> markHasConflicts() async {
+    /*
+     * ========================================================================
+     * Step 4: Mark pending sync conflicts
+     * ========================================================================
+     * Goal:
+     *   1) Let sync codec update the minimal status when text conflicts appear.
+     *   2) Keep markCompleted from overwriting hasConflicts back to false.
+     */
+    _logger.info('开始标记待处理同步冲突...');
+
+    _hasLocalMutation = true;
+    state = state.copyWith(hasConflicts: true);
+    await _statusRepository.setStatus(
+      isRunning: state.isRunning,
+      pendingCount: state.pendingCount,
+      lastErrorSummary: state.lastErrorSummary,
+      lastCompletedAt: state.lastCompletedAt,
+      hasConflicts: true,
+    );
+
+    _logger.info('待处理同步冲突标记完成。');
   }
 
   String? _normalizeOptional(String? value) {

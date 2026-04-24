@@ -1,0 +1,7 @@
+{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend development guide"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend development guide"}
+{"file": ".trellis/spec/architecture/local-first-sync-contract.md", "reason": "sync conflict policy and minimal status contract"}
+{"file": ".trellis/spec/architecture/system-boundaries.md", "reason": "provider and layer ownership"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "Drift tables/repositories/sync-capable fields"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "settings page provider consumption"}

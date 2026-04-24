@@ -5,6 +5,7 @@ import '../../../shared/network/s3_api_client.dart';
 import '../../../shared/network/webdav_api_client.dart';
 import 's3_storage_adapter.dart';
 import 'sync_codec.dart';
+import 'sync_conflict.dart';
 import 'sync_engine.dart';
 import 'sync_queue.dart';
 import 'sync_status.dart';
@@ -12,6 +13,7 @@ import 'webdav_storage_adapter.dart';
 
 export 's3_storage_adapter.dart';
 export 'sync_codec.dart';
+export 'sync_conflict.dart';
 export 'sync_engine.dart';
 export 'sync_exception.dart';
 export 'sync_merge_policy.dart';
@@ -33,6 +35,10 @@ final syncStatusRepositoryProvider = Provider<SyncStatusRepository>((ref) {
   return SyncStatusRepository(database: ref.watch(appDatabaseProvider));
 });
 
+final syncConflictRepositoryProvider = Provider<SyncConflictRepository>((ref) {
+  return SyncConflictRepository(database: ref.watch(appDatabaseProvider));
+});
+
 final syncCodecProvider = Provider<SyncCodec>((ref) {
   return SyncCodec(
     database: ref.watch(appDatabaseProvider),
@@ -42,6 +48,8 @@ final syncCodecProvider = Provider<SyncCodec>((ref) {
     tagRepository: ref.watch(tagRepositoryProvider),
     shelfRepository: ref.watch(shelfRepositoryProvider),
     activityLogRepository: ref.watch(activityLogRepositoryProvider),
+    conflictRepository: ref.watch(syncConflictRepositoryProvider),
+    statusController: ref.read(syncStatusProvider.notifier),
   );
 });
 

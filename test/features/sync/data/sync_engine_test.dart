@@ -2,6 +2,7 @@ import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:record_anywhere/features/sync/data/sync_codec.dart';
+import 'package:record_anywhere/features/sync/data/sync_conflict.dart';
 import 'package:record_anywhere/features/sync/data/sync_engine.dart';
 import 'package:record_anywhere/features/sync/data/sync_exception.dart';
 import 'package:record_anywhere/features/sync/data/sync_merge_policy.dart';
@@ -138,6 +139,94 @@ void main() {
     expect(outcome.decision, SyncMergeDecision.localWins);
   });
 
+  test(
+    'text conflicts keep copies while scalar fields follow last modified wins',
+    () async {
+      final mediaItemId = await source.mediaRepository.createItem(
+        mediaType: MediaType.tv,
+        title: 'Text Conflict Case',
+      );
+      await source.setUserEntryFields(
+        mediaItemId,
+        notes: 'base notes',
+        review: 'base review',
+        score: 6,
+      );
+
+      await source.engine.runSync(adapter: adapter);
+      await target.engine.runSync(adapter: adapter);
+
+      final sourceBase = await source.userEntryRepository.getByMediaItemId(
+        mediaItemId,
+      );
+      final targetBase = await target.userEntryRepository.getByMediaItemId(
+        mediaItemId,
+      );
+      await target.setUserEntryFields(
+        mediaItemId,
+        notes: 'local notes',
+        review: 'local review',
+        score: 9,
+        updatedAt: targetBase!.updatedAt.add(const Duration(minutes: 5)),
+      );
+      await source.setUserEntryFields(
+        mediaItemId,
+        notes: 'remote notes',
+        review: 'remote review',
+        score: 8,
+        updatedAt: sourceBase!.updatedAt.add(const Duration(minutes: 10)),
+      );
+
+      final sourceEntry = await source.userEntryRepository.getByMediaItemId(
+        mediaItemId,
+      );
+      final remoteEnvelope = await source.codec.encodePendingItem(
+        SyncQueueItem(
+          id: 'remote-user-entry-conflict',
+          entityType: SyncEntityType.userEntry,
+          entityId: sourceEntry!.id,
+          operation: SyncOperationType.upsert,
+          createdAt: sourceEntry.updatedAt,
+          updatedAt: sourceEntry.updatedAt,
+          retryCount: 0,
+          deviceId: 'device-source',
+        ),
+      );
+      await target.codec.applyRemoteEnvelope(remoteEnvelope);
+
+      final mergedEntry = await target.userEntryRepository.getByMediaItemId(
+        mediaItemId,
+      );
+      final conflicts = await target.syncConflictRepository.listPending();
+      final targetStatus = await target.syncStatusRepository.readStatus();
+
+      expect(mergedEntry?.notes, 'remote notes');
+      expect(mergedEntry?.review, 'remote review');
+      expect(mergedEntry?.score, 8);
+      expect(targetStatus.hasConflicts, isTrue);
+      expect(
+        conflicts.map((item) => item.fieldName),
+        containsAll(['notes', 'review']),
+      );
+      expect(
+        conflicts.singleWhere((item) => item.fieldName == 'notes').localValue,
+        'local notes',
+      );
+      expect(
+        conflicts.singleWhere((item) => item.fieldName == 'notes').remoteValue,
+        'remote notes',
+      );
+      expect(
+        conflicts.singleWhere((item) => item.fieldName == 'review').localValue,
+        'local review',
+      );
+      expect(
+        conflicts.singleWhere((item) => item.fieldName == 'review').remoteValue,
+        'remote review',
+      );
+    },
+  );
+
   test('failed push keeps local data and queue retry state', () async {
     adapter.failWrites = true;
     final mediaItemId = await source.mediaRepository.createItem(
@@ -192,6 +281,7 @@ class _SyncHarness {
       deviceIdentityService: deviceIdentityService,
     );
     syncStatusRepository = SyncStatusRepository(database: database);
+    syncConflictRepository = SyncConflictRepository(database: database);
     syncStatusController = SyncStatusController(
       statusRepository: syncStatusRepository,
       queueRepository: syncQueueRepository,
@@ -204,6 +294,8 @@ class _SyncHarness {
       tagRepository: tagRepository,
       shelfRepository: shelfRepository,
       activityLogRepository: activityLogRepository,
+      conflictRepository: syncConflictRepository,
+      statusController: syncStatusController,
     );
     engine = SyncEngine(
       queueRepository: syncQueueRepository,
@@ -222,6 +314,7 @@ class _SyncHarness {
   late final ActivityLogRepository activityLogRepository;
   late final SyncQueueRepository syncQueueRepository;
   late final SyncStatusRepository syncStatusRepository;
+  late final SyncConflictRepository syncConflictRepository;
   late final SyncStatusController syncStatusController;
   late final SyncCodec codec;
   late final SyncEngine engine;
@@ -273,6 +366,38 @@ class _SyncHarness {
         score: Value(existing.score),
         review: Value(existing.review),
         notes: Value(existing.notes),
+        favorite: Value(existing.favorite),
+        reconsumeCount: Value(existing.reconsumeCount),
+        startedAt: Value(existing.startedAt),
+        finishedAt: Value(existing.finishedAt),
+        createdAt: existing.createdAt,
+        updatedAt: nextUpdatedAt,
+        deletedAt: Value(existing.deletedAt),
+        syncVersion: Value(existing.syncVersion),
+        deviceId: Value(existing.deviceId),
+        lastSyncedAt: Value(existing.lastSyncedAt),
+      ),
+    );
+  }
+
+  Future<void> setUserEntryFields(
+    String mediaItemId, {
+    String? notes,
+    String? review,
+    int? score,
+    DateTime? updatedAt,
+  }) async {
+    final existing = await database.userEntryDao.getByMediaItemId(mediaItemId);
+    final nextUpdatedAt = updatedAt ?? existing!.updatedAt;
+
+    await database.userEntryDao.upsert(
+      UserEntriesCompanion.insert(
+        id: existing!.id,
+        mediaItemId: existing.mediaItemId,
+        status: Value(existing.status),
+        score: Value(score ?? existing.score),
+        review: Value(review ?? existing.review),
+        notes: Value(notes ?? existing.notes),
         favorite: Value(existing.favorite),
         reconsumeCount: Value(existing.reconsumeCount),
         startedAt: Value(existing.startedAt),

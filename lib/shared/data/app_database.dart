@@ -59,12 +59,13 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (Migrator m) async {
       await m.createAll();
+      await _createSyncConflictTable();
       await customSelect('PRAGMA foreign_keys = ON').get();
       await customSelect('PRAGMA journal_mode = WAL').get();
     },
@@ -73,8 +74,31 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(syncQueueEntries);
         await m.createTable(syncStatusEntries);
       }
+      if (from < 3) {
+        await _createSyncConflictTable();
+      }
     },
   );
+
+  Future<void> _createSyncConflictTable() {
+    return customStatement('''
+      CREATE TABLE IF NOT EXISTS sync_conflict_entries (
+        id TEXT NOT NULL PRIMARY KEY,
+        entity_type TEXT NOT NULL,
+        entity_id TEXT NOT NULL,
+        field_name TEXT NOT NULL,
+        local_value TEXT NULL,
+        remote_value TEXT NULL,
+        local_updated_at TEXT NOT NULL,
+        remote_updated_at TEXT NOT NULL,
+        local_device_id TEXT NULL,
+        remote_device_id TEXT NULL,
+        detected_at TEXT NOT NULL,
+        resolved INTEGER NOT NULL DEFAULT 0,
+        resolved_at TEXT NULL
+      )
+    ''');
+  }
 }
 
 QueryExecutor _openConnection() {

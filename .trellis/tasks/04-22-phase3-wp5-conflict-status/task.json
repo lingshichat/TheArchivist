@@ -4,7 +4,7 @@
   "title": "阶段3-WP5：冲突副本与最小状态展示",
   "description": "文本冲突副本、同步摘要状态、设置页最小展示与回归测试",
   "status": "planning",
-  "dev_type": null,
+  "dev_type": "fullstack",
   "scope": null,
   "package": null,
   "priority": "P2",

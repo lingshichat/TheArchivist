@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../sync/data/providers.dart';
 import '../../../shared/theme/app_theme.dart';
 import 'bangumi_connection_section.dart';
 
@@ -392,56 +394,187 @@ class _LocalDataSection extends StatelessWidget {
   }
 }
 
-class _SyncSection extends StatelessWidget {
+class _SyncSection extends ConsumerWidget {
   const _SyncSection();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final ThemeData theme = Theme.of(context);
+    final syncStatus = ref.watch(syncStatusProvider);
+    final statusColor = _statusColor(syncStatus);
 
-    return Opacity(
-      opacity: 0.6,
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(AppRadii.container),
+        border: Border.all(
+          color: AppColors.outlineVariant.withValues(alpha: 0.12),
+        ),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(
-                Icons.cloud_sync_outlined,
-                size: 18,
-                color: AppColors.subtleText,
-              ),
+              Icon(Icons.cloud_sync_outlined, size: 18, color: statusColor),
               const SizedBox(width: AppSpacing.sm),
               Text('Cloud Sync', style: AppTextStyles.panelTitle(theme)),
               const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.sm,
-                  vertical: AppSpacing.xs,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceContainer,
-                  borderRadius: BorderRadius.circular(AppRadii.card),
-                ),
-                child: Text(
-                  'Not Configured',
-                  style: theme.textTheme.labelMedium,
-                ),
-              ),
+              _SyncBadge(label: _statusLabel(syncStatus), color: statusColor),
             ],
           ),
           const SizedBox(height: AppSpacing.md),
           Text(
-            'Synchronize your curated library across multiple Windows workstations and mobile companion apps. Requires an Archivist Account.',
+            'Local-first device sync stores only a minimal health snapshot in this phase.',
             style: theme.textTheme.bodySmall?.copyWith(height: 1.7),
           ),
           const SizedBox(height: AppSpacing.lg),
+          _SyncFactRow(
+            label: 'CURRENT STATE',
+            value: _statusDescription(syncStatus),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          _SyncFactRow(
+            label: 'LAST SYNC',
+            value: _formatTimestamp(syncStatus.lastCompletedAt),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          _SyncFactRow(
+            label: 'LAST FAILURE',
+            value: syncStatus.lastErrorSummary ?? 'None recorded',
+            isWarning: syncStatus.lastErrorSummary != null,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          _SyncFactRow(
+            label: 'CONFLICTS',
+            value: syncStatus.hasConflicts
+                ? 'Pending text conflict copies'
+                : 'No pending conflicts',
+            isWarning: syncStatus.hasConflicts,
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _statusLabel(SyncStatusState state) {
+    if (state.isRunning) {
+      return 'Syncing';
+    }
+    if (state.hasConflicts) {
+      return 'Conflict';
+    }
+    if (state.lastErrorSummary != null) {
+      return 'Failed';
+    }
+    if (state.lastCompletedAt != null) {
+      return 'Synced';
+    }
+    return 'Ready';
+  }
+
+  Color _statusColor(SyncStatusState state) {
+    if (state.hasConflicts || state.lastErrorSummary != null) {
+      return AppColors.error;
+    }
+    if (state.isRunning) {
+      return AppColors.accent;
+    }
+    return AppColors.subtleText;
+  }
+
+  String _statusDescription(SyncStatusState state) {
+    if (state.isRunning) {
+      return 'Sync is running with ${state.pendingCount} pending item(s).';
+    }
+    if (state.hasConflicts) {
+      return 'Sync is paused for user review of text conflicts.';
+    }
+    if (state.lastErrorSummary != null) {
+      return 'Last sync finished with an error.';
+    }
+    if (state.pendingCount > 0) {
+      return '${state.pendingCount} pending item(s) waiting for sync.';
+    }
+    return 'Ready for the next sync run.';
+  }
+
+  String _formatTimestamp(DateTime? value) {
+    if (value == null) {
+      return 'Never synced';
+    }
+
+    String twoDigits(int input) => input.toString().padLeft(2, '0');
+    final local = value.toLocal();
+    final date =
+        '${local.year}-${twoDigits(local.month)}-${twoDigits(local.day)}';
+    final time = '${twoDigits(local.hour)}:${twoDigits(local.minute)}';
+    return '$date $time';
+  }
+}
+
+class _SyncBadge extends StatelessWidget {
+  const _SyncBadge({required this.label, required this.color});
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(AppRadii.card),
+      ),
+      child: Text(
+        label.toUpperCase(),
+        style: theme.textTheme.labelMedium?.copyWith(color: color),
+      ),
+    );
+  }
+}
+
+class _SyncFactRow extends StatelessWidget {
+  const _SyncFactRow({
+    required this.label,
+    required this.value,
+    this.isWarning = false,
+  });
+
+  final String label;
+  final String value;
+  final bool isWarning;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final valueColor = isWarning ? AppColors.error : AppColors.onSurface;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(AppRadii.container),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: theme.textTheme.labelSmall),
+          const SizedBox(height: AppSpacing.xs),
           Text(
-            'Learn More about Syncing',
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: AppColors.accent,
-              decoration: TextDecoration.underline,
-              decorationColor: AppColors.accent.withValues(alpha: 0.3),
+            value,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: valueColor,
+              height: 1.55,
             ),
           ),
         ],
