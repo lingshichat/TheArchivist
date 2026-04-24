@@ -45,9 +45,7 @@
   "commit": null,
   "pr_url": null,
   "subtasks": [],
-  "children": [
-    "04-22-phase3-wp5-conflict-status"
-  ],
+  "children": [],
   "parent": "04-18-flutter-media-tracker",
   "relatedFiles": [],
   "notes": "",
