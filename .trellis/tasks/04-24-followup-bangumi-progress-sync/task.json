@@ -1,8 +1,8 @@
 {
-  "id": "flutter-media-tracker",
-  "name": "flutter-media-tracker",
-  "title": "brainstorm: Flutter media tracker app",
-  "description": "",
+  "id": "followup-bangumi-progress-sync",
+  "name": "followup-bangumi-progress-sync",
+  "title": "后续增强：Bangumi 进度同步",
+  "description": "补齐 Bangumi 观看 / 阅读 / 游玩进度的双向同步缺口",
   "status": "planning",
   "dev_type": null,
   "scope": null,
@@ -10,7 +10,7 @@
   "priority": "P2",
   "creator": "lingshichat",
   "assignee": "lingshichat",
-  "createdAt": "2026-04-18",
+  "createdAt": "2026-04-24",
   "completedAt": null,
   "branch": null,
   "base_branch": "main",
@@ -45,12 +45,8 @@
   "commit": null,
   "pr_url": null,
   "subtasks": [],
-  "children": [
-    "04-19-phase5-polish-qa",
-    "04-20-followup-list-management",
-    "04-24-followup-bangumi-progress-sync"
-  ],
-  "parent": null,
+  "children": [],
+  "parent": "04-18-flutter-media-tracker",
   "relatedFiles": [],
   "notes": "",
   "meta": {}
