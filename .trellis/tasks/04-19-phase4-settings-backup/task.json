@@ -4,7 +4,7 @@
   "title": "阶段4：设置、备份恢复与同步运维",
   "description": "同步设置页、备份导入导出、待同步重试、冲突副本查看",
   "status": "planning",
-  "dev_type": null,
+  "dev_type": "fullstack",
   "scope": null,
   "package": null,
   "priority": "P2",

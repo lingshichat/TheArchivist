@@ -1,0 +1,17 @@
+{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend development guide"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend development guide"}
+{"file": ".trellis/spec/architecture/system-boundaries.md", "reason": "跨层边界与 provider 归属"}
+{"file": ".trellis/spec/architecture/local-first-sync-contract.md", "reason": "local-first 同步、队列、冲突与快照边界"}
+{"file": ".trellis/spec/architecture/task-spec-governance.md", "reason": "阶段 PRD 与 spec 归属"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "sync/settings 非 UI 代码落点"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "Drift、软删除、备份恢复边界"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "SyncException 与重试错误策略"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "凭据与用户数据不落日志"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "controller/repository/service 质量边界"}
+{"file": ".trellis/spec/frontend/design-system.md", "reason": "Settings 页面视觉契约"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "表单、异步、provider 状态"}
+{"file": ".trellis/spec/frontend/network-guidelines.md", "reason": "WebDAV/S3 client 边界"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Settings UI 质量检查"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Phase4 跨 UI/DB/adapter 数据流"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "复用 sync codec/adapter/envelope"}

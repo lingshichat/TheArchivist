@@ -46,11 +46,10 @@
   "pr_url": null,
   "subtasks": [],
   "children": [
-    "04-19-phase1-local-core",
     "04-19-phase5-polish-qa",
-    "04-19-phase3-sync-engine",
     "04-19-phase4-settings-backup",
-    "04-20-followup-list-management"
+    "04-20-followup-list-management",
+    "04-24-followup-bangumi-progress-sync"
   ],
   "parent": null,
   "relatedFiles": [],
