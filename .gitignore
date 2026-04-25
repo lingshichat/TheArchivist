@@ -50,3 +50,10 @@ app.*.map.json
 .claude/
 .kilocode/
 .opencode/
+
+# Tool configs (local only)
+.firecrawl/
+.mcp.json
+
+# Trellis task directories (live task state, not spec)
+.trellis/tasks/
