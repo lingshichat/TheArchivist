@@ -579,3 +579,34 @@ Implemented Bangumi bidirectional progress sync: API model extension (epStatus),
 ### Next Steps
 
 - None - task complete
+
+### 2026-04-25
+
+## Task: followup-list-management (04-20-followup-list-management)
+
+### Completed Work
+
+- PR1: Lists center page with ShelfCard grid, create/rename/delete dialogs
+- PR2: List detail page with PosterWrap, sort selector, empty states
+- PR3: Batch selection mode across Library and ListDetail, BatchActionBar, manual reorder with up/down controls
+- PR4: Testing and acceptance - 16 new tests, 125 total passing
+- Added AppTopBarVariant.lists enum value and sidebar nav item
+- Enhanced PosterWrap/PosterCard with selection mode and order controls
+- ShelfRepository: batchAttachToShelf, batchDetachFromShelf, reorderShelfItems, renameShelf, softDeleteShelf, isNameTaken
+- flutter analyze lib test: only 3 pre-existing info-level issues, no errors/warnings
+- Bug fixes: cards bottom overflow (childAspectRatio 2.2→1.8), rename not reflecting in detail page (provider invalidation + ValueKey), duplicate "Lists" title
+- Committed as feat(lists): add list management center with batch operations and sorting
+
+### Key Decisions
+- Batch selection state kept as widget-local StatefulWidget state, not extracted to controller
+- Manual sort uses up/down arrow buttons (not drag-and-drop) for simplicity
+- ShelfCard uses GridView with fixed cross-axis count, childAspectRatio 1.8
+- Rename validation: case-insensitive duplicate check
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete, ready for archive
