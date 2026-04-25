@@ -225,6 +225,7 @@ class _FakeBangumiApiService extends BangumiApiService {
     String? comment,
     bool? isPrivate,
     List<String>? tags,
+    int? epStatus,
   }) async {
     if (updateError != null) {
       throw updateError!;

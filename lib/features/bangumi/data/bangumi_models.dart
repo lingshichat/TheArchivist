@@ -223,6 +223,7 @@ class BangumiCollectionDto {
     this.tags = const <String>[],
     this.updatedAt,
     this.subject,
+    this.epStatus,
   });
 
   factory BangumiCollectionDto.fromJson(Map<String, Object?> json) {
@@ -248,6 +249,7 @@ class BangumiCollectionDto {
       subject: subjectMap == null
           ? null
           : BangumiSubjectDto.fromJson(subjectMap),
+      epStatus: _asInt(json['ep_status']),
     );
   }
 
@@ -259,6 +261,7 @@ class BangumiCollectionDto {
   final List<String> tags;
   final String? updatedAt;
   final BangumiSubjectDto? subject;
+  final int? epStatus;
 
   Map<String, Object?> toJson() {
     return <String, Object?>{
@@ -270,6 +273,7 @@ class BangumiCollectionDto {
       'tags': tags,
       'updated_at': updatedAt,
       'subject': subject?.toJson(),
+      'ep_status': epStatus,
     };
   }
 }

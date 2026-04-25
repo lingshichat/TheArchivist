@@ -1,5 +1,6 @@
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:record_anywhere/features/bangumi/data/bangumi_progress_sync_service.dart';
 import 'package:record_anywhere/features/bangumi/data/bangumi_sync_service.dart';
 
 import 'package:record_anywhere/features/add/data/add_entry_controller.dart';
@@ -53,6 +54,7 @@ void main() {
       deviceIdentityService: deviceIdentityService,
     );
     bangumiSyncService = _FakeBangumiSyncService();
+    final bangumiProgressSyncService = _FakeBangumiProgressSyncService();
     addEntryController = AddEntryController(
       mediaRepository: mediaRepo,
       tagRepository: tagRepo,
@@ -67,6 +69,7 @@ void main() {
       shelfRepository: shelfRepo,
       activityLogRepository: activityLogRepo,
       bangumiSyncService: bangumiSyncService,
+      bangumiProgressSyncService: bangumiProgressSyncService,
     );
   });
 
@@ -514,6 +517,15 @@ class _FakeBangumiSyncService implements BangumiSyncService {
     calls.add(
       _SyncCall(mediaItemId: mediaItemId, status: status, score: score),
     );
+  }
+}
+
+class _FakeBangumiProgressSyncService implements BangumiProgressSyncService {
+  final List<String> pushedMediaItemIds = <String>[];
+
+  @override
+  Future<void> pushProgress({required String mediaItemId}) async {
+    pushedMediaItemIds.add(mediaItemId);
   }
 }
 

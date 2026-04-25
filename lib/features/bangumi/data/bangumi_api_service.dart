@@ -138,6 +138,7 @@ class BangumiApiService {
     String? comment,
     bool? isPrivate,
     List<String>? tags,
+    int? epStatus,
   }) async {
     await _runRequest(
       () => _client.post<void>(
@@ -148,6 +149,7 @@ class BangumiApiService {
           'comment': _normalizeOptional(comment),
           'private': isPrivate,
           'tags': _normalizeTags(tags),
+          'ep_status': epStatus,
         }),
       ),
     );

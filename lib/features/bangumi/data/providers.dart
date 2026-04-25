@@ -9,6 +9,7 @@ import 'bangumi_auth_controller.dart';
 import 'bangumi_auth_verifier.dart';
 import 'bangumi_oauth_config.dart';
 import 'bangumi_oauth_service.dart';
+import 'bangumi_progress_sync_service.dart';
 import 'bangumi_pull_service.dart';
 import 'bangumi_sync_feedback.dart';
 import 'bangumi_sync_service.dart';
@@ -82,6 +83,7 @@ final bangumiPullServiceProvider = Provider<BangumiPullService>((ref) {
     apiService: ref.watch(bangumiApiServiceProvider),
     mediaRepository: ref.watch(mediaRepositoryProvider),
     userEntryRepository: ref.watch(userEntryRepositoryProvider),
+    progressRepository: ref.watch(progressRepositoryProvider),
   );
 });
 
@@ -105,3 +107,15 @@ final bangumiSyncServiceProvider = Provider<BangumiSyncService>((ref) {
     onUnauthorized: ref.watch(bangumiAuthProvider.notifier).invalidateSession,
   );
 });
+
+final bangumiProgressSyncServiceProvider =
+    Provider<BangumiProgressSyncService>((ref) {
+      return BangumiProgressSyncServiceImpl(
+        apiService: ref.watch(bangumiApiServiceProvider),
+        mediaRepository: ref.watch(mediaRepositoryProvider),
+        progressRepository: ref.watch(progressRepositoryProvider),
+        tokenStore: ref.watch(bangumiTokenStoreProvider),
+        feedbackController: ref.watch(bangumiSyncFeedbackProvider.notifier),
+        onUnauthorized: ref.watch(bangumiAuthProvider.notifier).invalidateSession,
+      );
+    });

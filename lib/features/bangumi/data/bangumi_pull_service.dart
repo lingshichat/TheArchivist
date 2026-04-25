@@ -1,5 +1,6 @@
 import '../../../shared/data/app_database.dart';
 import '../../../shared/data/repositories/media_repository.dart';
+import '../../../shared/data/repositories/progress_repository.dart';
 import '../../../shared/data/repositories/user_entry_repository.dart';
 import '../../../shared/data/source_id_map.dart';
 import '../../../shared/network/bangumi_api_client.dart';
@@ -15,11 +16,13 @@ class BangumiCollectionPullService implements BangumiPullService {
     required BangumiApiService apiService,
     required MediaRepository mediaRepository,
     required UserEntryRepository userEntryRepository,
+    required ProgressRepository progressRepository,
     DateTime Function()? now,
     StepLogger? logger,
   }) : _apiService = apiService,
        _mediaRepository = mediaRepository,
        _userEntryRepository = userEntryRepository,
+       _progressRepository = progressRepository,
        _now = now ?? DateTime.now,
        _logger = logger ?? const StepLogger('BangumiCollectionPullService');
 
@@ -28,6 +31,7 @@ class BangumiCollectionPullService implements BangumiPullService {
   final BangumiApiService _apiService;
   final MediaRepository _mediaRepository;
   final UserEntryRepository _userEntryRepository;
+  final ProgressRepository _progressRepository;
   final DateTime Function() _now;
   final StepLogger _logger;
 
@@ -169,6 +173,15 @@ class BangumiCollectionPullService implements BangumiPullService {
       }
 
       await _mediaRepository.markSynced(localItem.id, syncedAt);
+
+      // 步骤2.4：合并进度
+      await _reconcileProgress(
+        localItem.id,
+        mediaItem: localItem,
+        collection: collection,
+        summary: summary,
+      );
+
       _logger.info('单条 Bangumi 收藏合并完成。');
     } on BangumiUnauthorizedError {
       _logger.info('单条 Bangumi 收藏合并失败，授权已失效。');
@@ -234,6 +247,31 @@ class BangumiCollectionPullService implements BangumiPullService {
       score: remoteScore,
       syncedAt: syncedAt,
     );
+
+    // 3.3 若 Bangumi 中有进度，一并导入本地
+    final int? importEpisode;
+    final int? importPage;
+    switch (mediaDraft.mediaType) {
+      case MediaType.tv:
+        importEpisode = collection.epStatus;
+        importPage = null;
+      case MediaType.book:
+        importEpisode = null;
+        importPage = collection.epStatus;
+      case MediaType.movie:
+      case MediaType.game:
+        importEpisode = null;
+        importPage = null;
+    }
+    if (importEpisode != null || importPage != null) {
+      await _progressRepository.applyRemoteProgress(
+        mediaItemId,
+        currentEpisode: importEpisode,
+        currentPage: importPage,
+        syncedAt: syncedAt,
+      );
+    }
+
     await _mediaRepository.markSynced(mediaItemId, syncedAt);
 
     _logger.info('导入本地不存在的 Bangumi 收藏完成。');
@@ -284,6 +322,86 @@ class BangumiCollectionPullService implements BangumiPullService {
     }
 
     return localEntry.score != remoteScore;
+  }
+
+  Future<void> _reconcileProgress(
+    String mediaItemId, {
+    required MediaItem mediaItem,
+    required BangumiCollectionDto collection,
+    required _BangumiPullAccumulator summary,
+  }) async {
+    _logger.info('开始合并 Bangumi 进度...');
+
+    final remoteEpStatus = collection.epStatus;
+    if (remoteEpStatus == null) {
+      _logger.info('Bangumi 进度合并完成（远端无进度）。');
+      return;
+    }
+
+    final localProgress = await _progressRepository.getByMediaItemId(mediaItemId);
+
+    if (_isProgressDirty(localProgress)) {
+      summary.localWinsCount += 1;
+      _logger.info('Bangumi 进度合并完成（本地脏数据，保留本地）。');
+      return;
+    }
+
+    final (int? currentEpisode, int? currentPage, double? currentMinutes)
+    progressTuple = switch (mediaItem.mediaType) {
+      MediaType.tv => (remoteEpStatus, null, null),
+      MediaType.book => (null, remoteEpStatus, null),
+      MediaType.movie || MediaType.game => (null, null, null),
+    };
+
+    if (progressTuple.$1 == null &&
+        progressTuple.$2 == null &&
+        progressTuple.$3 == null) {
+      _logger.info('Bangumi 进度合并完成（媒体类型不支持进度映射）。');
+      return;
+    }
+
+    final existingProgress = await _progressRepository.getByMediaItemId(mediaItemId);
+    final bool shouldApply = _shouldApplyProgress(
+      existingProgress,
+      currentEpisode: progressTuple.$1,
+      currentPage: progressTuple.$2,
+      currentMinutes: progressTuple.$3,
+    );
+
+    if (shouldApply) {
+      final syncedAt = _now();
+      await _progressRepository.applyRemoteProgress(
+        mediaItemId,
+        currentEpisode: progressTuple.$1,
+        currentPage: progressTuple.$2,
+        currentMinutes: progressTuple.$3,
+        syncedAt: syncedAt,
+      );
+      // Note: updatedCount is already incremented by status/score merge if applicable
+    } else {
+      summary.skippedCount += 1;
+    }
+
+    _logger.info('Bangumi 进度合并完成。');
+  }
+
+  bool _isProgressDirty(ProgressEntry? progress) {
+    if (progress == null) return false;
+    final lastSyncedAt = progress.lastSyncedAt;
+    if (lastSyncedAt == null) return false;
+    return progress.updatedAt.isAfter(lastSyncedAt);
+  }
+
+  bool _shouldApplyProgress(
+    ProgressEntry? progress, {
+    required int? currentEpisode,
+    required int? currentPage,
+    required double? currentMinutes,
+  }) {
+    if (progress == null) return true;
+    return progress.currentEpisode != currentEpisode ||
+        progress.currentPage != currentPage ||
+        progress.currentMinutes != currentMinutes;
   }
 
   bool _isLocalDirty(UserEntry? localEntry) {
