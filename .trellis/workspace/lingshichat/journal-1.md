@@ -435,3 +435,60 @@ Added persisted text conflict copies, minimal sync status display, regression co
 ### Next Steps
 
 - None - task complete
+
+
+## Session 11: Phase 4: sync target, backup, operations UI
+
+**Date**: 2026-04-25
+**Task**: Phase 4: sync target, backup, operations UI
+**Branch**: `main`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+| Work Package | Description |
+|--------------|-------------|
+| WP1 Config   | Cloud Sync section with WebDAV/S3 form, target type selector, connection test, save/disconnect. Auto-completes https:// scheme. |
+| WP2 Sync Ops | SyncOperationsService bridges saved config -> adapter -> engine. Sync Now button with loading spinner. Pending queue list with retry-all. |
+| WP3 Conflicts| Conflict copy viewer showing entity type, field, local/remote value summary, detection time. |
+| WP4 Snapshot | SnapshotService exports versioned JSON (record-anywhere.snapshot v1) for 8 entity types. Import validates format, merges by dependency order, returns summary. file_picker integration for save/load dialogs. |
+| UX Polish    | CircularProgressIndicator on all async buttons (Sync Now, Test Connection, Save). Fixed: connected state no longer switches to config form during sync. |
+
+**New Files:**
+- `lib/features/settings/presentation/sync_target_section.dart`
+- `lib/features/sync/data/snapshot_service.dart`
+- `lib/features/sync/data/sync_operations_service.dart`
+- `lib/features/sync/data/sync_target_config.dart`
+- `lib/features/sync/data/sync_target_store.dart`
+- `lib/features/sync/data/sync_connection_test.dart`
+
+**Modified Files:**
+- `lib/features/settings/presentation/settings_page.dart` — merged Cloud Sync ops into single section, wired Export/Import buttons
+- `lib/features/sync/data/providers.dart` — added snapshotServiceProvider, syncOperationsServiceProvider, syncPendingItemsProvider, syncTargetConfigProvider
+- `pubspec.yaml` — added file_picker dependency
+
+**Tests:** 108/108 passing. flutter analyze: 0 issues.
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `e48641c` | (see git log) |
+| `3b1671f` | (see git log) |
+| `f1a6517` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
