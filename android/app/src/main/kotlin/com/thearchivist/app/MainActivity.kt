@@ -1,4 +1,4 @@
-package dev.recordanywhere.record_anywhere
+package com.thearchivist.app
 
 import io.flutter.embedding.android.FlutterActivity
 

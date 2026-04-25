@@ -14,7 +14,66 @@ This spec exists to prevent "close enough Material" drift.
 
 ---
 
-## Source of Truth
+## App Identity
+
+Brand name, platform identifiers, and icon contract. These values are locked
+for Phase 1 and must stay consistent across all platform manifests and window
+chrome.
+
+### Brand Name
+
+| Scope | Value |
+|-------|-------|
+| Display name | `The Archivist` |
+| Dart package name | `record_anywhere` (pubspec.yaml, internal only) |
+| Database name | `record_anywhere` (drift, internal only) |
+
+### Android
+
+| Field | Value |
+|-------|-------|
+| `applicationId` | `com.thearchivist.app` |
+| `namespace` | `com.thearchivist.app` |
+| `android:label` | `The Archivist` |
+| Kotlin package | `com.thearchivist.app` |
+| Source path | `android/app/src/main/kotlin/com/thearchivist/app/MainActivity.kt` |
+
+### Windows
+
+| Field | Value |
+|-------|-------|
+| Native window title (`main.cpp`) | `The Archivist` |
+| `ProductName` (`Runner.rc`) | `The Archivist` |
+| `FileDescription` (`Runner.rc`) | `The Archivist` |
+| `CompanyName` (`Runner.rc`) | `com.thearchivist.app` |
+| Binary name (`CMakeLists.txt`) | `record_anywhere.exe` (unchanged) |
+
+### Flutter MaterialApp
+
+```dart
+// lib/app/app.dart
+MaterialApp.router(
+  title: 'The Archivist',
+  ...
+);
+```
+
+### App Icon
+
+| Attribute | Value |
+|-----------|-------|
+| Stitch screen ID | `84ddc0a6017547d79d5bb399eb8a5acf` |
+| Generated | `2026-04-25` |
+| Description | Geometric "A" monogram built from book/archive imagery, ink-green on cream |
+| Android densities | mdpi (48), hdpi (72), xhdpi (96), xxhdpi (144), xxxhdpi (192) |
+| Windows ICO sizes | 16, 32, 48, 256 |
+
+To regenerate the icon, use the Stitch screen as the reference and export
+to the platform-specific formats listed above. Do not replace with a generic
+Material icon or an approximate recreation.
+
+---
+
 
 - Primary reference: Stitch project `16942033954476618867`
 - Design system asset: `assets/2ebc2aed509941f7a4af99a284c7958a`

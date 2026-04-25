@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "dev.recordanywhere" "\0"
-            VALUE "FileDescription", "record_anywhere" "\0"
+            VALUE "CompanyName", "com.thearchivist.app" "\0"
+            VALUE "FileDescription", "The Archivist" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "record_anywhere" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 dev.recordanywhere. All rights reserved." "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 com.thearchivist.app. All rights reserved." "\0"
             VALUE "OriginalFilename", "record_anywhere.exe" "\0"
-            VALUE "ProductName", "record_anywhere" "\0"
+            VALUE "ProductName", "The Archivist" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END
