@@ -544,3 +544,38 @@ Added persisted text conflict copies, minimal sync status display, regression co
 ### Next Steps
 
 - None - task complete
+
+
+## Session 13: Bangumi progress sync implementation
+
+**Date**: 2026-04-25
+**Task**: Bangumi progress sync implementation
+**Branch**: `worktree-bangumi-progress-sync`
+
+### Summary
+
+Implemented Bangumi bidirectional progress sync: API model extension (epStatus), new push service, pull merge with local-first policy, detail page triggers, provider registration. All 108 tests pass.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c21bfad` | (see git log) |
+| `5aaa70f` | (see git log) |
+| `770d6a1` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

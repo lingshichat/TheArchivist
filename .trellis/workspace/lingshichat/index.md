@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 12
+- **Total Sessions**: 13
 - **Last Active**: 2026-04-25
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~546 | Active |
+| `journal-1.md` | ~581 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 13 | 2026-04-25 | Bangumi progress sync implementation | `c21bfad`, `5aaa70f`, `770d6a1` | `worktree-bangumi-progress-sync` |
 | 12 | 2026-04-25 | Phase 5: desktop polish, performance, skeleton, error boundary | `9a027e1`, `50bc28e` | `main` |
 | 11 | 2026-04-25 | Phase 4: sync target, backup, operations UI | `e48641c`, `3b1671f`, `f1a6517` | `main` |
 | 10 | 2026-04-24 | Phase3 WP5 conflict status | `160cb17` | `main` |
