@@ -88,6 +88,12 @@ class _AppShellScaffoldState extends State<AppShellScaffold> {
               onTap: () => context.go(AppRoutes.library),
             ),
             _SidebarNavItem(
+              label: 'Lists',
+              icon: Icons.bookmark_border_rounded,
+              isActive: _isListsSelected(widget.currentPath),
+              onTap: () => context.go(AppRoutes.lists),
+            ),
+            _SidebarNavItem(
               label: 'Settings',
               icon: Icons.settings_outlined,
               isActive: _isSettingsSelected(widget.currentPath),
@@ -181,6 +187,10 @@ class _AppShellScaffoldState extends State<AppShellScaffold> {
         path.startsWith(AppRoutes.detail);
   }
 
+  static bool _isListsSelected(String path) {
+    return path.startsWith(AppRoutes.lists);
+  }
+
   static bool _isSettingsSelected(String path) {
     return path.startsWith(AppRoutes.settings);
   }
@@ -192,6 +202,10 @@ class _AppShellScaffoldState extends State<AppShellScaffold> {
 
     if (path.startsWith(AppRoutes.library)) {
       return AppTopBarVariant.library;
+    }
+
+    if (path.startsWith(AppRoutes.lists)) {
+      return AppTopBarVariant.lists;
     }
 
     if (path.startsWith(AppRoutes.detail)) {
@@ -208,6 +222,10 @@ class _AppShellScaffoldState extends State<AppShellScaffold> {
 
     if (path.startsWith(AppRoutes.library)) {
       return 'Library';
+    }
+
+    if (path.startsWith(AppRoutes.lists)) {
+      return 'Lists';
     }
 
     if (path.startsWith(AppRoutes.detail)) {
@@ -227,7 +245,8 @@ class _AppShellScaffoldState extends State<AppShellScaffold> {
     }
 
     if (path.startsWith(AppRoutes.library) ||
-        path.startsWith(AppRoutes.detail)) {
+        path.startsWith(AppRoutes.detail) ||
+        path.startsWith(AppRoutes.lists)) {
       return 'Search collection...';
     }
 
@@ -241,6 +260,10 @@ class _AppShellScaffoldState extends State<AppShellScaffold> {
   static IconData _actionIconForPath(String path) {
     if (path.startsWith(AppRoutes.settings)) {
       return Icons.help_outline_rounded;
+    }
+
+    if (path.startsWith(AppRoutes.lists)) {
+      return Icons.add_rounded;
     }
 
     return Icons.filter_list_rounded;

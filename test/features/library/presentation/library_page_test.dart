@@ -54,7 +54,7 @@ void main() {
 
       expect(find.text('Add Entry'), findsOneWidget);
       expect(find.text('LOAD MORE ENTRIES'), findsNothing);
-      expect(find.text('Archive'), findsOneWidget);
+      expect(find.text('Welcome back, Elias.'), findsOneWidget);
     },
   );
 }

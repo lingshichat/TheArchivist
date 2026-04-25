@@ -15,6 +15,8 @@ class ShelfRepository {
 
   Stream<List<ShelfList>> watchAll() => _db.shelfDao.watchAll();
 
+  Stream<List<ShelfList>> watchUserShelves() => _db.shelfDao.watchUserShelves();
+
   Stream<List<ShelfList>> watchByMediaItemId(String mediaItemId) {
     return _db.shelfDao.watchByMediaItemId(mediaItemId);
   }
@@ -275,7 +277,100 @@ class ShelfRepository {
     _logger.info('书架定义同步时间标记完成。');
   }
 
+  Future<int> countShelfItems(String shelfListId) {
+    return _db.shelfDao.countMediaItemsByShelfId(shelfListId);
+  }
+
+  Stream<List<MediaItem>> watchShelfMediaItems(
+    String shelfListId, {
+    ShelfSortOption sortBy = ShelfSortOption.position,
+  }) {
+    return _db.shelfDao.watchMediaItemsByShelfId(
+      shelfListId,
+      sortBy: sortBy.field,
+      descending: sortBy.descending,
+    );
+  }
+
+  Future<void> renameShelf(String shelfListId, String newName) async {
+    final deviceId = await _getDeviceId();
+    await _db.shelfDao.renameShelf(shelfListId, newName, deviceId);
+  }
+
+  Future<void> softDeleteShelf(String shelfListId) async {
+    final deviceId = await _getDeviceId();
+    await _db.shelfDao.softDeleteShelf(shelfListId, deviceId);
+  }
+
+  Future<void> batchAttachToShelf(
+    String shelfListId,
+    List<String> mediaItemIds,
+  ) async {
+    final deviceId = await _getDeviceId();
+    final now = SyncStampDecorator.now();
+
+    for (final mediaItemId in mediaItemIds) {
+      await _db.shelfDao.attachOrRestore(
+        mediaItemId: mediaItemId,
+        shelfListId: shelfListId,
+        id: DeviceIdentityService.generate(),
+        deviceId: deviceId,
+        updatedAt: now,
+        syncedAt: null,
+      );
+    }
+  }
+
+  Future<void> batchDetachFromShelf(
+    String shelfListId,
+    List<String> mediaItemIds,
+  ) async {
+    final deviceId = await _getDeviceId();
+    final now = SyncStampDecorator.now();
+
+    for (final mediaItemId in mediaItemIds) {
+      await _db.shelfDao.softDetach(
+        mediaItemId: mediaItemId,
+        shelfListId: shelfListId,
+        deviceId: deviceId,
+        updatedAt: now,
+        syncedAt: null,
+      );
+    }
+  }
+
+  Future<void> reorderShelfItems(
+    String shelfListId,
+    List<String> mediaItemIdsInOrder,
+  ) async {
+    for (var i = 0; i < mediaItemIdsInOrder.length; i++) {
+      await _db.shelfDao.updatePosition(
+        mediaItemIdsInOrder[i],
+        shelfListId,
+        (i + 1) * 1000,
+      );
+    }
+  }
+
+  Future<bool> isNameTaken(String name) async {
+    final all = await _db.shelfDao.getAll();
+    return all.any(
+      (s) => s.name.trim().toLowerCase() == name.trim().toLowerCase(),
+    );
+  }
+
   Future<String> _getDeviceId() async {
     return _deviceIdentityService.getOrCreateCurrentDeviceId();
   }
+}
+
+enum ShelfSortOption {
+  position('position', false),
+  recent('createdAt', true),
+  title('title', false);
+
+  const ShelfSortOption(this.field, this.descending);
+
+  final String field;
+  final bool descending;
 }

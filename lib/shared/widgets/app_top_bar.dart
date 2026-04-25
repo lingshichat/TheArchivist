@@ -164,6 +164,30 @@ class AppTopBar extends StatelessWidget {
           titleSlotWidth: 188,
           searchGap: AppSpacing.xl,
         );
+      case AppTopBarVariant.lists:
+        return _TopBarStyle(
+          titleStyle:
+              theme.textTheme.headlineSmall?.copyWith(
+                color: AppColors.onSurface,
+                fontWeight: FontWeight.w800,
+              ) ??
+              const TextStyle(
+                fontFamily: 'Manrope',
+                fontFamilyFallback: ['Inter', 'Segoe UI', 'Roboto'],
+                fontSize: 28,
+                fontWeight: FontWeight.w800,
+                color: AppColors.onSurface,
+              ),
+          backgroundColor: AppColors.background.withValues(alpha: 0.72),
+          blurSigma: 12,
+          searchBackground: AppColors.surfaceContainerLow.withValues(
+            alpha: 0.7,
+          ),
+          searchRadius: AppRadii.container,
+          actionUsesPill: true,
+          titleSlotWidth: 188,
+          searchGap: AppSpacing.xl,
+        );
       case AppTopBarVariant.settings:
         return _TopBarStyle(
           titleStyle:
@@ -194,7 +218,7 @@ class AppTopBar extends StatelessWidget {
   }
 }
 
-enum AppTopBarVariant { home, library, detail, settings }
+enum AppTopBarVariant { home, library, lists, detail, settings }
 
 class _SearchShell extends StatelessWidget {
   const _SearchShell({required this.hint, required this.style});

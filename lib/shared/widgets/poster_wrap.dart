@@ -14,6 +14,11 @@ class PosterWrap extends StatelessWidget {
     this.minTileWidth = 120,
     this.horizontalSpacing = 20,
     this.verticalSpacing = 32,
+    this.selectionMode = false,
+    this.selectedIds = const {},
+    this.onToggleSelection,
+    this.showOrderControls = false,
+    this.onReorder,
   });
 
   final List<PosterViewData> items;
@@ -24,6 +29,11 @@ class PosterWrap extends StatelessWidget {
   final double minTileWidth;
   final double horizontalSpacing;
   final double verticalSpacing;
+  final bool selectionMode;
+  final Set<String> selectedIds;
+  final ValueChanged<PosterViewData>? onToggleSelection;
+  final bool showOrderControls;
+  final ReorderCallback? onReorder;
 
   @override
   Widget build(BuildContext context) {
@@ -42,18 +52,41 @@ class PosterWrap extends StatelessWidget {
           spacing: horizontalSpacing,
           runSpacing: verticalSpacing,
           children: items
+              .asMap()
+              .entries
               .map(
-                (item) => RepaintBoundary(
-                  child: SizedBox(
-                    width: itemWidth,
-                    child: PosterCard(
-                      item: item,
-                      variant: variant,
-                      onTap:
-                          onItemTap == null ? null : () => onItemTap!(item),
+                (entry) {
+                  final index = entry.key;
+                  final item = entry.value;
+                  return RepaintBoundary(
+                    child: SizedBox(
+                      width: itemWidth,
+                      child: PosterCard(
+                        item: item,
+                        variant: variant,
+                        onTap:
+                            onItemTap == null ? null : () => onItemTap!(item),
+                        selectionMode: selectionMode,
+                        isSelected: selectedIds.contains(item.id),
+                        onToggleSelection:
+                            onToggleSelection == null
+                                ? null
+                                : () => onToggleSelection!(item),
+                        showOrderControls: showOrderControls,
+                        canMoveUp: index > 0,
+                        canMoveDown: index < items.length - 1,
+                        onMoveUp:
+                            onReorder == null || index == 0
+                                ? null
+                                : () => onReorder!(index, index - 1),
+                        onMoveDown:
+                            onReorder == null || index >= items.length - 1
+                                ? null
+                                : () => onReorder!(index, index + 1),
+                      ),
                     ),
-                  ),
-                ),
+                  );
+                },
               )
               .toList(),
         );
@@ -61,3 +94,5 @@ class PosterWrap extends StatelessWidget {
     );
   }
 }
+
+typedef ReorderCallback = void Function(int oldIndex, int newIndex);

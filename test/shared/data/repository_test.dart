@@ -503,6 +503,148 @@ void main() {
       },
     );
   });
+
+  group('ShelfRepository', () {
+    test('createShelf creates a user shelf', () async {
+      final shelfId = await shelfRepo.createShelf(name: 'My List');
+
+      final shelves = await shelfRepo.watchUserShelves().first;
+      expect(shelves, hasLength(1));
+      expect(shelves.first.id, shelfId);
+      expect(shelves.first.name, 'My List');
+      expect(shelves.first.kind, ShelfKind.user);
+    });
+
+    test('watchUserShelves filters out system shelves', () async {
+      await shelfRepo.createShelf(name: 'User List');
+      await db.shelfDao.upsert(
+        ShelfListsCompanion.insert(
+          id: 'system-1',
+          name: 'System List',
+          kind: ShelfKind.system,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+      );
+
+      final shelves = await shelfRepo.watchUserShelves().first;
+      expect(shelves, hasLength(1));
+      expect(shelves.first.name, 'User List');
+    });
+
+    test('renameShelf updates the name', () async {
+      final shelfId = await shelfRepo.createShelf(name: 'Old Name');
+
+      await shelfRepo.renameShelf(shelfId, 'New Name');
+
+      final shelves = await shelfRepo.watchUserShelves().first;
+      expect(shelves.first.name, 'New Name');
+    });
+
+    test('softDeleteShelf removes shelf from queries and cascades to links',
+        () async {
+      final shelfId = await shelfRepo.createShelf(name: 'To Delete');
+      final mediaId = await mediaRepo.createItem(
+        mediaType: MediaType.movie,
+        title: 'Linked Movie',
+      );
+      await shelfRepo.attachToMedia(mediaId, shelfId);
+
+      await shelfRepo.softDeleteShelf(shelfId);
+
+      final shelves = await shelfRepo.watchUserShelves().first;
+      expect(shelves, isEmpty);
+
+      final links = await db.shelfDao.getByMediaItemId(mediaId);
+      expect(links, isEmpty);
+    });
+
+    test('countShelfItems counts only active items', () async {
+      final shelfId = await shelfRepo.createShelf(name: 'Counted');
+      final mediaId1 = await mediaRepo.createItem(
+        mediaType: MediaType.movie,
+        title: 'Movie 1',
+      );
+      final mediaId2 = await mediaRepo.createItem(
+        mediaType: MediaType.movie,
+        title: 'Movie 2',
+      );
+
+      await shelfRepo.attachToMedia(mediaId1, shelfId);
+      await shelfRepo.attachToMedia(mediaId2, shelfId);
+
+      expect(await shelfRepo.countShelfItems(shelfId), 2);
+
+      await shelfRepo.detachFromMedia(mediaId1, shelfId);
+
+      expect(await shelfRepo.countShelfItems(shelfId), 1);
+    });
+
+    test('batchAttachToShelf attaches multiple items', () async {
+      final shelfId = await shelfRepo.createShelf(name: 'Batch');
+      final mediaId1 = await mediaRepo.createItem(
+        mediaType: MediaType.movie,
+        title: 'Movie 1',
+      );
+      final mediaId2 = await mediaRepo.createItem(
+        mediaType: MediaType.movie,
+        title: 'Movie 2',
+      );
+
+      await shelfRepo.batchAttachToShelf(shelfId, [mediaId1, mediaId2]);
+
+      final items = await shelfRepo.watchShelfMediaItems(shelfId).first;
+      expect(items, hasLength(2));
+    });
+
+    test('batchDetachFromShelf soft-detaches multiple items', () async {
+      final shelfId = await shelfRepo.createShelf(name: 'Batch Detach');
+      final mediaId1 = await mediaRepo.createItem(
+        mediaType: MediaType.movie,
+        title: 'Movie 1',
+      );
+      final mediaId2 = await mediaRepo.createItem(
+        mediaType: MediaType.movie,
+        title: 'Movie 2',
+      );
+
+      await shelfRepo.batchAttachToShelf(shelfId, [mediaId1, mediaId2]);
+      await shelfRepo.batchDetachFromShelf(shelfId, [mediaId1]);
+
+      final items = await shelfRepo.watchShelfMediaItems(shelfId).first;
+      expect(items, hasLength(1));
+      expect(items.first.id, mediaId2);
+    });
+
+    test('reorderShelfItems updates positions', () async {
+      final shelfId = await shelfRepo.createShelf(name: 'Reorder');
+      final mediaId1 = await mediaRepo.createItem(
+        mediaType: MediaType.movie,
+        title: 'Movie A',
+      );
+      final mediaId2 = await mediaRepo.createItem(
+        mediaType: MediaType.movie,
+        title: 'Movie B',
+      );
+
+      await shelfRepo.batchAttachToShelf(shelfId, [mediaId1, mediaId2]);
+      await shelfRepo.reorderShelfItems(shelfId, [mediaId2, mediaId1]);
+
+      final items = await shelfRepo
+          .watchShelfMediaItems(shelfId, sortBy: ShelfSortOption.position)
+          .first;
+      expect(items.first.id, mediaId2);
+      expect(items.last.id, mediaId1);
+    });
+
+    test('isNameTaken detects duplicate names case-insensitively', () async {
+      await shelfRepo.createShelf(name: 'My List');
+
+      expect(await shelfRepo.isNameTaken('My List'), true);
+      expect(await shelfRepo.isNameTaken('my list'), true);
+      expect(await shelfRepo.isNameTaken('Other List'), false);
+    });
+  });
 }
 
 class _FakeBangumiSyncService implements BangumiSyncService {
@@ -526,7 +668,8 @@ class _FakeBangumiProgressSyncService implements BangumiProgressSyncService {
   @override
   Future<void> pushProgress({required String mediaItemId}) async {
     pushedMediaItemIds.add(mediaItemId);
-  }
+}
+
 }
 
 class _SyncCall {

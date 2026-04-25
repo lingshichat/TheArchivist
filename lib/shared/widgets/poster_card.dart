@@ -12,11 +12,27 @@ class PosterCard extends StatefulWidget {
     required this.item,
     this.variant = PosterCardVariant.continuing,
     this.onTap,
+    this.selectionMode = false,
+    this.isSelected = false,
+    this.onToggleSelection,
+    this.showOrderControls = false,
+    this.canMoveUp = false,
+    this.canMoveDown = false,
+    this.onMoveUp,
+    this.onMoveDown,
   });
 
   final PosterViewData item;
   final PosterCardVariant variant;
   final VoidCallback? onTap;
+  final bool selectionMode;
+  final bool isSelected;
+  final VoidCallback? onToggleSelection;
+  final bool showOrderControls;
+  final bool canMoveUp;
+  final bool canMoveDown;
+  final VoidCallback? onMoveUp;
+  final VoidCallback? onMoveDown;
 
   @override
   State<PosterCard> createState() => _PosterCardState();
@@ -41,7 +57,10 @@ class _PosterCardState extends State<PosterCard> {
         child: Material(
           color: Colors.transparent,
           child: InkWell(
-            onTap: widget.onTap,
+            onTap:
+                widget.selectionMode
+                    ? widget.onToggleSelection
+                    : widget.onTap,
             borderRadius: BorderRadius.circular(AppRadii.card),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -57,9 +76,12 @@ class _PosterCardState extends State<PosterCard> {
                           : AppColors.surfaceContainer,
                       borderRadius: BorderRadius.circular(AppRadii.card),
                       border: Border.all(
-                        color: _hovered
+                        color: widget.isSelected
+                            ? AppColors.accent.withValues(alpha: 0.6)
+                            : _hovered
                             ? AppColors.outlineVariant.withValues(alpha: 0.22)
                             : Colors.transparent,
+                        width: widget.isSelected ? 2 : 1,
                       ),
                     ),
                     child: Stack(
@@ -67,6 +89,14 @@ class _PosterCardState extends State<PosterCard> {
                         Positioned.fill(
                           child: PosterArt(item: widget.item, muted: muted),
                         ),
+                        if (widget.selectionMode)
+                          Positioned(
+                            top: AppSpacing.sm,
+                            right: AppSpacing.sm,
+                            child: _SelectionIndicator(
+                              isSelected: widget.isSelected,
+                            ),
+                          ),
                         if (widget.variant ==
                                 PosterCardVariant.finishedOverlay &&
                             widget.item.statusLabel != null)
@@ -102,6 +132,15 @@ class _PosterCardState extends State<PosterCard> {
                   height: widget.variant == PosterCardVariant.compact ? 12 : 16,
                 ),
                 _buildMeta(theme),
+                if (widget.showOrderControls) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  _OrderControls(
+                    canMoveUp: widget.canMoveUp,
+                    canMoveDown: widget.canMoveDown,
+                    onMoveUp: widget.onMoveUp,
+                    onMoveDown: widget.onMoveDown,
+                  ),
+                ],
               ],
             ),
           ),
@@ -296,4 +335,115 @@ class _PosterStatusPalette {
 
   final Color background;
   final Color foreground;
+}
+
+class _OrderControls extends StatelessWidget {
+  const _OrderControls({
+    required this.canMoveUp,
+    required this.canMoveDown,
+    required this.onMoveUp,
+    required this.onMoveDown,
+  });
+
+  final bool canMoveUp;
+  final bool canMoveDown;
+  final VoidCallback? onMoveUp;
+  final VoidCallback? onMoveDown;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        _IconButton(
+          icon: Icons.arrow_upward_rounded,
+          onTap: canMoveUp ? onMoveUp : null,
+        ),
+        const SizedBox(width: AppSpacing.xs),
+        _IconButton(
+          icon: Icons.arrow_downward_rounded,
+          onTap: canMoveDown ? onMoveDown : null,
+        ),
+      ],
+    );
+  }
+}
+
+class _SelectionIndicator extends StatelessWidget {
+  const _SelectionIndicator({required this.isSelected});
+
+  final bool isSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 24,
+      height: 24,
+      decoration: BoxDecoration(
+        color:
+            isSelected
+                ? AppColors.accent
+                : AppColors.surfaceContainerLowest.withValues(alpha: 0.8),
+        shape: BoxShape.circle,
+        border: Border.all(
+          color:
+              isSelected
+                  ? AppColors.accent
+                  : AppColors.outlineVariant.withValues(alpha: 0.4),
+          width: 2,
+        ),
+      ),
+      child:
+          isSelected
+              ? const Icon(Icons.check_rounded, size: 16, color: Colors.white)
+              : null,
+    );
+  }
+}
+
+class _IconButton extends StatefulWidget {
+  const _IconButton({required this.icon, required this.onTap});
+
+  final IconData icon;
+  final VoidCallback? onTap;
+
+  @override
+  State<_IconButton> createState() => _IconButtonState();
+}
+
+class _IconButtonState extends State<_IconButton> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: widget.onTap,
+          borderRadius: BorderRadius.circular(AppRadii.sm),
+          child: Container(
+            padding: const EdgeInsets.all(AppSpacing.xs),
+            decoration: BoxDecoration(
+              color:
+                  _hovered
+                      ? AppColors.surfaceContainerHighest.withValues(alpha: 0.5)
+                      : Colors.transparent,
+              borderRadius: BorderRadius.circular(AppRadii.sm),
+            ),
+            child: Icon(
+              widget.icon,
+              size: 18,
+              color:
+                  widget.onTap != null
+                      ? AppColors.onSurfaceVariant
+                      : AppColors.subtleText.withValues(alpha: 0.3),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

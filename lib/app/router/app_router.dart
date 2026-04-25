@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -5,6 +6,8 @@ import '../../features/add/presentation/add_entry_page.dart';
 import '../../features/detail/presentation/detail_page.dart';
 import '../../features/home/presentation/home_page.dart';
 import '../../features/library/presentation/library_page.dart';
+import '../../features/lists/presentation/lists_center_page.dart';
+import '../../features/lists/presentation/list_detail_page.dart';
 import '../../features/settings/presentation/settings_page.dart';
 import '../shell/app_shell_scaffold.dart';
 
@@ -13,9 +16,12 @@ abstract final class AppRoutes {
   static const library = '/library';
   static const detail = '/detail';
   static const add = '/add';
+  static const lists = '/lists';
+  static const listDetail = '/lists/detail';
   static const settings = '/settings';
 
   static String detailFor(String id) => '$detail/$id';
+  static String listDetailFor(String id) => '$listDetail/$id';
 }
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -44,6 +50,22 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             pageBuilder: (context, state) {
               final id = state.pathParameters['id'] ?? '';
               return NoTransitionPage<void>(child: DetailPage(mediaId: id));
+            },
+          ),
+          GoRoute(
+            path: AppRoutes.lists,
+            pageBuilder: (context, state) {
+              return const NoTransitionPage<void>(child: ListsCenterPage());
+            },
+          ),
+          GoRoute(
+            path: '${AppRoutes.listDetail}/:id',
+            pageBuilder: (context, state) {
+              final id = state.pathParameters['id'] ?? '';
+              return NoTransitionPage<void>(
+                key: ValueKey('list-detail-$id'),
+                child: ListDetailPage(listId: id),
+              );
             },
           ),
           GoRoute(

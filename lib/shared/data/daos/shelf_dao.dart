@@ -17,6 +17,13 @@ class ShelfDao extends DatabaseAccessor<AppDatabase> with _$ShelfDaoMixin {
     return (select(shelfLists)..where((t) => t.deletedAt.isNull())).watch();
   }
 
+  Stream<List<ShelfList>> watchUserShelves() {
+    return (select(shelfLists)
+          ..where((t) => t.deletedAt.isNull())
+          ..where((t) => t.kind.equals('user')))
+        .watch();
+  }
+
   Future<List<ShelfList>> getAll() {
     return (select(shelfLists)..where((t) => t.deletedAt.isNull())).get();
   }
@@ -206,6 +213,120 @@ class ShelfDao extends DatabaseAccessor<AppDatabase> with _$ShelfDaoMixin {
           ..where(shelfLists.deletedAt.isNull());
 
     return query.map((row) => row.readTable(shelfLists)).get();
+  }
+
+  Future<int> countMediaItemsByShelfId(String shelfListId) {
+    final query =
+        select(mediaItemShelves).join([
+              innerJoin(
+                mediaItems,
+                mediaItems.id.equalsExp(mediaItemShelves.mediaItemId),
+              ),
+            ])
+            ..where(mediaItemShelves.shelfListId.equals(shelfListId))
+            ..where(mediaItemShelves.deletedAt.isNull())
+            ..where(mediaItems.deletedAt.isNull());
+
+    return query.map((row) => row.readTable(mediaItems)).get().then(
+      (items) => items.length,
+    );
+  }
+
+  Stream<List<MediaItem>> watchMediaItemsByShelfId(
+    String shelfListId, {
+    String sortBy = 'position',
+    bool descending = false,
+  }) {
+    final query =
+        select(mediaItemShelves).join([
+              innerJoin(
+                mediaItems,
+                mediaItems.id.equalsExp(mediaItemShelves.mediaItemId),
+              ),
+            ])
+            ..where(mediaItemShelves.shelfListId.equals(shelfListId))
+            ..where(mediaItemShelves.deletedAt.isNull())
+            ..where(mediaItems.deletedAt.isNull());
+
+    OrderingTerm term;
+    switch (sortBy) {
+      case 'title':
+        term = OrderingTerm(
+          expression: mediaItems.title,
+          mode: descending ? OrderingMode.desc : OrderingMode.asc,
+        );
+      case 'createdAt':
+        term = OrderingTerm(
+          expression: mediaItemShelves.createdAt,
+          mode: descending ? OrderingMode.desc : OrderingMode.asc,
+        );
+      case 'position':
+      default:
+        term = OrderingTerm(
+          expression: mediaItemShelves.position,
+          mode: descending ? OrderingMode.desc : OrderingMode.asc,
+        );
+    }
+    query.orderBy([term]);
+
+    return query.map((row) => row.readTable(mediaItems)).watch();
+  }
+
+  Future<void> updatePosition(
+    String mediaItemId,
+    String shelfListId,
+    int position,
+  ) {
+    return (update(mediaItemShelves)
+          ..where(
+            (t) =>
+                t.mediaItemId.equals(mediaItemId) &
+                t.shelfListId.equals(shelfListId),
+          ))
+        .write(
+          MediaItemShelvesCompanion(
+            position: Value(position),
+            updatedAt: Value(DateTime.now()),
+          ),
+        );
+  }
+
+  Future<void> softDeleteShelf(String shelfListId, String deviceId) async {
+    final now = DateTime.now();
+
+    // 1. 软删除 shelf 本身
+    await (update(shelfLists)..where((t) => t.id.equals(shelfListId))).write(
+      ShelfListsCompanion(
+        deletedAt: Value(now),
+        updatedAt: Value(now),
+        deviceId: Value(deviceId),
+      ),
+    );
+
+    // 2. 级联软删除关联记录
+    await (update(mediaItemShelves)
+          ..where((t) => t.shelfListId.equals(shelfListId)))
+        .write(
+          MediaItemShelvesCompanion(
+            deletedAt: Value(now),
+            updatedAt: Value(now),
+            deviceId: Value(deviceId),
+          ),
+        );
+  }
+
+  Future<void> renameShelf(
+    String shelfListId,
+    String newName,
+    String deviceId,
+  ) {
+    return (update(shelfLists)..where((t) => t.id.equals(shelfListId))).write(
+      ShelfListsCompanion(
+        name: Value(newName),
+        updatedAt: Value(DateTime.now()),
+        deviceId: Value(deviceId),
+      ),
+    );
   }
 
   Future<MediaItemShelve?> _findLink({
