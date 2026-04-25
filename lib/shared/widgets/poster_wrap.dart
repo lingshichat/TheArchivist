@@ -43,12 +43,15 @@ class PosterWrap extends StatelessWidget {
           runSpacing: verticalSpacing,
           children: items
               .map(
-                (item) => SizedBox(
-                  width: itemWidth,
-                  child: PosterCard(
-                    item: item,
-                    variant: variant,
-                    onTap: onItemTap == null ? null : () => onItemTap!(item),
+                (item) => RepaintBoundary(
+                  child: SizedBox(
+                    width: itemWidth,
+                    child: PosterCard(
+                      item: item,
+                      variant: variant,
+                      onTap:
+                          onItemTap == null ? null : () => onItemTap!(item),
+                    ),
                   ),
                 ),
               )

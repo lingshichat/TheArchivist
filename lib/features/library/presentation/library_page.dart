@@ -7,6 +7,7 @@ import '../../../shared/theme/app_theme.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/poster_card.dart';
 import '../../../shared/widgets/poster_wrap.dart';
+import '../../../shared/widgets/skeleton_card.dart';
 import '../../../shared/widgets/section_header.dart';
 import '../data/library_view_data.dart';
 
@@ -141,10 +142,13 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
           ),
           const SizedBox(height: AppSpacing.xxl),
           itemsAsync.when(
-            loading: () => const _LibraryStatePanel(
-              icon: Icons.hourglass_bottom_rounded,
-              title: 'Loading titles',
-              body: 'Preparing the current slice of your archive.',
+            loading: () => const SkeletonGrid(
+              itemCount: 12,
+              minColumns: 4,
+              maxColumns: 7,
+              minTileWidth: 150,
+              horizontalSpacing: 24,
+              verticalSpacing: 40,
             ),
             error: (error, stackTrace) => EmptyState(
               icon: Icons.error_outline_rounded,
@@ -348,19 +352,3 @@ class _FilterPopup<T> extends StatelessWidget {
   }
 }
 
-class _LibraryStatePanel extends StatelessWidget {
-  const _LibraryStatePanel({
-    required this.icon,
-    required this.title,
-    required this.body,
-  });
-
-  final IconData icon;
-  final String title;
-  final String body;
-
-  @override
-  Widget build(BuildContext context) {
-    return EmptyState(compact: true, icon: icon, title: title, body: body);
-  }
-}

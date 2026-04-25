@@ -5,7 +5,7 @@ import '../../shared/theme/app_theme.dart';
 import '../../shared/widgets/app_top_bar.dart';
 import '../router/app_router.dart';
 
-class AppShellScaffold extends StatelessWidget {
+class AppShellScaffold extends StatefulWidget {
   const AppShellScaffold({
     super.key,
     required this.currentPath,
@@ -18,95 +18,157 @@ class AppShellScaffold extends StatelessWidget {
   static const double _sidebarWidth = 256;
 
   @override
+  State<AppShellScaffold> createState() => _AppShellScaffoldState();
+}
+
+class _AppShellScaffoldState extends State<AppShellScaffold> {
+  bool _drawerOpen = false;
+
+  void _openDrawer() => setState(() => _drawerOpen = true);
+  void _closeDrawer() => setState(() => _drawerOpen = false);
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _contentBackgroundForPath(currentPath),
+      backgroundColor: _contentBackgroundForPath(widget.currentPath),
       body: SafeArea(
-        child: Row(
-          children: [
-            SizedBox(
-              width: _sidebarWidth,
-              child: DecoratedBox(
-                decoration: const BoxDecoration(color: AppColors.shellPanel),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.xl,
-                    AppSpacing.xl,
-                    AppSpacing.md,
-                    AppSpacing.xl,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const _SidebarBrand(),
-                      const SizedBox(height: AppSpacing.xxl),
-                      _SidebarNavItem(
-                        label: 'Home',
-                        icon: Icons.home_rounded,
-                        isActive: _isHomeSelected(currentPath),
-                        onTap: () => context.go(AppRoutes.home),
-                      ),
-                      _SidebarNavItem(
-                        label: 'Library',
-                        icon: Icons.grid_view_rounded,
-                        isActive: _isLibrarySelected(currentPath),
-                        onTap: () => context.go(AppRoutes.library),
-                      ),
-                      _SidebarNavItem(
-                        label: 'Settings',
-                        icon: Icons.settings_outlined,
-                        isActive: _isSettingsSelected(currentPath),
-                        onTap: () => context.go(AppRoutes.settings),
-                      ),
-                      const Spacer(),
-                      const _SidebarProfile(),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            Expanded(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: _contentBackgroundForPath(currentPath),
-                ),
-                child: Column(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final bool isNarrow = constraints.maxWidth < 768;
+
+            return Stack(
+              children: [
+                Row(
                   children: [
-                    Align(
-                      alignment: Alignment.topLeft,
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(
-                          maxWidth: _topBarMaxWidthForPath(currentPath),
-                        ),
-                        child: AppTopBar(
-                          title: _topBarTitleForPath(currentPath),
-                          searchHint: _searchHintForPath(currentPath),
-                          actionIcon: _actionIconForPath(currentPath),
-                          searchFieldWidth: _searchWidthForPath(currentPath),
-                          variant: _topBarVariantForPath(currentPath),
-                          horizontalPadding: _horizontalPaddingForPath(
-                            currentPath,
-                          ),
-                          verticalPadding: _verticalPaddingForPath(currentPath),
-                        ),
+                    if (!isNarrow)
+                      SizedBox(
+                        width: AppShellScaffold._sidebarWidth,
+                        child: _buildSidebar(),
                       ),
-                    ),
                     Expanded(
-                      child: Align(
-                        alignment: Alignment.topLeft,
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(
-                            maxWidth: _contentMaxWidthForPath(currentPath),
-                          ),
-                          child: child,
-                        ),
-                      ),
+                      child: _buildContentArea(isNarrow: isNarrow),
                     ),
                   ],
                 ),
+                if (isNarrow && _drawerOpen)
+                  _buildDrawerOverlay(),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSidebar() {
+    return DecoratedBox(
+      decoration: const BoxDecoration(color: AppColors.shellPanel),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.xl,
+          AppSpacing.xl,
+          AppSpacing.md,
+          AppSpacing.xl,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const _SidebarBrand(),
+            const SizedBox(height: AppSpacing.xxl),
+            _SidebarNavItem(
+              label: 'Home',
+              icon: Icons.home_rounded,
+              isActive: _isHomeSelected(widget.currentPath),
+              onTap: () => context.go(AppRoutes.home),
+            ),
+            _SidebarNavItem(
+              label: 'Library',
+              icon: Icons.grid_view_rounded,
+              isActive: _isLibrarySelected(widget.currentPath),
+              onTap: () => context.go(AppRoutes.library),
+            ),
+            _SidebarNavItem(
+              label: 'Settings',
+              icon: Icons.settings_outlined,
+              isActive: _isSettingsSelected(widget.currentPath),
+              onTap: () => context.go(AppRoutes.settings),
+            ),
+            const Spacer(),
+            const _SidebarProfile(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContentArea({required bool isNarrow}) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: _contentBackgroundForPath(widget.currentPath),
+      ),
+      child: Column(
+        children: [
+          if (isNarrow)
+            Align(
+              alignment: Alignment.topLeft,
+              child: Padding(
+                padding: const EdgeInsets.only(
+                  left: AppSpacing.md,
+                  top: AppSpacing.md,
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.menu_rounded),
+                  onPressed: _openDrawer,
+                  color: AppColors.onSurface,
+                ),
               ),
             ),
-          ],
+          Align(
+            alignment: Alignment.topLeft,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: _topBarMaxWidthForPath(widget.currentPath),
+              ),
+              child: AppTopBar(
+                title: _topBarTitleForPath(widget.currentPath),
+                searchHint: _searchHintForPath(widget.currentPath),
+                actionIcon: _actionIconForPath(widget.currentPath),
+                searchFieldWidth: _searchWidthForPath(widget.currentPath),
+                variant: _topBarVariantForPath(widget.currentPath),
+                horizontalPadding: _horizontalPaddingForPath(
+                  widget.currentPath,
+                ),
+                verticalPadding: _verticalPaddingForPath(widget.currentPath),
+              ),
+            ),
+          ),
+          Expanded(
+            child: Align(
+              alignment: Alignment.topLeft,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: _contentMaxWidthForPath(widget.currentPath),
+                ),
+                child: widget.child,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDrawerOverlay() {
+    return GestureDetector(
+      onTap: _closeDrawer,
+      child: Container(
+        color: Colors.black.withValues(alpha: 0.3),
+        child: GestureDetector(
+          onTap: () {},
+          child: SizedBox(
+            width: AppShellScaffold._sidebarWidth,
+            child: _buildSidebar(),
+          ),
         ),
       ),
     );
@@ -247,7 +309,7 @@ class _SidebarBrand extends StatelessWidget {
   }
 }
 
-class _SidebarNavItem extends StatelessWidget {
+class _SidebarNavItem extends StatefulWidget {
   const _SidebarNavItem({
     required this.label,
     required this.icon,
@@ -261,49 +323,100 @@ class _SidebarNavItem extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
+  State<_SidebarNavItem> createState() => _SidebarNavItemState();
+}
+
+class _SidebarNavItemState extends State<_SidebarNavItem> {
+  bool _hovered = false;
+
+  void _onEnter(PointerEvent event) => setState(() => _hovered = true);
+  void _onExit(PointerEvent event) => setState(() => _hovered = false);
+
+  Color get _backgroundColor {
+    if (widget.isActive) {
+      return AppColors.surfaceContainerLowest.withValues(alpha: 0.72);
+    }
+    if (_hovered) {
+      return AppColors.surfaceContainerLowest.withValues(alpha: 0.36);
+    }
+    return Colors.transparent;
+  }
+
+  Color get _borderColor {
+    if (widget.isActive) {
+      return AppColors.accent;
+    }
+    if (_hovered) {
+      return AppColors.outlineVariant.withValues(alpha: 0.3);
+    }
+    return Colors.transparent;
+  }
+
+  Color get _iconColor {
+    if (widget.isActive) {
+      return AppColors.accent;
+    }
+    if (_hovered) {
+      return AppColors.onSurfaceVariant;
+    }
+    return AppColors.subtleText;
+  }
+
+  Color get _textColor {
+    if (widget.isActive) {
+      return AppColors.accentStrong;
+    }
+    if (_hovered) {
+      return AppColors.onSurfaceVariant;
+    }
+    return AppColors.subtleText;
+  }
+
+  @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          child: Ink(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: 10,
-            ),
-            decoration: BoxDecoration(
-              color: isActive
-                  ? AppColors.surfaceContainerLowest.withValues(alpha: 0.72)
-                  : Colors.transparent,
-              border: Border(
-                right: BorderSide(
-                  color: isActive ? AppColors.accent : Colors.transparent,
-                  width: 2,
-                ),
+      child: MouseRegion(
+        onEnter: _onEnter,
+        onExit: _onExit,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: widget.onTap,
+            child: Ink(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: 10,
               ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  icon,
-                  size: 18,
-                  color: isActive ? AppColors.accent : AppColors.subtleText,
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Text(
-                  label,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    color: isActive
-                        ? AppColors.accentStrong
-                        : AppColors.subtleText,
-                    fontWeight: isActive ? FontWeight.w700 : FontWeight.w600,
+              decoration: BoxDecoration(
+                color: _backgroundColor,
+                border: Border(
+                  right: BorderSide(
+                    color: _borderColor,
+                    width: 2,
                   ),
                 ),
-              ],
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    widget.icon,
+                    size: 18,
+                    color: _iconColor,
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Text(
+                    widget.label,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: _textColor,
+                      fontWeight:
+                          widget.isActive ? FontWeight.w700 : FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

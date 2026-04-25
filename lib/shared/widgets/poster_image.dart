@@ -9,6 +9,8 @@ class PosterImage extends StatelessWidget {
     this.borderRadius = BorderRadius.zero,
     this.fit = BoxFit.cover,
     this.muted = false,
+    this.memCacheWidth = 300,
+    this.memCacheHeight = 450,
   });
 
   final String? posterUrl;
@@ -16,6 +18,8 @@ class PosterImage extends StatelessWidget {
   final BorderRadius borderRadius;
   final BoxFit fit;
   final bool muted;
+  final int? memCacheWidth;
+  final int? memCacheHeight;
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +52,11 @@ class PosterImage extends StatelessWidget {
     return CachedNetworkImage(
       imageUrl: normalizedPosterUrl,
       fit: fit,
-      fadeInDuration: const Duration(milliseconds: 180),
+      fadeInDuration: const Duration(milliseconds: 80),
+      memCacheWidth: memCacheWidth,
+      memCacheHeight: memCacheHeight,
+      maxWidthDiskCache: 600,
+      maxHeightDiskCache: 900,
       placeholder: (context, url) => fallback,
       errorWidget: (context, url, error) => fallback,
     );
