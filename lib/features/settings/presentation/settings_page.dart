@@ -290,17 +290,12 @@ class _AboutSection extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: AppColors.surfaceContainer,
-              borderRadius: BorderRadius.circular(AppRadii.container),
-            ),
-            child: const Icon(
-              Icons.token_outlined,
-              size: 18,
-              color: AppColors.subtleText,
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadii.container),
+            child: Image.asset(
+              'assets/icon.png',
+              width: 48,
+              height: 48,
             ),
           ),
           const SizedBox(width: AppSpacing.lg),
@@ -315,10 +310,10 @@ class _AboutSection extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: AppSpacing.xs),
-                Text('Version 1.0.4-WP1', style: theme.textTheme.bodySmall),
+                Text('Version 0.1.0', style: theme.textTheme.bodySmall),
                 const SizedBox(height: AppSpacing.lg),
                 Text(
-                  'A personal project dedicated to the preservation and curation of digital media. Built for the quiet explorer.\n© 2024 Curation Labs.',
+                  'A personal project dedicated to the preservation and curation of digital media. Built for the quiet explorer.\n© 2026 AnyRecord Team.',
                   style: theme.textTheme.bodySmall?.copyWith(height: 1.7),
                 ),
               ],

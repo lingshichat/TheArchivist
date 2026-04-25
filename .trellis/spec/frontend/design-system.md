@@ -63,7 +63,8 @@ MaterialApp.router(
 | Attribute | Value |
 |-----------|-------|
 | Stitch screen ID | `84ddc0a6017547d79d5bb399eb8a5acf` |
-| Generated | `2026-04-25` |
+| Generated | `2026-04-25` (v1, cropped to inner card) |
+| Description | Geometric "A" monogram on cream rounded-square card. Outer gray background cropped off, card edge is the icon boundary. |
 | Description | Geometric "A" monogram built from book/archive imagery, ink-green on cream |
 | Android densities | mdpi (48), hdpi (72), xhdpi (96), xxhdpi (144), xxxhdpi (192) |
 | Windows ICO sizes | 16, 32, 48, 256 |
@@ -447,6 +448,22 @@ Stitch copy has been locked.
   - app info
 - Local data block is highlighted but still calm
 - Success feedback can float as a compact toast at bottom-right
+
+#### App Info (About) section
+
+The bottom-most section in Settings, separated from previous sections by a
+low-opacity top border.
+
+| Field | Source | Notes |
+|-------|--------|-------|
+| App icon | `assets/icon.png` | 48×48, rounded corners, same as platform launcher icon |
+| Display name | hardcoded | `The Archivist Desktop` |
+| Version | must match `pubspec.yaml` `version` field | Currently `0.1.0`; keep in sync manually unless `package_info_plus` is added |
+| Copyright | hardcoded | `© 2026 AnyRecord Team.` |
+| Description | hardcoded | preservation and curation tagline |
+
+When the pubspec version is bumped for a release, the About version string
+must be updated in the same commit.
 
 ---
 
