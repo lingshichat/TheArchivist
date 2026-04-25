@@ -7,6 +7,7 @@ import 'package:record_anywhere/features/bangumi/data/bangumi_sync_status.dart';
 import 'package:record_anywhere/shared/data/app_database.dart';
 import 'package:record_anywhere/shared/data/device_identity.dart';
 import 'package:record_anywhere/shared/data/repositories/media_repository.dart';
+import 'package:record_anywhere/shared/data/repositories/progress_repository.dart';
 import 'package:record_anywhere/shared/data/repositories/user_entry_repository.dart';
 import 'package:record_anywhere/shared/data/source_id_map.dart';
 import 'package:record_anywhere/shared/network/bangumi_api_client.dart';
@@ -15,6 +16,7 @@ void main() {
   late AppDatabase db;
   late MediaRepository mediaRepository;
   late UserEntryRepository userEntryRepository;
+  late ProgressRepository progressRepository;
   late DeviceIdentityService deviceIdentityService;
 
   setUp(() {
@@ -27,6 +29,10 @@ void main() {
       deviceIdentityService: deviceIdentityService,
     );
     userEntryRepository = UserEntryRepository(
+      db,
+      deviceIdentityService: deviceIdentityService,
+    );
+    progressRepository = ProgressRepository(
       db,
       deviceIdentityService: deviceIdentityService,
     );
@@ -61,6 +67,7 @@ void main() {
         ),
         mediaRepository: mediaRepository,
         userEntryRepository: userEntryRepository,
+        progressRepository: progressRepository,
       );
 
       final summary = await service.pullCollections(
@@ -96,6 +103,7 @@ void main() {
       ),
       mediaRepository: mediaRepository,
       userEntryRepository: userEntryRepository,
+      progressRepository: progressRepository,
         now: () => DateTime(2026, 4, 21, 12, 30),
       );
 
@@ -137,6 +145,7 @@ void main() {
       ),
       mediaRepository: mediaRepository,
       userEntryRepository: userEntryRepository,
+      progressRepository: progressRepository,
     );
 
     final mediaId = await mediaRepository.createItem(

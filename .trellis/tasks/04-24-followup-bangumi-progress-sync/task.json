@@ -3,7 +3,7 @@
   "name": "followup-bangumi-progress-sync",
   "title": "后续增强：Bangumi 进度同步",
   "description": "补齐 Bangumi 观看 / 阅读 / 游玩进度的双向同步缺口",
-  "status": "planning",
+  "status": "in_progress",
   "dev_type": null,
   "scope": null,
   "package": null,
@@ -12,23 +12,11 @@
   "assignee": "lingshichat",
   "createdAt": "2026-04-24",
   "completedAt": null,
-  "branch": null,
+  "branch": "worktree-bangumi-progress-sync",
   "base_branch": "main",
-  "worktree_path": null,
-  "current_phase": 0,
+  "worktree_path": ".claude/worktrees/bangumi-progress-sync",
+  "current_phase": 3,
   "next_action": [
-    {
-      "phase": 1,
-      "action": "brainstorm"
-    },
-    {
-      "phase": 2,
-      "action": "research"
-    },
-    {
-      "phase": 3,
-      "action": "implement"
-    },
     {
       "phase": 4,
       "action": "check"
@@ -44,10 +32,48 @@
   ],
   "commit": null,
   "pr_url": null,
-  "subtasks": [],
+  "subtasks": [
+    {
+      "id": "wp1-api-models",
+      "title": "Bangumi API 层扩展：epStatus 字段与 API 方法",
+      "status": "completed"
+    },
+    {
+      "id": "wp2-push-service",
+      "title": "新建 BangumiProgressSyncService 进度推送服务",
+      "status": "completed"
+    },
+    {
+      "id": "wp3-pull-merge",
+      "title": "扩展 Pull 服务：进度拉取与本地优先合并",
+      "status": "completed"
+    },
+    {
+      "id": "wp4-trigger",
+      "title": "DetailActionsController 进度推送触发点",
+      "status": "completed"
+    },
+    {
+      "id": "wp5-providers",
+      "title": "Provider 注册与依赖注入",
+      "status": "completed"
+    },
+    {
+      "id": "wp6-test",
+      "title": "手动测试与验收",
+      "status": "in_progress"
+    }
+  ],
   "children": [],
   "parent": "04-18-flutter-media-tracker",
-  "relatedFiles": [],
+  "relatedFiles": [
+    "lib/features/bangumi/data/bangumi_models.dart",
+    "lib/features/bangumi/data/bangumi_api_service.dart",
+    "lib/features/bangumi/data/bangumi_progress_sync_service.dart",
+    "lib/features/bangumi/data/bangumi_pull_service.dart",
+    "lib/features/bangumi/data/providers.dart",
+    "lib/features/detail/data/detail_actions_controller.dart"
+  ],
   "notes": "",
   "meta": {}
 }

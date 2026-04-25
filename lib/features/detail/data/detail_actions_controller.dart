@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../features/bangumi/data/bangumi_progress_sync_service.dart';
 import '../../../features/bangumi/data/bangumi_sync_service.dart';
 import '../../../features/bangumi/data/providers.dart';
 import '../../../shared/data/app_database.dart';
@@ -42,6 +43,7 @@ final detailActionsControllerProvider = Provider<DetailActionsController>((
     shelfRepository: ref.watch(shelfRepositoryProvider),
     activityLogRepository: ref.watch(activityLogRepositoryProvider),
     bangumiSyncService: ref.watch(bangumiSyncServiceProvider),
+    bangumiProgressSyncService: ref.watch(bangumiProgressSyncServiceProvider),
   );
 });
 
@@ -54,13 +56,15 @@ class DetailActionsController {
     required ShelfRepository shelfRepository,
     required ActivityLogRepository activityLogRepository,
     required BangumiSyncService bangumiSyncService,
+    required BangumiProgressSyncService bangumiProgressSyncService,
   }) : _mediaRepository = mediaRepository,
        _userEntryRepository = userEntryRepository,
        _progressRepository = progressRepository,
        _tagRepository = tagRepository,
        _shelfRepository = shelfRepository,
        _activityLogRepository = activityLogRepository,
-       _bangumiSyncService = bangumiSyncService;
+       _bangumiSyncService = bangumiSyncService,
+       _bangumiProgressSyncService = bangumiProgressSyncService;
 
   final MediaRepository _mediaRepository;
   final UserEntryRepository _userEntryRepository;
@@ -69,6 +73,7 @@ class DetailActionsController {
   final ShelfRepository _shelfRepository;
   final ActivityLogRepository _activityLogRepository;
   final BangumiSyncService _bangumiSyncService;
+  final BangumiProgressSyncService _bangumiProgressSyncService;
 
   Future<void> applyQuickStatus(
     String mediaItemId,
@@ -100,6 +105,22 @@ class DetailActionsController {
       mediaItemId: mediaItemId,
       status: status,
     );
+
+    // 1.4 状态变为 done 时，若 TV 类型有总集数，同步推送进度
+    if (status == UnifiedStatus.done) {
+      final mediaItem = await _mediaRepository.getItem(mediaItemId);
+      if (mediaItem != null &&
+          mediaItem.mediaType == MediaType.tv &&
+          mediaItem.totalEpisodes != null) {
+        await _progressRepository.updateProgress(
+          mediaItemId,
+          currentEpisode: mediaItem.totalEpisodes,
+        );
+        await _bangumiProgressSyncService.pushProgress(
+          mediaItemId: mediaItemId,
+        );
+      }
+    }
   }
 
   Future<void> saveChanges(
@@ -194,7 +215,7 @@ class DetailActionsController {
     await _tagRepository.syncTagsForMedia(mediaItemId, input.tags);
     await _shelfRepository.syncShelvesForMedia(mediaItemId, input.shelves);
 
-    // 2.5 状态或评分变化后，再统一触发一次 Bangumi 推送
+    // 2.5 本地字段全部落库后，再统一触发 Bangumi 推送
     if (statusChanged) {
       await _bangumiSyncService.pushCollection(
         mediaItemId: mediaItemId,
@@ -205,6 +226,17 @@ class DetailActionsController {
       await _bangumiSyncService.pushCollection(
         mediaItemId: mediaItemId,
         score: input.score,
+      );
+    }
+
+    // 2.6 进度变化时触发 Bangumi 进度推送
+    if (!_sameProgress(
+      mediaItem.mediaType,
+      currentProgress,
+      input.progressValue,
+    )) {
+      await _bangumiProgressSyncService.pushProgress(
+        mediaItemId: mediaItemId,
       );
     }
   }
