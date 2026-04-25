@@ -4,24 +4,34 @@ import '../../../shared/data/providers.dart';
 import '../../../shared/network/s3_api_client.dart';
 import '../../../shared/network/webdav_api_client.dart';
 import 's3_storage_adapter.dart';
+import 'sync_connection_test.dart';
 import 'sync_codec.dart';
 import 'sync_conflict.dart';
 import 'sync_engine.dart';
+import 'sync_operations_service.dart';
 import 'sync_queue.dart';
+import 'snapshot_service.dart';
 import 'sync_status.dart';
+import 'sync_target_config.dart';
 import 'webdav_storage_adapter.dart';
+import 'sync_target_store.dart';
 
 export 's3_storage_adapter.dart';
+export 'sync_connection_test.dart';
 export 'sync_codec.dart';
 export 'sync_conflict.dart';
 export 'sync_engine.dart';
 export 'sync_exception.dart';
 export 'sync_merge_policy.dart';
 export 'sync_models.dart';
+export 'sync_operations_service.dart';
 export 'sync_queue.dart';
+export 'snapshot_service.dart';
 export 'sync_status.dart';
 export 'sync_storage_adapter.dart';
 export 'sync_summary.dart';
+export 'sync_target_config.dart';
+export 'sync_target_store.dart';
 export 'webdav_storage_adapter.dart';
 
 final syncQueueRepositoryProvider = Provider<SyncQueueRepository>((ref) {
@@ -37,6 +47,23 @@ final syncStatusRepositoryProvider = Provider<SyncStatusRepository>((ref) {
 
 final syncConflictRepositoryProvider = Provider<SyncConflictRepository>((ref) {
   return SyncConflictRepository(database: ref.watch(appDatabaseProvider));
+});
+
+final syncTargetStoreProvider = Provider<SyncTargetStore>((ref) {
+  return SecureSyncTargetStore();
+});
+
+final syncTargetConfigProvider = FutureProvider<SyncTargetConfig>((ref) async {
+  final store = ref.watch(syncTargetStoreProvider);
+  return store.read();
+});
+
+final syncConnectionTestServiceProvider = Provider<SyncConnectionTestService>((
+  ref,
+) {
+  return SyncConnectionTestService(
+    deviceIdentityService: ref.watch(deviceIdentityServiceProvider),
+  );
 });
 
 final syncCodecProvider = Provider<SyncCodec>((ref) {
@@ -65,6 +92,27 @@ final syncEngineProvider = Provider<SyncEngine>((ref) {
   return SyncEngine(
     queueRepository: ref.watch(syncQueueRepositoryProvider),
     statusController: ref.read(syncStatusProvider.notifier),
+    codec: ref.watch(syncCodecProvider),
+  );
+});
+
+final syncOperationsServiceProvider = Provider<SyncOperationsService>((ref) {
+  return SyncOperationsService(
+    engine: ref.watch(syncEngineProvider),
+    statusController: ref.read(syncStatusProvider.notifier),
+    queueRepository: ref.watch(syncQueueRepositoryProvider),
+  );
+});
+
+final syncPendingItemsProvider = FutureProvider<List<SyncQueueItem>>((ref) {
+  final queueRepo = ref.watch(syncQueueRepositoryProvider);
+  return queueRepo.listPending();
+});
+
+final snapshotServiceProvider = Provider<SnapshotService>((ref) {
+  return SnapshotService(
+    database: ref.watch(appDatabaseProvider),
+    deviceIdentityService: ref.watch(deviceIdentityServiceProvider),
     codec: ref.watch(syncCodecProvider),
   );
 });

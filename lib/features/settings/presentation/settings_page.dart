@@ -1,9 +1,15 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../sync/data/providers.dart';
 import '../../../shared/theme/app_theme.dart';
+import '../../../shared/widgets/local_feedback.dart';
 import 'bangumi_connection_section.dart';
+import 'sync_target_section.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -54,7 +60,7 @@ class _SettingsContent extends StatelessWidget {
         SizedBox(height: 48),
         BangumiConnectionSection(),
         SizedBox(height: 32),
-        _SyncSection(),
+        SyncTargetSection(),
         SizedBox(height: 32),
         _AboutSection(),
       ],
@@ -274,8 +280,16 @@ class _PreferencesSection extends StatelessWidget {
   }
 }
 
-class _LocalDataSection extends StatelessWidget {
+class _LocalDataSection extends ConsumerStatefulWidget {
   const _LocalDataSection();
+
+  @override
+  ConsumerState<_LocalDataSection> createState() => _LocalDataSectionState();
+}
+
+class _LocalDataSectionState extends ConsumerState<_LocalDataSection> {
+  bool _isExporting = false;
+  bool _isImporting = false;
 
   @override
   Widget build(BuildContext context) {
@@ -358,15 +372,15 @@ class _LocalDataSection extends StatelessWidget {
               final bool split = constraints.maxWidth >= 320;
 
               final Widget export = _DataButton(
-                label: 'Export Backup',
+                label: _isExporting ? 'Exporting...' : 'Export Backup',
                 icon: Icons.file_upload_outlined,
                 filled: true,
-                onTap: () {},
+                onTap: _isExporting || _isImporting ? null : _handleExport,
               );
               final Widget import = _DataButton(
-                label: 'Import Archive',
+                label: _isImporting ? 'Importing...' : 'Import Archive',
                 icon: Icons.file_download_outlined,
-                onTap: () {},
+                onTap: _isExporting || _isImporting ? null : _handleImport,
               );
 
               if (!split) {
@@ -392,194 +406,93 @@ class _LocalDataSection extends StatelessWidget {
       ),
     );
   }
-}
 
-class _SyncSection extends ConsumerWidget {
-  const _SyncSection();
+  Future<void> _handleExport() async {
+    setState(() => _isExporting = true);
+    try {
+      final snapshotService = ref.read(snapshotServiceProvider);
+      final jsonContent = await snapshotService.exportSnapshot();
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final ThemeData theme = Theme.of(context);
-    final syncStatus = ref.watch(syncStatusProvider);
-    final statusColor = _statusColor(syncStatus);
+      final String? outputPath = await FilePicker.platform.saveFile(
+        dialogTitle: 'Export Snapshot',
+        fileName: 'record-anywhere-backup-${DateTime.now().toLocal().toIso8601String().replaceAll(':', '-').substring(0, 19)}.snapshot.json',
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+        bytes: utf8.encode(jsonContent),
+      );
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.xl),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(AppRadii.container),
-        border: Border.all(
-          color: AppColors.outlineVariant.withValues(alpha: 0.12),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.cloud_sync_outlined, size: 18, color: statusColor),
-              const SizedBox(width: AppSpacing.sm),
-              Text('Cloud Sync', style: AppTextStyles.panelTitle(theme)),
-              const Spacer(),
-              _SyncBadge(label: _statusLabel(syncStatus), color: statusColor),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            'Local-first device sync stores only a minimal health snapshot in this phase.',
-            style: theme.textTheme.bodySmall?.copyWith(height: 1.7),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          _SyncFactRow(
-            label: 'CURRENT STATE',
-            value: _statusDescription(syncStatus),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          _SyncFactRow(
-            label: 'LAST SYNC',
-            value: _formatTimestamp(syncStatus.lastCompletedAt),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          _SyncFactRow(
-            label: 'LAST FAILURE',
-            value: syncStatus.lastErrorSummary ?? 'None recorded',
-            isWarning: syncStatus.lastErrorSummary != null,
-          ),
-          const SizedBox(height: AppSpacing.md),
-          _SyncFactRow(
-            label: 'CONFLICTS',
-            value: syncStatus.hasConflicts
-                ? 'Pending text conflict copies'
-                : 'No pending conflicts',
-            isWarning: syncStatus.hasConflicts,
-          ),
-        ],
-      ),
+      if (outputPath != null && mounted) {
+        showLocalFeedback(context, 'Snapshot exported successfully.');
+      }
+    } catch (error) {
+      if (mounted) {
+        showLocalFeedback(
+          context,
+          'Export failed: $error',
+          tone: LocalFeedbackTone.error,
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isExporting = false);
+      }
+    }
+  }
+
+  Future<void> _handleImport() async {
+    final result = await FilePicker.platform.pickFiles(
+      dialogTitle: 'Import Snapshot',
+      type: FileType.custom,
+      allowedExtensions: ['json'],
     );
-  }
 
-  String _statusLabel(SyncStatusState state) {
-    if (state.isRunning) {
-      return 'Syncing';
+    if (result == null || result.files.isEmpty) return;
+
+    final filePath = result.files.first.path;
+    if (filePath == null) return;
+
+    setState(() => _isImporting = true);
+    try {
+      final file = File(filePath);
+      final jsonContent = await file.readAsString();
+
+      final snapshotService = ref.read(snapshotServiceProvider);
+      final importResult = await snapshotService.importSnapshot(jsonContent);
+
+      if (mounted) {
+        final applied = importResult.appliedCount;
+        final skipped = importResult.skippedCount;
+        final conflicts = importResult.conflictCount;
+        final failed = importResult.failedCount;
+
+        final segments = <String>[
+          'Applied $applied',
+          'Skipped $skipped',
+        ];
+        if (conflicts > 0) segments.add('Conflicts $conflicts');
+        if (failed > 0) segments.add('Failed $failed');
+
+        showLocalFeedback(
+          context,
+          'Import complete. ${segments.join(' · ')}',
+          tone: importResult.hasFailures
+              ? LocalFeedbackTone.error
+              : LocalFeedbackTone.success,
+        );
+      }
+    } catch (error) {
+      if (mounted) {
+        showLocalFeedback(
+          context,
+          'Import failed: $error',
+          tone: LocalFeedbackTone.error,
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isImporting = false);
+      }
     }
-    if (state.hasConflicts) {
-      return 'Conflict';
-    }
-    if (state.lastErrorSummary != null) {
-      return 'Failed';
-    }
-    if (state.lastCompletedAt != null) {
-      return 'Synced';
-    }
-    return 'Ready';
-  }
-
-  Color _statusColor(SyncStatusState state) {
-    if (state.hasConflicts || state.lastErrorSummary != null) {
-      return AppColors.error;
-    }
-    if (state.isRunning) {
-      return AppColors.accent;
-    }
-    return AppColors.subtleText;
-  }
-
-  String _statusDescription(SyncStatusState state) {
-    if (state.isRunning) {
-      return 'Sync is running with ${state.pendingCount} pending item(s).';
-    }
-    if (state.hasConflicts) {
-      return 'Sync is paused for user review of text conflicts.';
-    }
-    if (state.lastErrorSummary != null) {
-      return 'Last sync finished with an error.';
-    }
-    if (state.pendingCount > 0) {
-      return '${state.pendingCount} pending item(s) waiting for sync.';
-    }
-    return 'Ready for the next sync run.';
-  }
-
-  String _formatTimestamp(DateTime? value) {
-    if (value == null) {
-      return 'Never synced';
-    }
-
-    String twoDigits(int input) => input.toString().padLeft(2, '0');
-    final local = value.toLocal();
-    final date =
-        '${local.year}-${twoDigits(local.month)}-${twoDigits(local.day)}';
-    final time = '${twoDigits(local.hour)}:${twoDigits(local.minute)}';
-    return '$date $time';
-  }
-}
-
-class _SyncBadge extends StatelessWidget {
-  const _SyncBadge({required this.label, required this.color});
-
-  final String label;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
-      ),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(AppRadii.card),
-      ),
-      child: Text(
-        label.toUpperCase(),
-        style: theme.textTheme.labelMedium?.copyWith(color: color),
-      ),
-    );
-  }
-}
-
-class _SyncFactRow extends StatelessWidget {
-  const _SyncFactRow({
-    required this.label,
-    required this.value,
-    this.isWarning = false,
-  });
-
-  final String label;
-  final String value;
-  final bool isWarning;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final valueColor = isWarning ? AppColors.error : AppColors.onSurface;
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(AppRadii.container),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: theme.textTheme.labelSmall),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            value,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: valueColor,
-              height: 1.55,
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
 
@@ -856,7 +769,7 @@ class _DataButton extends StatelessWidget {
 
   final String label;
   final IconData icon;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final bool filled;
 
   @override
