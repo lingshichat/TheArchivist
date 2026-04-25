@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 11
+- **Total Sessions**: 12
 - **Last Active**: 2026-04-25
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~494 | Active |
+| `journal-1.md` | ~546 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 12 | 2026-04-25 | Phase 5: desktop polish, performance, skeleton, error boundary | `9a027e1`, `50bc28e` | `main` |
 | 11 | 2026-04-25 | Phase 4: sync target, backup, operations UI | `e48641c`, `3b1671f`, `f1a6517` | `main` |
 | 10 | 2026-04-24 | Phase3 WP5 conflict status | `160cb17` | `main` |
 | 9 | 2026-04-23 | 完成 WebDAV 适配器 | `6edbbe46c485d1ce88b294a71357ac6da69d553c` | `main` |

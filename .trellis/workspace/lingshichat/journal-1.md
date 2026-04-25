@@ -492,3 +492,55 @@ Added persisted text conflict copies, minimal sync status display, regression co
 ### Next Steps
 
 - None - task complete
+
+
+## Session 12: Phase 5: desktop polish, performance, skeleton, error boundary
+
+**Date**: 2026-04-25
+**Task**: Phase 5: desktop polish, performance, skeleton, error boundary
+**Branch**: `main`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+| Work Package | Description |
+|--------------|-------------|
+| WP1 Sidebar  | _SidebarNavItem hover: background/border/icon/text color transitions via MouseRegion. AppShellScaffold narrow mode (<768px) hides sidebar, shows hamburger drawer. |
+| WP2 Poster   | RepaintBoundary around each PosterCard to isolate hover repaint from the rest of the Wrap grid. |
+| WP3 Image    | CachedNetworkImage memCache 300x450, disk cache 600x900. fadeInDuration reduced 180ms → 80ms. |
+| WP4 Skeleton | SkeletonCard with pulsing opacity animation + SkeletonGrid layout. LibraryPage loading state now shows 12 skeleton cards instead of text panel. Global ErrorWidget.builder fallback in main.dart. |
+
+**New Files:**
+- `lib/shared/widgets/skeleton_card.dart`
+
+**Modified Files:**
+- `lib/app/shell/app_shell_scaffold.dart`
+- `lib/shared/widgets/poster_wrap.dart`
+- `lib/shared/widgets/poster_image.dart`
+- `lib/features/library/presentation/library_page.dart`
+- `lib/main.dart`
+
+**Tests:** 108/108 passing. flutter analyze: 0 issues.
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `9a027e1` | (see git log) |
+| `50bc28e` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
