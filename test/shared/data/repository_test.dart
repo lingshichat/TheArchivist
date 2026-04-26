@@ -384,6 +384,7 @@ void main() {
           status: UnifiedStatus.inProgress,
           score: 8,
           progressValue: 124,
+          review: 'Public short review.',
           notes: 'Watched the first act locally.',
           tags: <String>['Noir', 'Favorite'],
           shelves: <String>['Weekend', 'Top Picks'],
@@ -400,6 +401,7 @@ void main() {
 
       expect(entry!.status, UnifiedStatus.inProgress);
       expect(entry.score, 8);
+      expect(entry.review, 'Public short review.');
       expect(entry.notes, 'Watched the first act locally.');
       expect(entry.startedAt, isNotNull);
       expect(progress!.currentMinutes, 124);
@@ -462,6 +464,7 @@ void main() {
           status: UnifiedStatus.done,
           score: 9,
           progressValue: null,
+          review: null,
           notes: null,
           tags: <String>[],
           shelves: <String>[],
@@ -472,6 +475,7 @@ void main() {
       expect(bangumiSyncService.calls.single.mediaItemId, mediaId);
       expect(bangumiSyncService.calls.single.status, UnifiedStatus.done);
       expect(bangumiSyncService.calls.single.score, 9);
+      expect(bangumiSyncService.calls.single.tags, <String>[]);
     });
 
     test(
@@ -490,6 +494,7 @@ void main() {
             status: UnifiedStatus.wishlist,
             score: 8,
             progressValue: null,
+            review: null,
             notes: null,
             tags: <String>[],
             shelves: <String>[],
@@ -541,23 +546,25 @@ void main() {
       expect(shelves.first.name, 'New Name');
     });
 
-    test('softDeleteShelf removes shelf from queries and cascades to links',
-        () async {
-      final shelfId = await shelfRepo.createShelf(name: 'To Delete');
-      final mediaId = await mediaRepo.createItem(
-        mediaType: MediaType.movie,
-        title: 'Linked Movie',
-      );
-      await shelfRepo.attachToMedia(mediaId, shelfId);
+    test(
+      'softDeleteShelf removes shelf from queries and cascades to links',
+      () async {
+        final shelfId = await shelfRepo.createShelf(name: 'To Delete');
+        final mediaId = await mediaRepo.createItem(
+          mediaType: MediaType.movie,
+          title: 'Linked Movie',
+        );
+        await shelfRepo.attachToMedia(mediaId, shelfId);
 
-      await shelfRepo.softDeleteShelf(shelfId);
+        await shelfRepo.softDeleteShelf(shelfId);
 
-      final shelves = await shelfRepo.watchUserShelves().first;
-      expect(shelves, isEmpty);
+        final shelves = await shelfRepo.watchUserShelves().first;
+        expect(shelves, isEmpty);
 
-      final links = await db.shelfDao.getByMediaItemId(mediaId);
-      expect(links, isEmpty);
-    });
+        final links = await db.shelfDao.getByMediaItemId(mediaId);
+        expect(links, isEmpty);
+      },
+    );
 
     test('countShelfItems counts only active items', () async {
       final shelfId = await shelfRepo.createShelf(name: 'Counted');
@@ -655,9 +662,17 @@ class _FakeBangumiSyncService implements BangumiSyncService {
     required String mediaItemId,
     UnifiedStatus? status,
     int? score,
+    String? review,
+    List<String>? tags,
   }) async {
     calls.add(
-      _SyncCall(mediaItemId: mediaItemId, status: status, score: score),
+      _SyncCall(
+        mediaItemId: mediaItemId,
+        status: status,
+        score: score,
+        review: review,
+        tags: tags,
+      ),
     );
   }
 }
@@ -668,8 +683,7 @@ class _FakeBangumiProgressSyncService implements BangumiProgressSyncService {
   @override
   Future<void> pushProgress({required String mediaItemId}) async {
     pushedMediaItemIds.add(mediaItemId);
-}
-
+  }
 }
 
 class _SyncCall {
@@ -677,9 +691,13 @@ class _SyncCall {
     required this.mediaItemId,
     required this.status,
     required this.score,
+    required this.review,
+    required this.tags,
   });
 
   final String mediaItemId;
   final UnifiedStatus? status;
   final int? score;
+  final String? review;
+  final List<String>? tags;
 }

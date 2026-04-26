@@ -344,6 +344,8 @@ class _SyncHarness {
         totalEpisodes: Value(existing.totalEpisodes),
         totalPages: Value(existing.totalPages),
         estimatedPlayHours: Value(existing.estimatedPlayHours),
+        communityScore: Value(existing.communityScore),
+        communityRatingCount: Value(existing.communityRatingCount),
         createdAt: existing.createdAt,
         updatedAt: nextUpdatedAt,
         deletedAt: Value(nextUpdatedAt),

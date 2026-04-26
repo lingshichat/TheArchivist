@@ -219,7 +219,7 @@ class MediaDao extends DatabaseAccessor<AppDatabase> with _$MediaDaoMixin {
       MediaItemsCompanion(
         deletedAt: Value(now),
         updatedAt: Value(now),
-        syncVersion: Value.absent(),
+        syncVersion: const Value.absent(),
         deviceId: Value(deviceId),
       ),
     );

@@ -315,6 +315,8 @@ class SyncCodec {
         'totalEpisodes': row.totalEpisodes,
         'totalPages': row.totalPages,
         'estimatedPlayHours': row.estimatedPlayHours,
+        'communityScore': row.communityScore,
+        'communityRatingCount': row.communityRatingCount,
         'createdAt': row.createdAt.toIso8601String(),
       },
     );
@@ -627,6 +629,11 @@ class SyncCodec {
           estimatedPlayHours: _optionalDouble(
             envelope.payload,
             'estimatedPlayHours',
+          ),
+          communityScore: _optionalDouble(envelope.payload, 'communityScore'),
+          communityRatingCount: _optionalInt(
+            envelope.payload,
+            'communityRatingCount',
           ),
           createdAt: _requireDateTime(envelope.payload, 'createdAt'),
           updatedAt: envelope.updatedAt,

@@ -102,6 +102,8 @@ class MediaRepository {
     int? totalEpisodes,
     int? totalPages,
     double? estimatedPlayHours,
+    double? communityScore,
+    int? communityRatingCount,
   }) async {
     final now = SyncStampDecorator.now();
     final id = DeviceIdentityService.generate();
@@ -121,6 +123,8 @@ class MediaRepository {
         totalEpisodes: Value(totalEpisodes),
         totalPages: Value(totalPages),
         estimatedPlayHours: Value(estimatedPlayHours),
+        communityScore: Value(communityScore),
+        communityRatingCount: Value(communityRatingCount),
         createdAt: now,
         updatedAt: now,
         deviceId: Value(deviceId),
@@ -159,6 +163,8 @@ class MediaRepository {
     int? totalEpisodes,
     int? totalPages,
     double? estimatedPlayHours,
+    double? communityScore,
+    int? communityRatingCount,
   }) async {
     /*
      * ========================================================================
@@ -194,6 +200,8 @@ class MediaRepository {
         totalEpisodes: Value(totalEpisodes),
         totalPages: Value(totalPages),
         estimatedPlayHours: Value(estimatedPlayHours),
+        communityScore: Value(communityScore),
+        communityRatingCount: Value(communityRatingCount),
         createdAt: existing.createdAt,
         updatedAt: now,
         deletedAt: Value(existing.deletedAt),
@@ -221,6 +229,8 @@ class MediaRepository {
     int? totalEpisodes,
     int? totalPages,
     double? estimatedPlayHours,
+    double? communityScore,
+    int? communityRatingCount,
     DateTime? deletedAt,
     int syncVersion = 0,
     DateTime? lastSyncedAt,
@@ -251,6 +261,8 @@ class MediaRepository {
         totalEpisodes: Value(totalEpisodes),
         totalPages: Value(totalPages),
         estimatedPlayHours: Value(estimatedPlayHours),
+        communityScore: Value(communityScore),
+        communityRatingCount: Value(communityRatingCount),
         createdAt: createdAt,
         updatedAt: updatedAt,
         deletedAt: Value(deletedAt),
@@ -286,6 +298,59 @@ class MediaRepository {
     await _db.mediaDao.markSynced(mediaItemId, syncedAt, deviceId);
 
     _logger.info('媒体条目同步时间标记完成。');
+  }
+
+  Future<void> applyRemoteCommunityRating(
+    String mediaItemId, {
+    double? communityScore,
+    int? communityRatingCount,
+    required DateTime syncedAt,
+  }) async {
+    /*
+     * ========================================================================
+     * 步骤4：写入远端社区评分
+     * ========================================================================
+     * 目标：
+     *   1) 保存 Bangumi subject.rating 的均分和评分人数
+     *   2) 把社区评分作为 pull-only 展示数据，不影响用户个人评分
+     */
+    _logger.info('开始写入远端社区评分...');
+
+    // 4.1 读取现有媒体条目；不存在时直接跳过
+    final existing = await getItemIncludingDeleted(mediaItemId);
+    if (existing == null) {
+      _logger.info('远端社区评分写入完成。');
+      return;
+    }
+
+    // 4.2 只覆盖社区评分字段，并补写同步戳
+    final deviceId = await _getDeviceId();
+    await _db.mediaDao.upsertItem(
+      MediaItemsCompanion.insert(
+        id: existing.id,
+        mediaType: existing.mediaType,
+        title: existing.title,
+        subtitle: Value(existing.subtitle),
+        posterUrl: Value(existing.posterUrl),
+        releaseDate: Value(existing.releaseDate),
+        overview: Value(existing.overview),
+        sourceIdsJson: Value(existing.sourceIdsJson),
+        runtimeMinutes: Value(existing.runtimeMinutes),
+        totalEpisodes: Value(existing.totalEpisodes),
+        totalPages: Value(existing.totalPages),
+        estimatedPlayHours: Value(existing.estimatedPlayHours),
+        communityScore: Value(communityScore),
+        communityRatingCount: Value(communityRatingCount),
+        createdAt: existing.createdAt,
+        updatedAt: existing.updatedAt,
+        deletedAt: Value(existing.deletedAt),
+        syncVersion: Value(existing.syncVersion),
+        deviceId: Value(deviceId),
+        lastSyncedAt: Value(syncedAt),
+      ),
+    );
+
+    _logger.info('远端社区评分写入完成。');
   }
 
   Future<String> _getDeviceId() async {

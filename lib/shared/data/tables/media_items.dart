@@ -15,6 +15,8 @@ class MediaItems extends Table {
   IntColumn get totalEpisodes => integer().nullable()();
   IntColumn get totalPages => integer().nullable()();
   RealColumn get estimatedPlayHours => real().nullable()();
+  RealColumn get communityScore => real().nullable()();
+  IntColumn get communityRatingCount => integer().nullable()();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
   DateTimeColumn get deletedAt => dateTime().nullable()();

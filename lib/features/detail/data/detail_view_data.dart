@@ -16,6 +16,12 @@ class DetailNotesEntry {
   final String body;
 }
 
+class DetailReviewEntry {
+  const DetailReviewEntry({required this.body});
+
+  final String body;
+}
+
 class DetailLifecycleEntry {
   const DetailLifecycleEntry({
     required this.title,
@@ -42,11 +48,13 @@ class DetailViewData {
     required this.primaryActionLabel,
     required this.primaryActionStatus,
     required this.score,
+    required this.communityRatingLabel,
     required this.lifecycle,
     required this.updateCount,
     this.synopsis,
     this.tags = const <String>[],
     this.shelves = const <String>[],
+    this.review,
     this.notes,
   });
 
@@ -62,9 +70,11 @@ class DetailViewData {
   final String primaryActionLabel;
   final UnifiedStatus primaryActionStatus;
   final int? score;
+  final String communityRatingLabel;
   final String? synopsis;
   final List<String> tags;
   final List<String> shelves;
+  final DetailReviewEntry? review;
   final DetailNotesEntry? notes;
   final List<DetailLifecycleEntry> lifecycle;
   final int updateCount;
@@ -72,6 +82,7 @@ class DetailViewData {
   bool get hasSynopsis => synopsis != null && synopsis!.isNotEmpty;
   bool get hasTags => tags.isNotEmpty;
   bool get hasShelves => shelves.isNotEmpty;
+  bool get hasReview => review != null;
   bool get hasNotes => notes != null;
   bool get hasLifecycle => lifecycle.isNotEmpty;
 }
@@ -105,6 +116,7 @@ final detailViewDataProvider = StreamProvider.family<DetailViewData?, String>((
         logs: logs,
         fallbackTime: base.userEntry?.updatedAt ?? base.mediaItem.updatedAt,
       );
+      final review = _buildReview(reviewBody: base.userEntry?.review);
 
       return DetailViewData(
         mediaId: base.mediaItem.id,
@@ -128,9 +140,11 @@ final detailViewDataProvider = StreamProvider.family<DetailViewData?, String>((
         primaryActionLabel: _primaryActionLabel(base.userEntry?.status),
         primaryActionStatus: _primaryActionStatus(base.userEntry?.status),
         score: base.userEntry?.score,
+        communityRatingLabel: _buildCommunityRatingLabel(base.mediaItem),
         synopsis: base.mediaItem.overview,
         tags: tags.map((tag) => tag.name).toList(),
         shelves: shelves.map((shelf) => shelf.name).toList(),
+        review: review,
         notes: notes,
         lifecycle: _buildLifecycle(logs),
         updateCount: logs.length,
@@ -161,6 +175,30 @@ DetailNotesEntry? _buildNotes({
     date: LocalViewAdapters.formatDateTime(noteTime),
     body: resolvedNotes,
   );
+}
+
+DetailReviewEntry? _buildReview({required String? reviewBody}) {
+  final resolvedReview = reviewBody?.trim();
+  if (resolvedReview == null || resolvedReview.isEmpty) {
+    return null;
+  }
+
+  return DetailReviewEntry(body: resolvedReview);
+}
+
+String _buildCommunityRatingLabel(MediaItem mediaItem) {
+  final score = mediaItem.communityScore;
+  final count = mediaItem.communityRatingCount;
+  if (score == null) {
+    return 'Unknown';
+  }
+
+  final scoreText = score.toStringAsFixed(1);
+  if (count == null || count <= 0) {
+    return '$scoreText/10';
+  }
+
+  return '$scoreText/10 · $count votes';
 }
 
 List<DetailLifecycleEntry> _buildLifecycle(List<ActivityLog> logs) {

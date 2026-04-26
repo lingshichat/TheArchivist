@@ -14,6 +14,8 @@ abstract class BangumiSyncService {
     required String mediaItemId,
     UnifiedStatus? status,
     int? score,
+    String? review,
+    List<String>? tags,
   });
 }
 
@@ -47,6 +49,8 @@ class BangumiCollectionSyncService implements BangumiSyncService {
     required String mediaItemId,
     UnifiedStatus? status,
     int? score,
+    String? review,
+    List<String>? tags,
   }) async {
     /*
      * ========================================================================
@@ -59,7 +63,7 @@ class BangumiCollectionSyncService implements BangumiSyncService {
     _logger.info('开始校验 Bangumi 推送前置条件...');
 
     // 1.1 无待推送字段时直接结束，避免无意义请求
-    if (status == null && score == null) {
+    if (status == null && score == null && review == null && tags == null) {
       _logger.info('Bangumi 推送前置条件校验完成。');
       return;
     }
@@ -100,11 +104,15 @@ class BangumiCollectionSyncService implements BangumiSyncService {
           bangumiId,
           type: BangumiTypeMapper.toCollectionType(status),
           rate: score,
+          comment: review,
+          tags: tags,
         );
       } else {
-        // 2.2 仅评分变化时只 patch rate，避免额外猜测远端收藏类型
+        // 2.2 未同步状态时只 patch 变更字段，避免额外猜测远端收藏类型
         await _apiService.patchCollection(bangumiId, <String, Object?>{
           'rate': score,
+          'comment': review,
+          'tags': tags,
         });
       }
 
@@ -198,6 +206,8 @@ class NoopBangumiSyncService implements BangumiSyncService {
     required String mediaItemId,
     UnifiedStatus? status,
     int? score,
+    String? review,
+    List<String>? tags,
   }) async {
     /*
      * ========================================================================
@@ -210,7 +220,7 @@ class NoopBangumiSyncService implements BangumiSyncService {
     _logger.info('开始跳过 Bangumi 同步占位实现...');
 
     // 1.1 当前实现不做远程调用，只保留接口兼容
-    final _ = (mediaItemId, status, score);
+    final _ = (mediaItemId, status, score, review, tags);
 
     _logger.info('跳过 Bangumi 同步占位实现完成。');
   }

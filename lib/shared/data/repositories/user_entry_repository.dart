@@ -58,6 +58,11 @@ class UserEntryRepository {
     await _db.userEntryDao.updateNotes(mediaItemId, notes, deviceId);
   }
 
+  Future<void> updateReview(String mediaItemId, String? review) async {
+    final deviceId = await _getDeviceId();
+    await _db.userEntryDao.updateReview(mediaItemId, review, deviceId);
+  }
+
   Future<void> toggleFavorite(String mediaItemId, bool favorite) async {
     final deviceId = await _getDeviceId();
     await _db.userEntryDao.toggleFavorite(mediaItemId, favorite, deviceId);
@@ -69,15 +74,30 @@ class UserEntryRepository {
     int? score,
     required DateTime syncedAt,
   }) async {
+    return applyRemoteCollectionFields(
+      mediaItemId,
+      status: status,
+      score: score,
+      syncedAt: syncedAt,
+    );
+  }
+
+  Future<void> applyRemoteCollectionFields(
+    String mediaItemId, {
+    UnifiedStatus? status,
+    int? score,
+    String? review,
+    required DateTime syncedAt,
+  }) async {
     /*
      * ========================================================================
-     * 步骤1：应用远端回拉得到的状态和评分
+     * 步骤1：应用远端回拉得到的收藏字段
      * ========================================================================
      * 目标：
-     *   1) 让 Bangumi pull 在仓储层统一落库 status / score
+     *   1) 让 Bangumi pull 在仓储层统一落库 status / score / review
      *   2) 同步补齐 updatedAt / lastSyncedAt / deviceId 等同步字段
      */
-    _logger.info('开始应用远端回拉状态和评分...');
+    _logger.info('开始应用远端回拉收藏字段...');
 
     // 1.1 读取现有 user entry；不存在时补建默认行
     final existing = await _db.userEntryDao.getByMediaItemId(mediaItemId);
@@ -108,7 +128,7 @@ class UserEntryRepository {
         mediaItemId: mediaItemId,
         status: Value(nextStatus),
         score: Value(score),
-        review: Value(existing?.review),
+        review: Value(_normalizeOptional(review)),
         notes: Value(existing?.notes),
         favorite: Value(existing?.favorite ?? false),
         reconsumeCount: Value(existing?.reconsumeCount ?? 0),
@@ -123,7 +143,7 @@ class UserEntryRepository {
       ),
     );
 
-    _logger.info('远端回拉状态和评分应用完成。');
+    _logger.info('远端回拉收藏字段应用完成。');
   }
 
   Future<void> applyRemoteSnapshot({
@@ -206,5 +226,13 @@ class UserEntryRepository {
 
   Future<String> _getDeviceId() async {
     return _deviceIdentityService.getOrCreateCurrentDeviceId();
+  }
+
+  String? _normalizeOptional(String? value) {
+    final normalized = value?.trim();
+    if (normalized == null || normalized.isEmpty) {
+      return null;
+    }
+    return normalized;
   }
 }

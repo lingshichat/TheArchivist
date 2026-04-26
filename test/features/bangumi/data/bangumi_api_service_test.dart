@@ -124,6 +124,10 @@ void main() {
               'images': <String, Object?>{
                 'common': 'https://example.com/poster.jpg',
               },
+              'tags': <Object?>[
+                <String, Object?>{'name': 'mecha', 'count': 10},
+                <String, Object?>{'name': 'classic', 'count': 8},
+              ],
               'eps': 26,
             },
           ],
@@ -148,6 +152,7 @@ void main() {
       expect(result.data, hasLength(1));
       expect(result.data.first.nameCn, '新世纪福音战士');
       expect(result.data.first.images.common, 'https://example.com/poster.jpg');
+      expect(result.data.first.tags, <String>['mecha', 'classic']);
     });
 
     test(
@@ -289,11 +294,7 @@ void main() {
               'type': 2,
               'rate': 8,
               'updated_at': '2026-04-21T12:00:00+08:00',
-              'subject': <String, Object?>{
-                'id': 42,
-                'type': 2,
-                'name': 'Eva',
-              },
+              'subject': <String, Object?>{'id': 42, 'type': 2, 'name': 'Eva'},
             },
           ],
         }),

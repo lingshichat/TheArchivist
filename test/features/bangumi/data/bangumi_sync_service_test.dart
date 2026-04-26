@@ -168,6 +168,41 @@ void main() {
   });
 
   test(
+    'pushCollection sends review and tags through updateCollection',
+    () async {
+      final apiService = _FakeBangumiApiService();
+      final service = BangumiCollectionSyncService(
+        apiService: apiService,
+        mediaRepository: mediaRepository,
+        userEntryRepository: userEntryRepository,
+        tokenStore: InMemoryBangumiTokenStore(token: 'bound-token'),
+        feedbackController: feedbackController,
+        onUnauthorized: () async {},
+      );
+
+      final mediaId = await mediaRepository.createItem(
+        mediaType: MediaType.tv,
+        title: 'Reviewed Show',
+        sourceIdsJson: SourceIdMap.encode(const <String, String>{
+          'bangumi': '88',
+        }),
+      );
+
+      await service.pushCollection(
+        mediaItemId: mediaId,
+        status: UnifiedStatus.inProgress,
+        review: 'Great pacing.',
+        tags: const <String>['sci-fi', 'classic'],
+      );
+
+      expect(apiService.updateCalls, hasLength(1));
+      expect(apiService.updateCalls.single.subjectId, 88);
+      expect(apiService.updateCalls.single.comment, 'Great pacing.');
+      expect(apiService.updateCalls.single.tags, <String>['sci-fi', 'classic']);
+    },
+  );
+
+  test(
     'pushCollection clears auth on unauthorized and publishes failure',
     () async {
       var unauthorizedTriggered = false;
@@ -231,7 +266,15 @@ class _FakeBangumiApiService extends BangumiApiService {
       throw updateError!;
     }
 
-    updateCalls.add(_UpdateCall(subjectId: subjectId, type: type, rate: rate));
+    updateCalls.add(
+      _UpdateCall(
+        subjectId: subjectId,
+        type: type,
+        rate: rate,
+        comment: comment,
+        tags: tags,
+      ),
+    );
   }
 
   @override
@@ -245,11 +288,15 @@ class _UpdateCall {
     required this.subjectId,
     required this.type,
     required this.rate,
+    required this.comment,
+    required this.tags,
   });
 
   final int subjectId;
   final int type;
   final int? rate;
+  final String? comment;
+  final List<String>? tags;
 }
 
 class _PatchCall {

@@ -348,6 +348,16 @@ class _DetailSidebar extends StatelessWidget {
               const SizedBox(height: AppSpacing.md),
               _RatingRow(score: view.score),
               const SizedBox(height: AppSpacing.xl),
+              Text('BANGUMI RATING', style: theme.textTheme.labelSmall),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                view.communityRatingLabel,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: AppColors.onSurface,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xl),
               _ActionButton(
                 label: view.primaryActionLabel,
                 icon: Icons.play_arrow_rounded,
@@ -490,6 +500,8 @@ class _DetailContent extends StatelessWidget {
                     emptyTitle: 'No lists yet',
                     emptyBody: 'Attach this entry to one or more local lists.',
                   ),
+                  const SizedBox(height: AppSpacing.xl),
+                  _ReviewSection(review: view.review),
                 ],
               ),
             ),
@@ -506,6 +518,7 @@ class _DetailContent extends StatelessWidget {
                 final history = _HistoryWorkspace(
                   entries: view.lifecycle,
                   progressSummary: view.progressSummary,
+                  communityRatingLabel: view.communityRatingLabel,
                   updateCount: view.updateCount,
                 );
 
@@ -591,6 +604,49 @@ class _ChipSection extends StatelessWidget {
   }
 }
 
+class _ReviewSection extends StatelessWidget {
+  const _ReviewSection({required this.review});
+
+  final DetailReviewEntry? review;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('PUBLIC REVIEW', style: theme.textTheme.labelSmall),
+        const SizedBox(height: AppSpacing.md),
+        if (review == null)
+          const EmptyState(
+            compact: true,
+            icon: Icons.rate_review_outlined,
+            title: 'No public review yet',
+            body:
+                'Use Modify Entry to write a short review that can sync to Bangumi.',
+          )
+        else
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(AppRadii.card),
+            ),
+            child: Text(
+              review!.body,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                height: 1.7,
+                color: AppColors.onSurfaceVariant,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
 class _NotesWorkspace extends StatelessWidget {
   const _NotesWorkspace({required this.notes});
 
@@ -670,11 +726,13 @@ class _HistoryWorkspace extends StatelessWidget {
   const _HistoryWorkspace({
     required this.entries,
     required this.progressSummary,
+    required this.communityRatingLabel,
     required this.updateCount,
   });
 
   final List<DetailLifecycleEntry> entries;
   final String progressSummary;
+  final String communityRatingLabel;
   final int updateCount;
 
   @override
@@ -713,6 +771,10 @@ class _HistoryWorkspace extends StatelessWidget {
           children: [
             Expanded(
               child: _StatTile(label: 'PROGRESS', value: progressSummary),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: _StatTile(label: 'BGM SCORE', value: communityRatingLabel),
             ),
             const SizedBox(width: AppSpacing.md),
             Expanded(
@@ -998,6 +1060,7 @@ class _EditEntryDialogState extends State<_EditEntryDialog> {
 
   late final TextEditingController _scoreController;
   late final TextEditingController _progressController;
+  late final TextEditingController _reviewController;
   late final TextEditingController _notesController;
   late final TextEditingController _tagsController;
   late final TextEditingController _shelvesController;
@@ -1018,6 +1081,7 @@ class _EditEntryDialogState extends State<_EditEntryDialog> {
           ? ''
           : _formatProgressValue(view.mediaType, view.progressValue!),
     );
+    _reviewController = TextEditingController(text: view.review?.body ?? '');
     _notesController = TextEditingController(text: view.notes?.body ?? '');
     _tagsController = TextEditingController(text: view.tags.join(', '));
     _shelvesController = TextEditingController(text: view.shelves.join(', '));
@@ -1027,6 +1091,7 @@ class _EditEntryDialogState extends State<_EditEntryDialog> {
   void dispose() {
     _scoreController.dispose();
     _progressController.dispose();
+    _reviewController.dispose();
     _notesController.dispose();
     _tagsController.dispose();
     _shelvesController.dispose();
@@ -1122,9 +1187,22 @@ class _EditEntryDialogState extends State<_EditEntryDialog> {
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   TextFormField(
+                    controller: _reviewController,
+                    style: fieldTextStyle,
+                    decoration: decoration(
+                      'Public review',
+                      hintText: 'Short review synced to Bangumi',
+                    ),
+                    maxLines: 3,
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  TextFormField(
                     controller: _notesController,
                     style: fieldTextStyle,
-                    decoration: decoration('Notes'),
+                    decoration: decoration(
+                      'Private notes',
+                      hintText: 'Local only, never synced to Bangumi',
+                    ),
                     maxLines: 6,
                   ),
                   const SizedBox(height: AppSpacing.lg),
@@ -1183,6 +1261,7 @@ class _EditEntryDialogState extends State<_EditEntryDialog> {
         status: _status,
         score: _parseScore(_scoreController.text),
         progressValue: _parseProgress(_progressController.text),
+        review: _reviewController.text,
         notes: _notesController.text,
         tags: _splitComma(_tagsController.text),
         shelves: _splitComma(_shelvesController.text),

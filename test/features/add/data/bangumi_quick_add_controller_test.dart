@@ -7,6 +7,7 @@ import 'package:record_anywhere/shared/data/app_database.dart';
 import 'package:record_anywhere/shared/data/device_identity.dart';
 import 'package:record_anywhere/shared/data/repositories/activity_log_repository.dart';
 import 'package:record_anywhere/shared/data/repositories/media_repository.dart';
+import 'package:record_anywhere/shared/data/repositories/tag_repository.dart';
 import 'package:record_anywhere/shared/data/repositories/user_entry_repository.dart';
 import 'package:record_anywhere/shared/data/source_id_map.dart';
 
@@ -14,6 +15,7 @@ void main() {
   late AppDatabase db;
   late MediaRepository mediaRepository;
   late UserEntryRepository userEntryRepository;
+  late TagRepository tagRepository;
   late ActivityLogRepository activityLogRepository;
   late DeviceIdentityService deviceIdentityService;
   late _FakeBangumiSyncService syncService;
@@ -32,6 +34,10 @@ void main() {
       db,
       deviceIdentityService: deviceIdentityService,
     );
+    tagRepository = TagRepository(
+      db,
+      deviceIdentityService: deviceIdentityService,
+    );
     activityLogRepository = ActivityLogRepository(
       db,
       deviceIdentityService: deviceIdentityService,
@@ -40,6 +46,7 @@ void main() {
     controller = BangumiQuickAddController(
       mediaRepository: mediaRepository,
       userEntryRepository: userEntryRepository,
+      tagRepository: tagRepository,
       activityLogRepository: activityLogRepository,
       bangumiSyncService: syncService,
     );
@@ -61,6 +68,7 @@ void main() {
           summary: 'A mecha classic.',
           date: '1995-10-04',
           images: BangumiImages(common: 'https://example.com/eva.jpg'),
+          tags: <String>['mecha', 'classic'],
           eps: 26,
           totalEpisodes: 26,
         ),
@@ -69,6 +77,7 @@ void main() {
 
       final item = await mediaRepository.getItem(result.mediaId);
       final entry = await userEntryRepository.getByMediaItemId(result.mediaId);
+      final tags = await tagRepository.getByMediaItemId(result.mediaId);
       final logs = await activityLogRepository
           .watchByMediaItemId(result.mediaId)
           .first;
@@ -83,6 +92,10 @@ void main() {
       expect(entry, isNotNull);
       expect(entry!.status, UnifiedStatus.inProgress);
       expect(entry.startedAt, isNotNull);
+      expect(
+        tags.map((tag) => tag.name),
+        containsAll(<String>['mecha', 'classic']),
+      );
       expect(logs, hasLength(1));
       expect(logs.single.event, ActivityEvent.added);
       expect(syncService.calls, hasLength(1));
@@ -127,9 +140,17 @@ class _FakeBangumiSyncService implements BangumiSyncService {
     required String mediaItemId,
     UnifiedStatus? status,
     int? score,
+    String? review,
+    List<String>? tags,
   }) async {
     calls.add(
-      _SyncCall(mediaItemId: mediaItemId, status: status, score: score),
+      _SyncCall(
+        mediaItemId: mediaItemId,
+        status: status,
+        score: score,
+        review: review,
+        tags: tags,
+      ),
     );
   }
 }
@@ -139,9 +160,13 @@ class _SyncCall {
     required this.mediaItemId,
     required this.status,
     required this.score,
+    required this.review,
+    required this.tags,
   });
 
   final String mediaItemId;
   final UnifiedStatus? status;
   final int? score;
+  final String? review;
+  final List<String>? tags;
 }

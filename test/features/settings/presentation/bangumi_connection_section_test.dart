@@ -143,6 +143,41 @@ void main() {
     expect(pullService.calls.single.trigger, BangumiSyncTrigger.postConnect);
   });
 
+  testWidgets('section enables browser OAuth with built-in desktop config', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          bangumiTokenStoreProvider.overrideWithValue(
+            InMemoryBangumiTokenStore(),
+          ),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: const Scaffold(body: BangumiConnectionSection()),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Browser login is enabled for this desktop build.'),
+      findsOneWidget,
+    );
+
+    final browserLoginButton = tester.widget<ButtonStyleButton>(
+      find.ancestor(
+        of: find.text('Sign in with Browser'),
+        matching: find.byWidgetPredicate(
+          (widget) => widget is ButtonStyleButton,
+        ),
+      ),
+    );
+    expect(browserLoginButton.onPressed, isNotNull);
+  });
+
   testWidgets('section can trigger manual sync and render sync summary', (
     tester,
   ) async {

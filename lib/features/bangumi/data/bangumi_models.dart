@@ -41,6 +41,7 @@ class BangumiSubjectDto {
     this.summary,
     this.date,
     this.images = const BangumiImages.empty(),
+    this.tags = const <String>[],
     this.rating,
     this.eps,
     this.totalEpisodes,
@@ -59,6 +60,9 @@ class BangumiSubjectDto {
             _asMap(json['image']) ??
             const <String, Object?>{},
       ),
+      tags: _asDynamicList(
+        json['tags'],
+      ).map(_asTagName).whereType<String>().toList(growable: false),
       rating: _asMap(json['rating']) == null
           ? null
           : BangumiRatingDto.fromJson(_asMap(json['rating'])!),
@@ -74,6 +78,7 @@ class BangumiSubjectDto {
   final String? summary;
   final String? date;
   final BangumiImages images;
+  final List<String> tags;
   final BangumiRatingDto? rating;
   final int? eps;
   final int? totalEpisodes;
@@ -87,6 +92,7 @@ class BangumiSubjectDto {
       'summary': summary,
       'date': date,
       'images': images.toJson(),
+      'tags': tags,
       'rating': rating?.toJson(),
       'eps': eps,
       'total_episodes': totalEpisodes,
@@ -415,4 +421,18 @@ String? _asNullableTrimmedString(Object? value) {
     return null;
   }
   return normalized;
+}
+
+String? _asTagName(Object? value) {
+  final mapValue = _asMap(value);
+  if (mapValue != null) {
+    return _asNullableTrimmedString(mapValue['name']);
+  }
+
+  final directName = _asNullableTrimmedString(value);
+  if (directName != null) {
+    return directName;
+  }
+
+  return null;
 }

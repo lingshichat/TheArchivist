@@ -8,6 +8,7 @@ import '../../../shared/data/app_database.dart';
 import '../../../shared/data/providers.dart';
 import '../../../shared/data/repositories/activity_log_repository.dart';
 import '../../../shared/data/repositories/media_repository.dart';
+import '../../../shared/data/repositories/tag_repository.dart';
 import '../../../shared/data/repositories/user_entry_repository.dart';
 import '../../../shared/data/source_id_map.dart';
 import '../../../shared/utils/step_logger.dart';
@@ -28,6 +29,7 @@ final bangumiQuickAddControllerProvider = Provider<BangumiQuickAddController>((
   return BangumiQuickAddController(
     mediaRepository: ref.watch(mediaRepositoryProvider),
     userEntryRepository: ref.watch(userEntryRepositoryProvider),
+    tagRepository: ref.watch(tagRepositoryProvider),
     activityLogRepository: ref.watch(activityLogRepositoryProvider),
     bangumiSyncService: ref.watch(bangumiSyncServiceProvider),
   );
@@ -37,17 +39,20 @@ class BangumiQuickAddController {
   BangumiQuickAddController({
     required MediaRepository mediaRepository,
     required UserEntryRepository userEntryRepository,
+    required TagRepository tagRepository,
     required ActivityLogRepository activityLogRepository,
     required BangumiSyncService bangumiSyncService,
     StepLogger? logger,
   }) : _mediaRepository = mediaRepository,
        _userEntryRepository = userEntryRepository,
+       _tagRepository = tagRepository,
        _activityLogRepository = activityLogRepository,
        _bangumiSyncService = bangumiSyncService,
        _logger = logger ?? const StepLogger('BangumiQuickAddController');
 
   final MediaRepository _mediaRepository;
   final UserEntryRepository _userEntryRepository;
+  final TagRepository _tagRepository;
   final ActivityLogRepository _activityLogRepository;
   final BangumiSyncService _bangumiSyncService;
   final StepLogger _logger;
@@ -106,6 +111,8 @@ class BangumiQuickAddController {
       totalEpisodes: mediaDraft.totalEpisodes,
       totalPages: mediaDraft.totalPages,
       estimatedPlayHours: mediaDraft.estimatedPlayHours,
+      communityScore: mediaDraft.communityScore,
+      communityRatingCount: mediaDraft.communityRatingCount,
     );
 
     // 2.2 把默认 wishlist user entry 更新成用户选择状态
@@ -113,7 +120,12 @@ class BangumiQuickAddController {
       await _userEntryRepository.updateStatus(mediaId, status);
     }
 
-    // 2.3 记录本地 added activity，保持详情页时间线完整
+    // 2.3 把 Bangumi subject 公共标签追加到本地标签表
+    if (mediaDraft.tags.isNotEmpty) {
+      await _tagRepository.addTagsForMedia(mediaId, mediaDraft.tags);
+    }
+
+    // 2.4 记录本地 added activity，保持详情页时间线完整
     await _activityLogRepository.appendEvent(
       mediaId,
       ActivityEvent.added,

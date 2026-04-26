@@ -146,7 +146,7 @@ class BangumiApiService {
         data: _compactMap(<String, Object?>{
           'type': type,
           'rate': rate,
-          'comment': _normalizeOptional(comment),
+          'comment': comment?.trim(),
           'private': isPrivate,
           'tags': _normalizeTags(tags),
           'ep_status': epStatus,
@@ -214,14 +214,6 @@ class BangumiApiService {
         });
   }
 
-  String? _normalizeOptional(String? value) {
-    final normalized = value?.trim();
-    if (normalized == null || normalized.isEmpty) {
-      return null;
-    }
-    return normalized;
-  }
-
   List<String>? _normalizeTags(List<String>? tags) {
     if (tags == null) {
       return null;
@@ -232,7 +224,7 @@ class BangumiApiService {
         .where((item) => item.isNotEmpty)
         .toList(growable: false);
 
-    return normalized.isEmpty ? null : normalized;
+    return normalized;
   }
 
   int? _normalizeSubjectType(int? subjectType) {

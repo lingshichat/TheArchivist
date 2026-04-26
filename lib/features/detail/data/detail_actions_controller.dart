@@ -18,6 +18,7 @@ class DetailEntryUpdateInput {
     required this.status,
     required this.score,
     required this.progressValue,
+    required this.review,
     required this.notes,
     required this.tags,
     required this.shelves,
@@ -27,6 +28,7 @@ class DetailEntryUpdateInput {
   final UnifiedStatus status;
   final int? score;
   final double? progressValue;
+  final String? review;
   final String? notes;
   final List<String> tags;
   final List<String> shelves;
@@ -133,7 +135,7 @@ class DetailActionsController {
      * ========================================================================
      * 目标：
      *   1) 先完成本地状态、评分、进度、笔记等写入
-     *   2) 仅在状态或评分变化时触发一次 Bangumi 推送
+     *   2) 仅在 Bangumi 收藏字段变化时触发一次 Bangumi 推送
      */
 
     // 2.1 读取本地基线数据，确定哪些字段真正发生变化
@@ -148,10 +150,14 @@ class DetailActionsController {
     final currentProgress = await _progressRepository.getByMediaItemId(
       mediaItemId,
     );
+    final currentTags = await _tagRepository.getByMediaItemId(mediaItemId);
 
     final currentStatus = currentEntry?.status ?? UnifiedStatus.wishlist;
     final statusChanged = currentStatus != input.status;
     final scoreChanged = currentEntry?.score != input.score;
+    final normalizedReview = _normalizeOptional(input.review);
+    final reviewChanged =
+        _normalizeOptional(currentEntry?.review) != normalizedReview;
 
     // 2.2 状态变化时先更新本地 user entry 和 activity log
     if (statusChanged) {
@@ -212,15 +218,27 @@ class DetailActionsController {
       );
     }
 
+    // 2.5 公开短评变化时写入本地 review；notes 仍作为私有笔记独立保存
+    if (reviewChanged) {
+      await _userEntryRepository.updateReview(mediaItemId, normalizedReview);
+    }
+
     await _tagRepository.syncTagsForMedia(mediaItemId, input.tags);
     await _shelfRepository.syncShelvesForMedia(mediaItemId, input.shelves);
 
-    // 2.5 本地字段全部落库后，再统一触发 Bangumi 推送
-    if (statusChanged) {
+    final tagsChanged = !_sameStringList(
+      currentTags.map((tag) => tag.name).toList(growable: false),
+      input.tags,
+    );
+
+    // 2.6 本地字段全部落库后，再统一触发 Bangumi 推送
+    if (statusChanged || reviewChanged || tagsChanged) {
       await _bangumiSyncService.pushCollection(
         mediaItemId: mediaItemId,
         status: input.status,
         score: input.score,
+        review: normalizedReview,
+        tags: input.tags,
       );
     } else if (scoreChanged) {
       await _bangumiSyncService.pushCollection(
@@ -229,15 +247,13 @@ class DetailActionsController {
       );
     }
 
-    // 2.6 进度变化时触发 Bangumi 进度推送
+    // 2.7 进度变化时触发 Bangumi 进度推送
     if (!_sameProgress(
       mediaItem.mediaType,
       currentProgress,
       input.progressValue,
     )) {
-      await _bangumiProgressSyncService.pushProgress(
-        mediaItemId: mediaItemId,
-      );
+      await _bangumiProgressSyncService.pushProgress(mediaItemId: mediaItemId);
     }
   }
 
@@ -374,6 +390,39 @@ class DetailActionsController {
     if (normalized == null || normalized.isEmpty) {
       return null;
     }
+    return normalized;
+  }
+
+  bool _sameStringList(List<String> left, List<String> right) {
+    final normalizedLeft = _normalizeList(left);
+    final normalizedRight = _normalizeList(right);
+    if (normalizedLeft.length != normalizedRight.length) {
+      return false;
+    }
+
+    for (var index = 0; index < normalizedLeft.length; index += 1) {
+      if (normalizedLeft[index] != normalizedRight[index]) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  List<String> _normalizeList(List<String> values) {
+    final seen = <String>{};
+    final normalized = <String>[];
+    for (final value in values) {
+      final trimmed = value.trim();
+      if (trimmed.isEmpty) {
+        continue;
+      }
+      final key = trimmed.toLowerCase();
+      if (seen.add(key)) {
+        normalized.add(key);
+      }
+    }
+    normalized.sort();
     return normalized;
   }
 }

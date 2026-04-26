@@ -76,6 +76,23 @@ class UserEntryDao extends DatabaseAccessor<AppDatabase>
     );
   }
 
+  Future<void> updateReview(
+    String mediaItemId,
+    String? review,
+    String deviceId,
+  ) {
+    final now = DateTime.now();
+    return (update(
+      userEntries,
+    )..where((t) => t.mediaItemId.equals(mediaItemId))).write(
+      UserEntriesCompanion(
+        review: Value(review),
+        updatedAt: Value(now),
+        deviceId: Value(deviceId),
+      ),
+    );
+  }
+
   Future<void> toggleFavorite(
     String mediaItemId,
     bool favorite,

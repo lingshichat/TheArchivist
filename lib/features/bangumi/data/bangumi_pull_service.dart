@@ -1,6 +1,7 @@
 import '../../../shared/data/app_database.dart';
 import '../../../shared/data/repositories/media_repository.dart';
 import '../../../shared/data/repositories/progress_repository.dart';
+import '../../../shared/data/repositories/tag_repository.dart';
 import '../../../shared/data/repositories/user_entry_repository.dart';
 import '../../../shared/data/source_id_map.dart';
 import '../../../shared/network/bangumi_api_client.dart';
@@ -17,12 +18,14 @@ class BangumiCollectionPullService implements BangumiPullService {
     required MediaRepository mediaRepository,
     required UserEntryRepository userEntryRepository,
     required ProgressRepository progressRepository,
+    required TagRepository tagRepository,
     DateTime Function()? now,
     StepLogger? logger,
   }) : _apiService = apiService,
        _mediaRepository = mediaRepository,
        _userEntryRepository = userEntryRepository,
        _progressRepository = progressRepository,
+       _tagRepository = tagRepository,
        _now = now ?? DateTime.now,
        _logger = logger ?? const StepLogger('BangumiCollectionPullService');
 
@@ -32,6 +35,7 @@ class BangumiCollectionPullService implements BangumiPullService {
   final MediaRepository _mediaRepository;
   final UserEntryRepository _userEntryRepository;
   final ProgressRepository _progressRepository;
+  final TagRepository _tagRepository;
   final DateTime Function() _now;
   final StepLogger _logger;
 
@@ -157,13 +161,15 @@ class BangumiCollectionPullService implements BangumiPullService {
         localEntry,
         remoteStatus: remoteStatus,
         remoteScore: remoteScore,
+        remoteReview: collection.comment,
       );
 
       if (shouldApplyRemote) {
-        await _userEntryRepository.applyRemoteStatusAndScore(
+        await _userEntryRepository.applyRemoteCollectionFields(
           localItem.id,
           status: remoteStatus,
           score: remoteScore,
+          review: collection.comment,
           syncedAt: syncedAt,
         );
         summary.updatedCount += 1;
@@ -173,6 +179,8 @@ class BangumiCollectionPullService implements BangumiPullService {
       }
 
       await _mediaRepository.markSynced(localItem.id, syncedAt);
+      await _reconcileCommunityRating(localItem.id, collection: collection);
+      await _reconcileTags(localItem.id, collection: collection);
 
       // 步骤2.4：合并进度
       await _reconcileProgress(
@@ -238,13 +246,22 @@ class BangumiCollectionPullService implements BangumiPullService {
       totalEpisodes: mediaDraft.totalEpisodes,
       totalPages: mediaDraft.totalPages,
       estimatedPlayHours: mediaDraft.estimatedPlayHours,
+      communityScore: mediaDraft.communityScore,
+      communityRatingCount: mediaDraft.communityRatingCount,
     );
 
     final syncedAt = _now();
-    await _userEntryRepository.applyRemoteStatusAndScore(
+    await _userEntryRepository.applyRemoteCollectionFields(
       mediaItemId,
       status: remoteStatus,
       score: remoteScore,
+      review: collection.comment,
+      syncedAt: syncedAt,
+    );
+    await _reconcileTags(
+      mediaItemId,
+      collection: collection,
+      subject: subject,
       syncedAt: syncedAt,
     );
 
@@ -311,6 +328,7 @@ class BangumiCollectionPullService implements BangumiPullService {
     UserEntry? localEntry, {
     required UnifiedStatus? remoteStatus,
     required int? remoteScore,
+    required String? remoteReview,
   }) {
     if (localEntry == null) {
       return true;
@@ -321,7 +339,138 @@ class BangumiCollectionPullService implements BangumiPullService {
       return true;
     }
 
-    return localEntry.score != remoteScore;
+    return localEntry.score != remoteScore ||
+        _normalizeOptional(localEntry.review) !=
+            _normalizeOptional(remoteReview);
+  }
+
+  Future<void> _reconcileCommunityRating(
+    String mediaItemId, {
+    required BangumiCollectionDto collection,
+  }) async {
+    /*
+     * ========================================================================
+     * 步骤4：合并 Bangumi 社区评分
+     * ========================================================================
+     * 目标：
+     *   1) 从 collection 内嵌 subject 写入社区均分和评分人数
+     *   2) 只作为展示数据覆盖更新，不参与用户评分冲突
+     */
+    _logger.info('开始合并 Bangumi 社区评分...');
+
+    // 4.1 优先复用收藏列表内嵌 rating，缺失时回退到 subject 详情缓存
+    final rating = await _resolveRating(collection);
+    if (rating == null) {
+      _logger.info('Bangumi 社区评分合并完成。');
+      return;
+    }
+
+    // 4.2 写入 media_items 的 pull-only 展示字段
+    await _mediaRepository.applyRemoteCommunityRating(
+      mediaItemId,
+      communityScore: rating.score,
+      communityRatingCount: rating.total,
+      syncedAt: _now(),
+    );
+
+    _logger.info('Bangumi 社区评分合并完成。');
+  }
+
+  Future<BangumiRatingDto?> _resolveRating(
+    BangumiCollectionDto collection,
+  ) async {
+    final embeddedRating = collection.subject?.rating;
+    if (embeddedRating != null) {
+      return embeddedRating;
+    }
+
+    try {
+      return (await _apiService.getSubject(collection.subjectId)).rating;
+    } on BangumiApiException {
+      return null;
+    } on ArgumentError {
+      return null;
+    }
+  }
+
+  Future<void> _reconcileTags(
+    String mediaItemId, {
+    required BangumiCollectionDto collection,
+    BangumiSubjectDto? subject,
+    DateTime? syncedAt,
+  }) async {
+    /*
+     * ========================================================================
+     * 步骤5：合并 Bangumi 标签
+     * ========================================================================
+     * 目标：
+     *   1) 把远端收藏 tags 和 subject 公共 tags 追加进本地标签表和关联表
+     *   2) 不删除本地已有额外标签，保持加法合并策略
+     */
+    _logger.info('开始合并 Bangumi 标签...');
+
+    // 5.1 合并收藏标签和 subject 公共标签，远端无标签时跳过
+    final tags = await _resolveTags(collection, subject: subject);
+    if (tags.isEmpty) {
+      _logger.info('Bangumi 标签合并完成。');
+      return;
+    }
+
+    // 5.2 只追加或恢复远端标签关联，并标记为已同步
+    await _tagRepository.addTagsForMedia(
+      mediaItemId,
+      tags,
+      syncedAt: syncedAt ?? _now(),
+    );
+
+    _logger.info('Bangumi 标签合并完成。');
+  }
+
+  String? _normalizeOptional(String? value) {
+    final normalized = value?.trim();
+    if (normalized == null || normalized.isEmpty) {
+      return null;
+    }
+    return normalized;
+  }
+
+  Future<List<String>> _resolveTags(
+    BangumiCollectionDto collection, {
+    BangumiSubjectDto? subject,
+  }) async {
+    final embeddedTags = _mergeTags(<String>[
+      ...collection.tags,
+      ...((subject ?? collection.subject)?.tags ?? const <String>[]),
+    ]);
+    if (embeddedTags.isNotEmpty) {
+      return embeddedTags;
+    }
+
+    try {
+      final detailSubject = await _apiService.getSubject(collection.subjectId);
+      return _mergeTags(<String>[...collection.tags, ...detailSubject.tags]);
+    } on BangumiApiException {
+      return collection.tags;
+    } on ArgumentError {
+      return collection.tags;
+    }
+  }
+
+  List<String> _mergeTags(List<String> values) {
+    final seen = <String>{};
+    final merged = <String>[];
+    for (final value in values) {
+      final tag = _normalizeOptional(value);
+      if (tag == null) {
+        continue;
+      }
+
+      final key = tag.toLowerCase();
+      if (seen.add(key)) {
+        merged.add(tag);
+      }
+    }
+    return merged;
   }
 
   Future<void> _reconcileProgress(
@@ -338,7 +487,9 @@ class BangumiCollectionPullService implements BangumiPullService {
       return;
     }
 
-    final localProgress = await _progressRepository.getByMediaItemId(mediaItemId);
+    final localProgress = await _progressRepository.getByMediaItemId(
+      mediaItemId,
+    );
 
     if (_isProgressDirty(localProgress)) {
       summary.localWinsCount += 1;
@@ -360,7 +511,9 @@ class BangumiCollectionPullService implements BangumiPullService {
       return;
     }
 
-    final existingProgress = await _progressRepository.getByMediaItemId(mediaItemId);
+    final existingProgress = await _progressRepository.getByMediaItemId(
+      mediaItemId,
+    );
     final bool shouldApply = _shouldApplyProgress(
       existingProgress,
       currentEpisode: progressTuple.$1,

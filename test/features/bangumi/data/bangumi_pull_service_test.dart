@@ -8,6 +8,7 @@ import 'package:record_anywhere/shared/data/app_database.dart';
 import 'package:record_anywhere/shared/data/device_identity.dart';
 import 'package:record_anywhere/shared/data/repositories/media_repository.dart';
 import 'package:record_anywhere/shared/data/repositories/progress_repository.dart';
+import 'package:record_anywhere/shared/data/repositories/tag_repository.dart';
 import 'package:record_anywhere/shared/data/repositories/user_entry_repository.dart';
 import 'package:record_anywhere/shared/data/source_id_map.dart';
 import 'package:record_anywhere/shared/network/bangumi_api_client.dart';
@@ -17,6 +18,7 @@ void main() {
   late MediaRepository mediaRepository;
   late UserEntryRepository userEntryRepository;
   late ProgressRepository progressRepository;
+  late TagRepository tagRepository;
   late DeviceIdentityService deviceIdentityService;
 
   setUp(() {
@@ -36,6 +38,10 @@ void main() {
       db,
       deviceIdentityService: deviceIdentityService,
     );
+    tagRepository = TagRepository(
+      db,
+      deviceIdentityService: deviceIdentityService,
+    );
   });
 
   tearDown(() async {
@@ -45,18 +51,18 @@ void main() {
   test(
     'pullCollections imports remote-only rows via subject fallback',
     () async {
-    final service = BangumiCollectionPullService(
-      apiService: _FakeBangumiApiService(
-        pagesBySubjectType: <int, List<List<BangumiCollectionDto>>>{
-          2: <List<BangumiCollectionDto>>[
-            <BangumiCollectionDto>[
-              const BangumiCollectionDto(subjectId: 42, type: 2, rate: 7),
+      final service = BangumiCollectionPullService(
+        apiService: _FakeBangumiApiService(
+          pagesBySubjectType: <int, List<List<BangumiCollectionDto>>>{
+            2: <List<BangumiCollectionDto>>[
+              <BangumiCollectionDto>[
+                const BangumiCollectionDto(subjectId: 42, type: 2, rate: 7),
+              ],
             ],
-          ],
-        },
-        subjects: <int, BangumiSubjectDto>{
-          42: const BangumiSubjectDto(
-            id: 42,
+          },
+          subjects: <int, BangumiSubjectDto>{
+            42: const BangumiSubjectDto(
+              id: 42,
               type: 2,
               name: 'Neon Genesis Evangelion',
               nameCn: '新世纪福音战士',
@@ -68,6 +74,7 @@ void main() {
         mediaRepository: mediaRepository,
         userEntryRepository: userEntryRepository,
         progressRepository: progressRepository,
+        tagRepository: tagRepository,
       );
 
       final summary = await service.pullCollections(
@@ -91,19 +98,20 @@ void main() {
   test(
     'pullCollections updates a clean local row and marks it synced',
     () async {
-    final service = BangumiCollectionPullService(
-      apiService: _FakeBangumiApiService(
-        pagesBySubjectType: <int, List<List<BangumiCollectionDto>>>{
-          6: <List<BangumiCollectionDto>>[
-            <BangumiCollectionDto>[
-              const BangumiCollectionDto(subjectId: 9, type: 3, rate: 8),
+      final service = BangumiCollectionPullService(
+        apiService: _FakeBangumiApiService(
+          pagesBySubjectType: <int, List<List<BangumiCollectionDto>>>{
+            6: <List<BangumiCollectionDto>>[
+              <BangumiCollectionDto>[
+                const BangumiCollectionDto(subjectId: 9, type: 3, rate: 8),
+              ],
             ],
-          ],
-        },
-      ),
-      mediaRepository: mediaRepository,
-      userEntryRepository: userEntryRepository,
-      progressRepository: progressRepository,
+          },
+        ),
+        mediaRepository: mediaRepository,
+        userEntryRepository: userEntryRepository,
+        progressRepository: progressRepository,
+        tagRepository: tagRepository,
         now: () => DateTime(2026, 4, 21, 12, 30),
       );
 
@@ -146,6 +154,7 @@ void main() {
       mediaRepository: mediaRepository,
       userEntryRepository: userEntryRepository,
       progressRepository: progressRepository,
+      tagRepository: tagRepository,
     );
 
     final mediaId = await mediaRepository.createItem(
@@ -168,6 +177,114 @@ void main() {
     expect(entry?.score, isNull);
     expect(entry?.lastSyncedAt, isNull);
   });
+
+  test('pullCollections imports review tags and community rating', () async {
+    final service = BangumiCollectionPullService(
+      apiService: _FakeBangumiApiService(
+        pagesBySubjectType: <int, List<List<BangumiCollectionDto>>>{
+          2: <List<BangumiCollectionDto>>[
+            <BangumiCollectionDto>[
+              const BangumiCollectionDto(
+                subjectId: 99,
+                type: 2,
+                rate: 9,
+                comment: 'Remote review.',
+                tags: <String>['mecha', 'classic'],
+                subject: BangumiSubjectDto(
+                  id: 99,
+                  type: 2,
+                  name: 'Reviewed Subject',
+                  tags: <String>['robot'],
+                  rating: BangumiRatingDto(score: 8.3, total: 1200),
+                ),
+              ),
+            ],
+          ],
+        },
+      ),
+      mediaRepository: mediaRepository,
+      userEntryRepository: userEntryRepository,
+      progressRepository: progressRepository,
+      tagRepository: tagRepository,
+    );
+
+    final summary = await service.pullCollections(
+      username: 'ikari',
+      trigger: BangumiSyncTrigger.manual,
+    );
+
+    final imported = await mediaRepository.findBySourceId('bangumi', '99');
+    final entry = await userEntryRepository.getByMediaItemId(imported!.id);
+    final tags = await tagRepository.getByMediaItemId(imported.id);
+
+    expect(summary.importedCount, 1);
+    expect(entry?.review, 'Remote review.');
+    expect(imported.communityScore, 8.3);
+    expect(imported.communityRatingCount, 1200);
+    expect(
+      tags.map((tag) => tag.name),
+      containsAll(<String>['mecha', 'classic', 'robot']),
+    );
+  });
+
+  test(
+    'pullCollections falls back to subject detail for subject tags',
+    () async {
+      final mediaId = await mediaRepository.createItem(
+        mediaType: MediaType.tv,
+        title: 'Existing Subject',
+        sourceIdsJson: SourceIdMap.encode(const <String, String>{
+          'bangumi': '100',
+        }),
+      );
+      final syncedAt = DateTime.now();
+      await mediaRepository.markSynced(mediaId, syncedAt);
+      await userEntryRepository.markSynced(mediaId, syncedAt);
+
+      final service = BangumiCollectionPullService(
+        apiService: _FakeBangumiApiService(
+          pagesBySubjectType: <int, List<List<BangumiCollectionDto>>>{
+            2: <List<BangumiCollectionDto>>[
+              <BangumiCollectionDto>[
+                const BangumiCollectionDto(
+                  subjectId: 100,
+                  type: 2,
+                  subject: BangumiSubjectDto(
+                    id: 100,
+                    type: 2,
+                    name: 'Existing Subject',
+                  ),
+                ),
+              ],
+            ],
+          },
+          subjects: const <int, BangumiSubjectDto>{
+            100: BangumiSubjectDto(
+              id: 100,
+              type: 2,
+              name: 'Existing Subject',
+              tags: <String>['short', 'comedy'],
+            ),
+          },
+        ),
+        mediaRepository: mediaRepository,
+        userEntryRepository: userEntryRepository,
+        progressRepository: progressRepository,
+        tagRepository: tagRepository,
+      );
+
+      await service.pullCollections(
+        username: 'ikari',
+        trigger: BangumiSyncTrigger.manual,
+      );
+
+      final tags = await tagRepository.getByMediaItemId(mediaId);
+      expect(
+        tags.map((tag) => tag.name),
+        containsAll(<String>['short', 'comedy']),
+      );
+    },
+  );
 }
 
 class _FakeBangumiApiService extends BangumiApiService {
@@ -188,7 +305,9 @@ class _FakeBangumiApiService extends BangumiApiService {
     int? subjectType,
   }) async {
     final normalizedSubjectType = subjectType ?? -1;
-    final pages = pagesBySubjectType[normalizedSubjectType] ?? const <List<BangumiCollectionDto>>[];
+    final pages =
+        pagesBySubjectType[normalizedSubjectType] ??
+        const <List<BangumiCollectionDto>>[];
     final pageIndex = _subjectTypeOffsets[normalizedSubjectType] ?? 0;
     _subjectTypeOffsets[normalizedSubjectType] = pageIndex + 1;
     if (pageIndex >= pages.length) {
@@ -201,10 +320,7 @@ class _FakeBangumiApiService extends BangumiApiService {
     }
 
     final data = pages[pageIndex];
-    final total = pages.fold<int>(
-      0,
-      (count, page) => count + page.length,
-    );
+    final total = pages.fold<int>(0, (count, page) => count + page.length);
     return BangumiCollectionPage(
       total: total,
       data: data,

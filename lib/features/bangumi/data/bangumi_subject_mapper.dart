@@ -15,6 +15,9 @@ class BangumiLocalMediaDraft {
     this.totalEpisodes,
     this.totalPages,
     this.estimatedPlayHours,
+    this.tags = const <String>[],
+    this.communityScore,
+    this.communityRatingCount,
   });
 
   final MediaType mediaType;
@@ -27,6 +30,9 @@ class BangumiLocalMediaDraft {
   final int? totalEpisodes;
   final int? totalPages;
   final double? estimatedPlayHours;
+  final List<String> tags;
+  final double? communityScore;
+  final int? communityRatingCount;
 }
 
 abstract final class BangumiSubjectMapper {
@@ -58,6 +64,9 @@ abstract final class BangumiSubjectMapper {
       releaseDate: _parseReleaseDate(subject.date),
       overview: _normalizeOptional(subject.summary),
       totalEpisodes: mediaType == MediaType.tv ? subject.totalEpisodes : null,
+      tags: _normalizeTags(subject.tags),
+      communityScore: subject.rating?.score,
+      communityRatingCount: subject.rating?.total,
     );
 
     _logger.info('Bangumi Subject 到本地媒体草稿映射完成。');
@@ -123,5 +132,22 @@ abstract final class BangumiSubjectMapper {
       return null;
     }
     return normalizedValue;
+  }
+
+  static List<String> _normalizeTags(List<String> values) {
+    final seen = <String>{};
+    final normalized = <String>[];
+    for (final value in values) {
+      final tag = _normalizeOptional(value);
+      if (tag == null) {
+        continue;
+      }
+
+      final key = tag.toLowerCase();
+      if (seen.add(key)) {
+        normalized.add(tag);
+      }
+    }
+    return normalized;
   }
 }

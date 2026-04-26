@@ -130,6 +130,52 @@ class TagRepository {
     }
   }
 
+  Future<List<Tag>> addTagsForMedia(
+    String mediaItemId,
+    Iterable<String> rawNames, {
+    DateTime? syncedAt,
+  }) async {
+    /*
+     * ========================================================================
+     * 步骤5：追加远端标签到媒体条目
+     * ========================================================================
+     * 目标：
+     *   1) 支持 Bangumi tags 的加法合并策略
+     *   2) 不删除本地已经存在但远端没有的标签
+     */
+    _logger.info('开始追加远端标签到媒体条目...');
+
+    // 5.1 归一化远端标签名，并建立本地已有标签索引
+    final desiredNames = _normalizeNames(rawNames);
+    final existingTags = await _db.tagDao.getAll();
+    final existingByName = <String, Tag>{
+      for (final tag in existingTags) tag.name.toLowerCase(): tag,
+    };
+    final attached = <Tag>[];
+    final effectiveSyncedAt = syncedAt ?? SyncStampDecorator.now();
+
+    // 5.2 缺失的标签先补建，再恢复或创建媒体关联
+    for (final name in desiredNames) {
+      final key = name.toLowerCase();
+      final existing = existingByName[key];
+      final tagId = existing?.id ?? await createTag(name: name);
+      final tag = existing ?? await _findTagById(tagId);
+      if (tag != null) {
+        attached.add(tag);
+        existingByName[key] = tag;
+      }
+
+      await applyRemoteAttachment(
+        mediaItemId: mediaItemId,
+        tagId: tagId,
+        syncedAt: effectiveSyncedAt,
+      );
+    }
+
+    _logger.info('远端标签追加到媒体条目完成。');
+    return attached;
+  }
+
   List<String> _normalizeNames(Iterable<String> rawNames) {
     final seen = <String>{};
     final names = <String>[];
@@ -274,5 +320,11 @@ class TagRepository {
 
   Future<String> _getDeviceId() async {
     return _deviceIdentityService.getOrCreateCurrentDeviceId();
+  }
+
+  Future<Tag?> _findTagById(String tagId) {
+    return (_db.select(
+      _db.tags,
+    )..where((t) => t.id.equals(tagId))).getSingleOrNull();
   }
 }

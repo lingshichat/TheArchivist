@@ -1,3 +1,5 @@
+import '../../../shared/utils/step_logger.dart';
+
 class BangumiOAuthConfig {
   const BangumiOAuthConfig({
     required this.clientId,
@@ -5,25 +7,41 @@ class BangumiOAuthConfig {
     required this.redirectUri,
   });
 
+  static const StepLogger _logger = StepLogger('BangumiOAuthConfig');
+  static const String _builtInClientId = 'bgm599869e73329cb7f3';
+  static const String _builtInClientSecret = '2e8faa28bf192889707c1c0f681e701b';
+  static const String _builtInRedirectUri = 'http://127.0.0.1:17863/callback';
+
   factory BangumiOAuthConfig.fromEnvironment() {
     /*
      * ========================================================================
-     * 步骤1：从运行时环境读取 Bangumi OAuth 配置
+     * 步骤1：解析 Bangumi OAuth 桌面端配置
      * ========================================================================
      * 目标：
-     *   1) 通过 `--dart-define` 注入 client_id / client_secret / redirect_uri
-     *   2) 避免把 OAuth 凭据直接写进仓库源码
+     *   1) 优先读取 `--dart-define` 注入的 OAuth 配置
+     *   2) 未注入时回退到桌面端内置配置，保证裸 `flutter run` 可登录
      */
+    _logger.info('开始解析 Bangumi OAuth 桌面端配置...');
 
-    // 1.1 读取三个 OAuth 必需字段
-    const clientId = String.fromEnvironment('BANGUMI_CLIENT_ID');
-    const clientSecret = String.fromEnvironment('BANGUMI_CLIENT_SECRET');
-    const redirectUri = String.fromEnvironment('BANGUMI_REDIRECT_URI');
+    // 1.1 读取三个可覆盖的 OAuth 编译期字段
+    const environmentClientId = String.fromEnvironment('BANGUMI_CLIENT_ID');
+    const environmentClientSecret = String.fromEnvironment(
+      'BANGUMI_CLIENT_SECRET',
+    );
+    const environmentRedirectUri = String.fromEnvironment(
+      'BANGUMI_REDIRECT_URI',
+    );
 
-    // 1.2 缺字段时返回空配置，由调用方决定是否启用 OAuth 登录按钮
-    final normalizedClientId = _normalizeOptional(clientId);
-    final normalizedClientSecret = _normalizeOptional(clientSecret);
-    final normalizedRedirectUri = _normalizeOptional(redirectUri);
+    // 1.2 合并编译期覆盖值和内置桌面端默认值
+    final normalizedClientId =
+        _normalizeOptional(environmentClientId) ??
+        _normalizeOptional(_builtInClientId);
+    final normalizedClientSecret =
+        _normalizeOptional(environmentClientSecret) ??
+        _normalizeOptional(_builtInClientSecret);
+    final normalizedRedirectUri =
+        _normalizeOptional(environmentRedirectUri) ??
+        _normalizeOptional(_builtInRedirectUri);
     if (normalizedClientId == null ||
         normalizedClientSecret == null ||
         normalizedRedirectUri == null) {
@@ -37,6 +55,8 @@ class BangumiOAuthConfig {
         parsedRedirectUri.host.isEmpty) {
       throw const FormatException('Bangumi redirect_uri is invalid.');
     }
+
+    _logger.info('Bangumi OAuth 桌面端配置解析完成。');
 
     return BangumiOAuthConfig(
       clientId: normalizedClientId,

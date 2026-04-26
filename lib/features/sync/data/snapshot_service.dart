@@ -85,7 +85,9 @@ class SnapshotService {
     }
 
     if (decoded is! Map<Object?, Object?>) {
-      throw const SyncFormatException('Invalid snapshot: expected a JSON object.');
+      throw const SyncFormatException(
+        'Invalid snapshot: expected a JSON object.',
+      );
     }
 
     final json = Map<String, Object?>.from(decoded);
@@ -99,14 +101,14 @@ class SnapshotService {
 
     final version = json['version'];
     if (version is! int || version > currentVersion) {
-      throw const SyncFormatException(
-        'Invalid snapshot: unsupported version.',
-      );
+      throw const SyncFormatException('Invalid snapshot: unsupported version.');
     }
 
     final rawEntities = json['entities'];
     if (rawEntities is! List) {
-      throw const SyncFormatException('Invalid snapshot: missing entities list.');
+      throw const SyncFormatException(
+        'Invalid snapshot: missing entities list.',
+      );
     }
 
     final envelopes = <SyncEntityEnvelope>[];
@@ -114,9 +116,7 @@ class SnapshotService {
       if (rawEntity is! Map<Object?, Object?>) continue;
       try {
         envelopes.add(
-          SyncEntityEnvelope.fromJson(
-            Map<String, Object?>.from(rawEntity),
-          ),
+          SyncEntityEnvelope.fromJson(Map<String, Object?>.from(rawEntity)),
         );
       } catch (_) {
         continue;
@@ -190,6 +190,8 @@ class SnapshotService {
           'totalEpisodes': row.totalEpisodes,
           'totalPages': row.totalPages,
           'estimatedPlayHours': row.estimatedPlayHours,
+          'communityScore': row.communityScore,
+          'communityRatingCount': row.communityRatingCount,
           'createdAt': row.createdAt.toIso8601String(),
         },
       ).toJson();
@@ -361,8 +363,9 @@ class SnapshotService {
 
   void _sortEnvelopesByDependency(List<SyncEntityEnvelope> envelopes) {
     envelopes.sort((a, b) {
-      return _entitySortOrder(a.entityType)
-          .compareTo(_entitySortOrder(b.entityType));
+      return _entitySortOrder(
+        a.entityType,
+      ).compareTo(_entitySortOrder(b.entityType));
     });
   }
 

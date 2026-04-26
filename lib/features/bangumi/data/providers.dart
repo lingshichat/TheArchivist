@@ -84,6 +84,7 @@ final bangumiPullServiceProvider = Provider<BangumiPullService>((ref) {
     mediaRepository: ref.watch(mediaRepositoryProvider),
     userEntryRepository: ref.watch(userEntryRepositoryProvider),
     progressRepository: ref.watch(progressRepositoryProvider),
+    tagRepository: ref.watch(tagRepositoryProvider),
   );
 });
 
@@ -108,14 +109,15 @@ final bangumiSyncServiceProvider = Provider<BangumiSyncService>((ref) {
   );
 });
 
-final bangumiProgressSyncServiceProvider =
-    Provider<BangumiProgressSyncService>((ref) {
-      return BangumiProgressSyncServiceImpl(
-        apiService: ref.watch(bangumiApiServiceProvider),
-        mediaRepository: ref.watch(mediaRepositoryProvider),
-        progressRepository: ref.watch(progressRepositoryProvider),
-        tokenStore: ref.watch(bangumiTokenStoreProvider),
-        feedbackController: ref.watch(bangumiSyncFeedbackProvider.notifier),
-        onUnauthorized: ref.watch(bangumiAuthProvider.notifier).invalidateSession,
-      );
-    });
+final bangumiProgressSyncServiceProvider = Provider<BangumiProgressSyncService>(
+  (ref) {
+    return BangumiProgressSyncServiceImpl(
+      apiService: ref.watch(bangumiApiServiceProvider),
+      mediaRepository: ref.watch(mediaRepositoryProvider),
+      progressRepository: ref.watch(progressRepositoryProvider),
+      tokenStore: ref.watch(bangumiTokenStoreProvider),
+      feedbackController: ref.watch(bangumiSyncFeedbackProvider.notifier),
+      onUnauthorized: ref.watch(bangumiAuthProvider.notifier).invalidateSession,
+    );
+  },
+);
