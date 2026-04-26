@@ -610,3 +610,36 @@ Implemented Bangumi bidirectional progress sync: API model extension (epStatus),
 ### Next Steps
 
 - None - task complete, ready for archive
+
+
+## Session 14: Bangumi data integration
+
+**Date**: 2026-04-26
+**Task**: Bangumi data integration
+**Branch**: `main`
+
+### Summary
+
+完成 Bangumi collection comment/review、tags、subject rating 与 subject tags 接入；详情页展示 public review/private notes/Bangumi rating；OAuth 默认配置内置；补充相关同步与仓储测试。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `0ee495a` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
