@@ -107,10 +107,10 @@ class _ListPickerDialogState extends ConsumerState<ListPickerDialog> {
                                     ),
                                     child:
                                         isSelected
-                                            ? const Icon(
+                                            ? Icon(
                                               Icons.check_rounded,
                                               size: 14,
-                                              color: Colors.white,
+                                              color: AppColors.accentForeground,
                                             )
                                             : null,
                                   ),

@@ -97,7 +97,7 @@ List<CategoryViewData> _buildCategories(
       label: 'Books',
       count: bookCount,
       icon: Icons.menu_book_rounded,
-      accentColor: const Color(0xFF4A6552),
+      accentColor: AppColors.accentStrong,
     ),
     LocalViewAdapters.buildCategory(
       label: 'Games',

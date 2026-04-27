@@ -1,45 +1,55 @@
 import 'package:flutter/material.dart';
 
 abstract final class AppColors {
-  static const Color background = Color(0xFFF9F9FB);
-  static const Color surface = Color(0xFFF9F9FB);
-  static const Color surfaceBase = Color(0xFFF9F9FB);
-  static const Color surfaceMuted = Color(0xFFF2F4F6);
-  static const Color shellPanel = Color(0xFFF2F2F4);
+  // Background - near-black with subtle blue undertone
+  static const Color background = Color(0xFF0A0A0F);
+  static const Color surface = Color(0xFF141419);
+  static const Color surfaceBase = Color(0xFF141419);
+  static const Color surfaceMuted = Color(0xFF1A1A22);
+  static const Color shellPanel = Color(0xFF1E1E28);
   static const Color panel = shellPanel;
-  static const Color surfaceContainerLowest = Color(0xFFFFFFFF);
-  static const Color surfaceContainerLow = Color(0xFFF2F4F6);
-  static const Color surfaceContainer = Color(0xFFEBEEF2);
-  static const Color surfaceContainerHigh = Color(0xFFE4E9EE);
-  static const Color surfaceContainerHighest = Color(0xFFDDE3E9);
-  static const Color surfaceDim = Color(0xFFD3DBE2);
-  static const Color surfaceVariant = Color(0xFFDDE3E9);
 
-  static const Color title = Color(0xFF2D3338);
-  static const Color onSurface = Color(0xFF2D3338);
-  static const Color bodyText = Color(0xFF3C444B);
-  static const Color subtleText = Color(0xFF596065);
-  static const Color onSurfaceVariant = Color(0xFF596065);
-  static const Color outline = Color(0xFF757C81);
-  static const Color outlineSoft = Color(0xFFACB3B8);
-  static const Color outlineVariant = Color(0xFFACB3B8);
+  // Surface containers - dark hierarchy (darkest to lightest)
+  static const Color surfaceContainerLowest = Color(0xFF1A1A22);
+  static const Color surfaceContainerLow = Color(0xFF1E1E28);
+  static const Color surfaceContainer = Color(0xFF252530);
+  static const Color surfaceContainerHigh = Color(0xFF2A2A38);
+  static const Color surfaceContainerHighest = Color(0xFF323240);
+  static const Color surfaceDim = Color(0xFF3A3A4A);
+  static const Color surfaceVariant = Color(0xFF2A2A38);
 
-  static const Color accent = Color(0xFF426464);
-  static const Color accentStrong = Color(0xFF365858);
-  static const Color accentContainer = Color(0xFFC5EAE9);
-  static const Color accentForeground = Color(0xFFDAFFFE);
-  static const Color secondary = Color(0xFF5C605F);
-  static const Color secondaryDim = Color(0xFF505453);
-  static const Color secondaryFixedDim = Color(0xFFD2D5D4);
-  static const Color secondaryContainer = Color(0xFFE0E3E2);
-  static const Color tertiaryContainer = Color(0xFFD9F9DF);
-  static const Color error = Color(0xFF9F403D);
+  // Text - high contrast on dark backgrounds
+  static const Color title = Color(0xFFE8E8EC);
+  static const Color onSurface = Color(0xFFE8E8EC);
+  static const Color bodyText = Color(0xFFC4C4CE);
+  static const Color subtleText = Color(0xFF9CA3AF);
+  static const Color onSurfaceVariant = Color(0xFF9CA3AF);
+  static const Color outline = Color(0xFF6B7280);
+  static const Color outlineSoft = Color(0xFF4B5563);
+  static const Color outlineVariant = Color(0xFF4B5563);
 
-  static const Color darkBackground = Color(0xFF0F1113);
-  static const Color darkSurface = Color(0xFF15181B);
-  static const Color darkPanel = Color(0xFF1A1C1E);
-  static const Color darkText = Color(0xFFE4EAEE);
-  static const Color darkSubtleText = Color(0xFF9BA4AB);
+  // Accent - mint teal (#5EEAD4)
+  static const Color accent = Color(0xFF5EEAD4);
+  static const Color accentStrong = Color(0xFF2DD4BF);
+  static const Color accentContainer = Color(0xFF134E4A);
+  static const Color accentForeground = Color(0xFF041F1D);
+
+  // Secondary
+  static const Color secondary = Color(0xFF8B929D);
+  static const Color secondaryDim = Color(0xFF7A828D);
+  static const Color secondaryFixedDim = Color(0xFF4B5563);
+  static const Color secondaryContainer = Color(0xFF2A2A38);
+  static const Color tertiaryContainer = Color(0xFF1E3A3A);
+
+  // Error - brighter for dark theme visibility
+  static const Color error = Color(0xFFEF4444);
+
+  // Legacy dark aliases (kept for compatibility, now same as main palette)
+  static const Color darkBackground = background;
+  static const Color darkSurface = surface;
+  static const Color darkPanel = panel;
+  static const Color darkText = onSurface;
+  static const Color darkSubtleText = subtleText;
 }
 
 abstract final class AppSpacing {
@@ -272,8 +282,10 @@ abstract final class AppFormStyles {
 }
 
 abstract final class AppTheme {
-  static ThemeData light() {
-    const ColorScheme colorScheme = ColorScheme.light(
+  static ThemeData light() => dark();
+
+  static ThemeData dark() {
+    const ColorScheme colorScheme = ColorScheme.dark(
       primary: AppColors.accent,
       onPrimary: AppColors.accentForeground,
       secondary: AppColors.surfaceContainerHigh,
@@ -283,7 +295,7 @@ abstract final class AppTheme {
       error: AppColors.error,
     );
 
-    final TextTheme textTheme = _textTheme(Brightness.light);
+    final TextTheme textTheme = _textTheme(Brightness.dark);
     final InputDecorationTheme formInputTheme = AppFormStyles.inputTheme(
       textTheme,
     );
@@ -296,7 +308,7 @@ abstract final class AppTheme {
       dividerColor: AppColors.outlineVariant.withValues(alpha: 0.2),
       splashColor: Colors.transparent,
       highlightColor: Colors.transparent,
-      hoverColor: AppColors.surfaceContainerLow.withValues(alpha: 0.7),
+      hoverColor: AppColors.surfaceContainerLow.withValues(alpha: 0.5),
       textTheme: textTheme,
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
@@ -355,14 +367,12 @@ abstract final class AppTheme {
             if (states.contains(WidgetState.selected)) {
               return AppColors.surfaceContainerLowest;
             }
-
             return AppColors.surfaceContainerHigh;
           }),
           foregroundColor: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.selected)) {
               return AppColors.accent;
             }
-
             return AppColors.subtleText;
           }),
           textStyle: WidgetStateProperty.all(textTheme.labelLarge),
@@ -380,32 +390,6 @@ abstract final class AppTheme {
         ),
       ),
       inputDecorationTheme: formInputTheme,
-    );
-  }
-
-  static ThemeData dark() {
-    const ColorScheme colorScheme = ColorScheme.dark(
-      primary: AppColors.accentContainer,
-      onPrimary: AppColors.darkBackground,
-      secondary: AppColors.darkPanel,
-      onSecondary: AppColors.darkText,
-      surface: AppColors.darkSurface,
-      onSurface: AppColors.darkText,
-      error: AppColors.error,
-    );
-
-    final TextTheme textTheme = _textTheme(Brightness.dark);
-
-    return ThemeData(
-      useMaterial3: true,
-      colorScheme: colorScheme,
-      scaffoldBackgroundColor: AppColors.darkBackground,
-      cardColor: AppColors.darkSurface,
-      dividerColor: Colors.white.withValues(alpha: 0.08),
-      textTheme: textTheme,
-      splashColor: Colors.transparent,
-      highlightColor: Colors.transparent,
-      hoverColor: Colors.white.withValues(alpha: 0.03),
     );
   }
 

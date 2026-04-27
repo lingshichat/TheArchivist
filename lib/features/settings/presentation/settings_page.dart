@@ -118,7 +118,7 @@ class _LocalDataSectionState extends ConsumerState<_LocalDataSection> {
             width: double.infinity,
             padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.6),
+              color: AppColors.surfaceContainerHigh,
               borderRadius: BorderRadius.circular(AppRadii.container),
             ),
             child: Row(

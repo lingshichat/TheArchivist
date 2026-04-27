@@ -100,8 +100,8 @@ class _LocalFeedbackBubble extends StatelessWidget {
       LocalFeedbackTone.error => AppColors.error.withValues(alpha: 0.18),
     };
     final iconForegroundColor = switch (tone) {
-      LocalFeedbackTone.success => AppColors.accentStrong,
-      LocalFeedbackTone.error => const Color(0xFFFFD6D4),
+      LocalFeedbackTone.success => AppColors.accent,
+      LocalFeedbackTone.error => const Color(0xFFFCA5A5),
     };
     final normalizedActionLabel = actionLabel?.trim();
     final hasAction =
@@ -112,11 +112,11 @@ class _LocalFeedbackBubble extends StatelessWidget {
     // 2.2 用暗色胶囊容器承载图标、文案和可选动作
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: const Color(0xFF2D3338),
+        color: AppColors.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(999),
         boxShadow: <BoxShadow>[
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
+            color: AppColors.background.withValues(alpha: 0.5),
             blurRadius: 22,
             offset: const Offset(0, 10),
           ),
@@ -150,7 +150,7 @@ class _LocalFeedbackBubble extends StatelessWidget {
                 message,
                 style:
                     theme.textTheme.bodySmall?.copyWith(
-                      color: AppColors.surfaceContainerLowest,
+                      color: AppColors.onSurface,
                     ) ??
                     const TextStyle(
                       fontFamily: 'Inter',
@@ -158,7 +158,7 @@ class _LocalFeedbackBubble extends StatelessWidget {
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
                       height: 1.3,
-                      color: AppColors.surfaceContainerLowest,
+                      color: AppColors.onSurface,
                     ),
               ),
             ),

@@ -168,7 +168,7 @@ class _AppShellScaffoldState extends State<AppShellScaffold> {
     return GestureDetector(
       onTap: _closeDrawer,
       child: Container(
-        color: Colors.black.withValues(alpha: 0.3),
+        color: AppColors.background.withValues(alpha: 0.7),
         child: GestureDetector(
           onTap: () {},
           child: SizedBox(

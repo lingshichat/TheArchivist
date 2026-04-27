@@ -19,9 +19,9 @@ class RecordAnywhereApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'The Archivist',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light(),
+      theme: AppTheme.dark(),
       darkTheme: AppTheme.dark(),
-      themeMode: ThemeMode.system,
+      themeMode: ThemeMode.dark,
       routerConfig: router,
       builder: (context, child) {
         return _BangumiSyncFeedbackHost(

@@ -655,7 +655,7 @@ class _BangumiConnectionSectionState
   ButtonStyle _syncPrimaryButtonStyle(ThemeData theme) {
     return FilledButton.styleFrom(
       backgroundColor: AppColors.accent,
-      foregroundColor: Colors.white,
+      foregroundColor: AppColors.accentForeground,
       disabledBackgroundColor: AppColors.surfaceContainerHigh,
       disabledForegroundColor: AppColors.bodyText,
       textStyle: theme.textTheme.labelLarge?.copyWith(

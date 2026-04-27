@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app/app.dart';
+import 'shared/theme/app_theme.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -12,6 +13,7 @@ void main() {
 void _setupErrorWidget() {
   ErrorWidget.builder = (details) {
     return Material(
+      color: AppColors.background,
       child: SafeArea(
         child: Center(
           child: Padding(
@@ -22,7 +24,7 @@ void _setupErrorWidget() {
                 const Icon(
                   Icons.broken_image_outlined,
                   size: 48,
-                  color: Color(0xFFB0B8BF),
+                  color: AppColors.subtleText,
                 ),
                 const SizedBox(height: 16),
                 const Text(
@@ -30,7 +32,7 @@ void _setupErrorWidget() {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF2D3338),
+                    color: AppColors.onSurface,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -39,7 +41,7 @@ void _setupErrorWidget() {
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     fontSize: 12,
-                    color: Color(0xFF8A9299),
+                    color: AppColors.onSurfaceVariant,
                   ),
                 ),
               ],
