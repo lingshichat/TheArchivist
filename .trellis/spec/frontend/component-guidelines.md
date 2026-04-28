@@ -335,6 +335,73 @@ Why it is correct:
 
 ---
 
+## Interaction Patterns
+
+### Page Transitions
+
+When using `go_router` `CustomTransitionPage`, the `transitionsBuilder` must handle **both** `animation` (new page enter) and `secondaryAnimation` (old page exit). If `secondaryAnimation` is ignored, the old page disappears instantly while the new page animates in, creating a jarring layer glitch.
+
+Preferred approach for sibling shell pages:
+```dart
+final fadeIn = Tween<double>(begin: 0, end: 1).animate(
+  CurvedAnimation(parent: animation, curve: Curves.easeOut),
+);
+final fadeOut = Tween<double>(begin: 1, end: 0).animate(
+  CurvedAnimation(parent: secondaryAnimation, curve: Curves.easeOut),
+);
+return FadeTransition(
+  opacity: fadeIn,
+  child: FadeTransition(opacity: fadeOut, child: child),
+);
+```
+
+For detail/overlay pages, combine slide + fade on enter with fade on exit.
+
+### Staggered Grid Entrance
+
+For poster walls or card grids that animate in on page load, prefer `TweenAnimationBuilder` over `StatefulWidget` + `AnimationController` + `TickerProvider`. The former avoids creating one ticker per grid item.
+
+```dart
+TweenAnimationBuilder<double>(
+  tween: Tween(begin: 0.0, end: _visible ? 1.0 : 0.0),
+  duration: const Duration(milliseconds: 360),
+  curve: Curves.easeOutCubic,
+  builder: (context, value, child) => Opacity(
+    opacity: value,
+    child: FractionalTranslation(
+      translation: Offset(0, 0.06 * (1 - value)),
+      child: child,
+    ),
+  ),
+  child: widget.child,
+)
+```
+
+Delay per item is computed from row/column position, clamped to avoid excessive total duration.
+
+### Hover Feedback
+
+Desktop hover states need multiple reinforcing cues. A single cue (e.g. only position shift) is often too subtle.
+
+Good hover contract for cards:
+- **Lift**: small upward offset (`AnimatedSlide` or `Transform.translate`)
+- **Shadow**: `BoxShadow` appears or intensifies
+- **Surface shift**: background color lightens one tone tier
+
+Example:
+```dart
+decoration: BoxDecoration(
+  color: _hovered
+      ? AppColors.surfaceContainerHigh
+      : AppColors.surfaceContainer,
+  boxShadow: _hovered
+      ? [BoxShadow(color: Colors.black.withValues(alpha: 0.4), blurRadius: 16, offset: Offset(0, 6))]
+      : null,
+)
+```
+
+Duration should stay short (180–240ms) and use `Curves.easeOut` or `Curves.easeOutCubic`.
+
 ## Common Mistakes
 
 - Mixing shell code and feature page code in the same file
@@ -346,3 +413,6 @@ Why it is correct:
 - Using divider lines where Stitch expects whitespace and tonal grouping
 - Applying glass or gradients to ordinary content panels
 - Letting search, filter, and badge widgets drift into playful mobile styling
+- Animating only the entering page and ignoring the exiting page in route transitions
+- Using one `AnimationController` per grid item instead of `TweenAnimationBuilder` for staggered entrances
+- Relying on a single hover cue (e.g. only lift) without shadow or surface shift to reinforce it
