@@ -35,7 +35,7 @@ class PosterImage extends StatelessWidget {
             Positioned.fill(
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.42),
+                  color: Colors.black.withValues(alpha: 0.45),
                 ),
               ),
             ),

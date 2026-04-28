@@ -270,9 +270,9 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                   itemCount: 12,
                   minColumns: 4,
                   maxColumns: 7,
-                  minTileWidth: 150,
-                  horizontalSpacing: 24,
-                  verticalSpacing: 40,
+                  minTileWidth: 170,
+                  horizontalSpacing: 28,
+                  verticalSpacing: 48,
                 ),
                 error:
                     (error, stackTrace) => EmptyState(
@@ -308,9 +308,9 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                         variant: PosterCardVariant.libraryFooter,
                         minColumns: 4,
                         maxColumns: 7,
-                        minTileWidth: 150,
-                        horizontalSpacing: 24,
-                        verticalSpacing: 40,
+                        minTileWidth: 170,
+                        horizontalSpacing: 28,
+                        verticalSpacing: 48,
                         selectionMode: _batchMode,
                         selectedIds: _selectedIds,
                         onItemTap:
@@ -395,7 +395,9 @@ class _LibraryTab extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppRadii.card),
-        child: Container(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
           padding: const EdgeInsets.only(bottom: AppSpacing.sm),
           decoration: BoxDecoration(
             border: Border(
@@ -405,11 +407,13 @@ class _LibraryTab extends StatelessWidget {
               ),
             ),
           ),
-          child: Text(
-            label.toUpperCase(),
-            style: theme.textTheme.labelLarge?.copyWith(
+          child: AnimatedDefaultTextStyle(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+            style: theme.textTheme.labelLarge!.copyWith(
               color: isActive ? AppColors.accent : AppColors.subtleText,
             ),
+            child: Text(label.toUpperCase()),
           ),
         ),
       ),

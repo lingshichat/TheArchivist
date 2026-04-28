@@ -228,8 +228,8 @@ class _DetailBody extends StatelessWidget {
       builder: (context, constraints) {
         final pageWidth = constraints.maxWidth;
         final useTwoColumns = pageWidth >= 820;
-        final sidebarWidth = (pageWidth * 0.26).clamp(216.0, 280.0).toDouble();
-        final columnGap = (pageWidth * 0.045).clamp(32.0, 64.0).toDouble();
+        final sidebarWidth = (pageWidth * 0.26).clamp(240.0, 320.0).toDouble();
+        final columnGap = (pageWidth * 0.045).clamp(40.0, 72.0).toDouble();
 
         final leftColumn = _DetailSidebar(
           view: view,
@@ -241,16 +241,13 @@ class _DetailBody extends StatelessWidget {
         final rightColumn = _DetailContent(view: view);
 
         if (!useTwoColumns) {
-          return SizedBox(
-            width: double.infinity,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(width: sidebarWidth, child: leftColumn),
-                const SizedBox(height: AppSpacing.xxxl),
-                SizedBox(width: double.infinity, child: rightColumn),
-              ],
-            ),
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(width: sidebarWidth, child: leftColumn),
+              const SizedBox(height: AppSpacing.xxxl),
+              SizedBox(width: double.infinity, child: rightColumn),
+            ],
           );
         }
 
@@ -267,7 +264,7 @@ class _DetailBody extends StatelessWidget {
   }
 }
 
-class _DetailSidebar extends StatelessWidget {
+class _DetailSidebar extends StatefulWidget {
   const _DetailSidebar({
     required this.view,
     required this.isSaving,
@@ -283,45 +280,86 @@ class _DetailSidebar extends StatelessWidget {
   final VoidCallback onDeleteTap;
 
   @override
+  State<_DetailSidebar> createState() => _DetailSidebarState();
+}
+
+class _DetailSidebarState extends State<_DetailSidebar> {
+  bool _posterHovered = false;
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final poster = view.poster;
+    final poster = widget.view.poster;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        AspectRatio(
-          aspectRatio: 2 / 3,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: AppColors.surfaceContainerLowest,
-              border: Border.all(
-                color: AppColors.outlineVariant.withValues(alpha: 0.15),
+        MouseRegion(
+          onEnter: (_) => setState(() => _posterHovered = true),
+          onExit: (_) => setState(() => _posterHovered = false),
+          cursor: SystemMouseCursors.click,
+          child: GestureDetector(
+            onTap: () {},
+            child: AspectRatio(
+              aspectRatio: 2 / 3,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 240),
+                curve: Curves.easeOutCubic,
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceContainerLowest,
+                  borderRadius: BorderRadius.circular(AppRadii.container),
+                  boxShadow: _posterHovered
+                      ? [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.5),
+                            blurRadius: 28,
+                            offset: const Offset(0, 10),
+                          ),
+                        ]
+                      : [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.35),
+                            blurRadius: 24,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(AppRadii.container),
+                  child: AnimatedScale(
+                    duration: const Duration(milliseconds: 280),
+                    curve: Curves.easeOutCubic,
+                    scale: _posterHovered ? 1.03 : 1.0,
+                    child: PosterArt(item: poster),
+                  ),
+                ),
               ),
             ),
-            child: PosterArt(item: poster),
           ),
         ),
         const SizedBox(height: 40),
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(AppSpacing.xl),
-          decoration: const BoxDecoration(color: AppColors.surfaceContainerLow),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(AppRadii.container),
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('STATUS', style: theme.textTheme.labelSmall),
               const SizedBox(height: AppSpacing.lg),
-              _StatusStrip(status: view.status),
+              _StatusStrip(status: widget.view.status),
               const SizedBox(height: AppSpacing.xl),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(view.progressLabel, style: theme.textTheme.labelSmall),
+                  Text(widget.view.progressLabel, style: theme.textTheme.labelSmall),
                   Flexible(
                     child: Text(
-                      view.progressSummary,
+                      widget.view.progressSummary,
                       textAlign: TextAlign.end,
                       style: theme.textTheme.titleMedium?.copyWith(
                         color: AppColors.accent,
@@ -334,24 +372,33 @@ class _DetailSidebar extends StatelessWidget {
               const SizedBox(height: AppSpacing.sm),
               Container(
                 height: 4,
-                color: AppColors.surfaceContainerHigh,
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceContainerHigh,
+                  borderRadius: BorderRadius.circular(AppRadii.pill),
+                ),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: FractionallySizedBox(
-                    widthFactor: view.progressRatio.clamp(0, 1),
-                    child: Container(color: AppColors.accent),
+                    widthFactor: widget.view.progressRatio.clamp(0, 1),
+                    child: Container(
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: AppColors.accent,
+                        borderRadius: BorderRadius.circular(AppRadii.pill),
+                      ),
+                    ),
                   ),
                 ),
               ),
               const SizedBox(height: AppSpacing.xl),
               Text('PERSONAL RATING', style: theme.textTheme.labelSmall),
               const SizedBox(height: AppSpacing.md),
-              _RatingRow(score: view.score),
+              _RatingRow(score: widget.view.score),
               const SizedBox(height: AppSpacing.xl),
               Text('BANGUMI RATING', style: theme.textTheme.labelSmall),
               const SizedBox(height: AppSpacing.md),
               Text(
-                view.communityRatingLabel,
+                widget.view.communityRatingLabel,
                 style: theme.textTheme.titleMedium?.copyWith(
                   color: AppColors.onSurface,
                   fontWeight: FontWeight.w700,
@@ -359,21 +406,21 @@ class _DetailSidebar extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.xl),
               _ActionButton(
-                label: view.primaryActionLabel,
+                label: widget.view.primaryActionLabel,
                 icon: Icons.play_arrow_rounded,
                 filled: true,
-                onTap: isSaving ? null : onPrimaryTap,
+                onTap: widget.isSaving ? null : widget.onPrimaryTap,
               ),
               const SizedBox(height: AppSpacing.sm),
               _ActionButton(
                 label: 'Modify Entry',
                 icon: Icons.edit_outlined,
-                onTap: isSaving ? null : onEditTap,
+                onTap: widget.isSaving ? null : widget.onEditTap,
               ),
               const SizedBox(height: AppSpacing.md),
               Center(
                 child: TextButton(
-                  onPressed: isSaving ? null : onDeleteTap,
+                  onPressed: widget.isSaving ? null : widget.onDeleteTap,
                   child: Text(
                     'DELETE ENTRY',
                     style: theme.textTheme.labelSmall?.copyWith(
@@ -405,8 +452,8 @@ class _DetailContent extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final titleFontSize = (constraints.maxWidth * 0.078)
-            .clamp(40.0, 56.0)
+        final titleFontSize = (constraints.maxWidth * 0.085)
+            .clamp(44.0, 64.0)
             .toDouble();
 
         return Column(
@@ -416,52 +463,65 @@ class _DetailContent extends StatelessWidget {
               children: [
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm,
+                    horizontal: AppSpacing.md,
                     vertical: AppSpacing.xs,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.accentContainer,
+                    color: AppColors.accent.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(AppRadii.card),
                   ),
                   child: Text(
                     poster.mediaLabel.toUpperCase(),
                     style: theme.textTheme.labelSmall?.copyWith(
-                      color: AppColors.accentStrong,
+                      color: AppColors.accent,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
                 const SizedBox(width: AppSpacing.md),
-                Text(view.archiveId, style: theme.textTheme.labelMedium),
+                Text(
+                  view.archiveId,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: AppColors.subtleText,
+                  ),
+                ),
               ],
             ),
-            const SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: AppSpacing.xl),
             Text(
               poster.title,
               style: AppTextStyles.heroTitle(theme).copyWith(
                 fontSize: titleFontSize,
-                letterSpacing: -1.1,
-                height: 0.95,
+                letterSpacing: -1.4,
+                height: 0.92,
               ),
             ),
-            const SizedBox(height: AppSpacing.md),
-            Wrap(
-              spacing: AppSpacing.md,
-              runSpacing: AppSpacing.sm,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                if (subtitle != null)
-                  Text(
-                    subtitle,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: AppColors.onSurface,
+            if (subtitle != null || year != null) ...[
+              const SizedBox(height: AppSpacing.lg),
+              Wrap(
+                spacing: AppSpacing.md,
+                runSpacing: AppSpacing.sm,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  if (subtitle != null)
+                    Text(
+                      subtitle,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: AppColors.onSurfaceVariant,
+                      ),
                     ),
-                  ),
-                if (subtitle != null && year != null) const _DotDivider(),
-                if (year != null)
-                  Text(year, style: theme.textTheme.titleMedium),
-              ],
-            ),
-            const SizedBox(height: 48),
+                  if (subtitle != null && year != null) const _DotDivider(),
+                  if (year != null)
+                    Text(
+                      year,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                    ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 56),
             ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 720),
               child: Column(
@@ -685,6 +745,7 @@ class _NotesWorkspace extends StatelessWidget {
             padding: const EdgeInsets.all(AppSpacing.xl),
             decoration: BoxDecoration(
               color: AppColors.surfaceContainerLowest,
+              borderRadius: BorderRadius.circular(AppRadii.container),
               border: Border.all(
                 color: AppColors.outlineVariant.withValues(alpha: 0.1),
               ),
@@ -895,6 +956,7 @@ class _ActionButton extends StatelessWidget {
               color: filled
                   ? AppColors.accent
                   : AppColors.surfaceContainerLowest,
+              borderRadius: BorderRadius.circular(AppRadii.card),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -989,7 +1051,10 @@ class _StatTile extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
-      color: AppColors.surfaceContainerLow,
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(AppRadii.card),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

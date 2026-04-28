@@ -58,7 +58,9 @@ class PosterWrap extends StatelessWidget {
                 (entry) {
                   final index = entry.key;
                   final item = entry.value;
-                  return RepaintBoundary(
+                  return _StaggeredPosterItem(
+                    index: index,
+                    columns: columns,
                     child: SizedBox(
                       width: itemWidth,
                       child: PosterCard(
@@ -91,6 +93,56 @@ class PosterWrap extends StatelessWidget {
               .toList(),
         );
       },
+    );
+  }
+}
+
+class _StaggeredPosterItem extends StatefulWidget {
+  const _StaggeredPosterItem({
+    required this.index,
+    required this.columns,
+    required this.child,
+  });
+
+  final int index;
+  final int columns;
+  final Widget child;
+
+  @override
+  State<_StaggeredPosterItem> createState() => _StaggeredPosterItemState();
+}
+
+class _StaggeredPosterItemState extends State<_StaggeredPosterItem> {
+  bool _visible = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final row = widget.index ~/ widget.columns;
+    final col = widget.index % widget.columns;
+    final delayMs = (row * 60 + col * 40).clamp(0, 600);
+
+    Future.delayed(Duration(milliseconds: delayMs), () {
+      if (mounted) setState(() => _visible = true);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: _visible ? 1.0 : 0.0),
+      duration: const Duration(milliseconds: 360),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: FractionalTranslation(
+            translation: Offset(0, 0.06 * (1 - value)),
+            child: child,
+          ),
+        );
+      },
+      child: widget.child,
     );
   }
 }

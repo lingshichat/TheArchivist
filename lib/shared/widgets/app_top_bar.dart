@@ -236,6 +236,9 @@ class _SearchShell extends StatelessWidget {
       decoration: BoxDecoration(
         color: style.searchBackground,
         borderRadius: BorderRadius.circular(style.searchRadius),
+        border: Border.all(
+          color: AppColors.outlineVariant.withValues(alpha: 0.12),
+        ),
       ),
       child: Row(
         children: [
@@ -291,7 +294,11 @@ class _TopBarActionButton extends StatelessWidget {
           width: 36,
           height: 36,
           decoration: BoxDecoration(
+            color: AppColors.surfaceContainerLow.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(AppRadii.container),
+            border: Border.all(
+              color: AppColors.outlineVariant.withValues(alpha: 0.15),
+            ),
           ),
           child: Center(child: iconWidget),
         ),

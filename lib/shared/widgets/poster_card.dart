@@ -72,17 +72,26 @@ class _PosterCardState extends State<PosterCard> {
                     curve: Curves.easeOut,
                     decoration: BoxDecoration(
                       color: _hovered
-                          ? AppColors.surfaceContainerLowest
+                          ? AppColors.surfaceContainerHigh
                           : AppColors.surfaceContainer,
                       borderRadius: BorderRadius.circular(AppRadii.card),
                       border: Border.all(
                         color: widget.isSelected
-                            ? AppColors.accent.withValues(alpha: 0.6)
+                            ? AppColors.accent.withValues(alpha: 0.7)
                             : _hovered
-                            ? AppColors.outlineVariant.withValues(alpha: 0.22)
+                            ? AppColors.outlineVariant.withValues(alpha: 0.35)
                             : Colors.transparent,
                         width: widget.isSelected ? 2 : 1,
                       ),
+                      boxShadow: _hovered
+                          ? [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.4),
+                                blurRadius: 16,
+                                offset: const Offset(0, 6),
+                              ),
+                            ]
+                          : null,
                     ),
                     child: Stack(
                       children: [
