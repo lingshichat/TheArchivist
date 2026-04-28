@@ -702,3 +702,36 @@ Implemented Bangumi bidirectional progress sync: API model extension (epStatus),
 ### Next Steps
 
 - None - task complete
+
+
+## Session 16: Redesign lists page with dark theme styling
+
+**Date**: 2026-04-28
+**Task**: Redesign lists page with dark theme styling
+**Branch**: `feat/dark-theme-redesign`
+
+### Summary
+
+Redesigned lists page components (ShelfCard, ListsCenterPage, ListDetailPage) to match dark theme with mint accent. Added hover shadows, accent bars, hero headers, and improved sort selector visuals.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `135fb45` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
