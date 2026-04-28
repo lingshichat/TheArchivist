@@ -643,3 +643,62 @@ Implemented Bangumi bidirectional progress sync: API model extension (epStatus),
 ### Next Steps
 
 - None - task complete
+
+
+## Session 15: PR2: 交互动画与页面过渡
+
+**Date**: 2026-04-28
+**Task**: PR2: 交互动画与页面过渡
+**Branch**: `feat/dark-theme-redesign`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+## 工作摘要
+
+完成 PR2：为 The Archivist 添加交互动画与页面过渡动画。
+
+## 主要改动
+
+| 模块 | 改动 |
+|------|------|
+| 页面过渡 | `app_router.dart` 添加 `CustomTransitionPage`， sibling 页面用 subtleFade (200ms)，Detail/Add 用 slideIn (280ms) |
+| 入场动画 | `PosterWrap` 恢复 staggered 入场动画（淡入 + 上浮），基于行列延迟 |
+| 卡片交互 | `PosterCard` 添加 hover 阴影、上浮、颜色变化 |
+| Home 页 | 添加 `_HeroBanner`（首条 Continuing 的横向 Banner），`_CategoryCard` hover 动画 |
+| Library 页 | 标签栏 `AnimatedContainer` + `AnimatedDefaultTextStyle`，布局优化 |
+| Detail 页 | `_DetailSidebar` 添加 hover 阴影 + scale，圆角统一，标题字号增大 |
+| 其他 | `finishedOverlay` 遮罩改为深色，web 平台支持 |
+
+## 踩坑记录
+
+1. **页面过渡"怪怪的"**：旧页面瞬间消失，新页面独自动画进入。原因是 `transitionsBuilder` 只处理了 `animation`（新页面进入），没处理 `secondaryAnimation`（旧页面退出）。修复后两者同时淡入淡出，层级感自然。
+2. **误删 staggered 动画**：以为每个卡片独立的 `AnimationController` 是性能瓶颈，回滚后用户反馈丢失了喜欢的入场效果。实际性能瓶颈在别处。恢复后用 `TweenAnimationBuilder` 替代 `AnimationController`，效果相同但更轻量。
+3. **hover 效果回滚丢失**：回滚 `poster_card.dart` 时把阴影和 hover 颜色也还原了，导致上浮动画视觉上不明显。单独恢复了阴影和颜色变化。
+
+## 提交
+
+- Branch: `feat/dark-theme-redesign`
+- Commit: `8b952a7 feat(ui): add page transitions and interaction animations`
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `8b952a7` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

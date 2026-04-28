@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 14
-- **Last Active**: 2026-04-26
+- **Total Sessions**: 15
+- **Last Active**: 2026-04-28
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~645 | Active |
+| `journal-1.md` | ~704 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 15 | 2026-04-28 | PR2: 交互动画与页面过渡 | `8b952a7` | `feat/dark-theme-redesign` |
 | 14 | 2026-04-26 | Bangumi data integration | `0ee495a` | `main` |
 | 13 | 2026-04-25 | Bangumi progress sync implementation | `c21bfad`, `5aaa70f`, `770d6a1` | `worktree-bangumi-progress-sync` |
 | 12 | 2026-04-25 | Phase 5: desktop polish, performance, skeleton, error boundary | `9a027e1`, `50bc28e` | `main` |
