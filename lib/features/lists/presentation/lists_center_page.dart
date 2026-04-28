@@ -78,10 +78,57 @@ class _ListsBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _ListsHeader(shelfCount: shelves.length),
+        // Hero header
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Lists', style: AppTextStyles.heroTitle(theme)),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    'Organize your media into curated collections.',
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                ],
+              ),
+            ),
+            FilledButton.icon(
+              onPressed: () => _showCreateDialog(context),
+              icon: const Icon(Icons.add_rounded, size: 18),
+              label: const Text('Create List'),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.xxl),
+        // Subtle separator
+        Container(
+          padding: const EdgeInsets.only(bottom: AppSpacing.xl),
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: AppColors.outlineVariant.withValues(alpha: 0.1),
+              ),
+            ),
+          ),
+          child: Row(
+            children: [
+              Text(
+                '${shelves.length} custom ${shelves.length == 1 ? 'list' : 'lists'}',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: AppColors.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
         const SizedBox(height: AppSpacing.xxl),
         if (shelves.isEmpty)
           EmptyState(
@@ -94,36 +141,6 @@ class _ListsBody extends StatelessWidget {
           )
         else
           _ShelfGrid(shelves: shelves),
-      ],
-    );
-  }
-}
-
-class _ListsHeader extends StatelessWidget {
-  const _ListsHeader({required this.shelfCount});
-
-  final int shelfCount;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        Expanded(
-          child: Text(
-            '$shelfCount custom ${shelfCount == 1 ? 'list' : 'lists'}',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: AppColors.onSurfaceVariant,
-            ),
-          ),
-        ),
-        FilledButton.icon(
-          onPressed: () => _showCreateDialog(context),
-          icon: const Icon(Icons.add_rounded, size: 18),
-          label: const Text('Create List'),
-        ),
       ],
     );
   }
@@ -478,9 +495,7 @@ class _ConfirmDialog extends StatelessWidget {
           ),
         ),
         FilledButton(
-          style: FilledButton.styleFrom(
-            backgroundColor: AppColors.error,
-          ),
+          style: FilledButton.styleFrom(backgroundColor: AppColors.error),
           onPressed: () => Navigator.of(context).pop(true),
           child: Text(confirmLabel.toUpperCase()),
         ),

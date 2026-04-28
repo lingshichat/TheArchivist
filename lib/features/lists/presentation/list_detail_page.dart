@@ -370,106 +370,139 @@ class _DetailHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        IconButton(
-          onPressed: () => context.go(AppRoutes.lists),
-          icon: const Icon(Icons.arrow_back_rounded, size: 20),
-          color: AppColors.onSurfaceVariant,
-          tooltip: 'Back to lists',
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.xxl),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(AppRadii.container),
+        border: Border.all(
+          color: AppColors.outlineVariant.withValues(alpha: 0.1),
         ),
-        const SizedBox(width: AppSpacing.md),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(detail.name, style: AppTextStyles.heroTitle(theme)),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                '${detail.itemCount} ${detail.itemCount == 1 ? 'item' : 'items'}',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: AppColors.onSurfaceVariant,
-                ),
-              ),
-            ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          IconButton(
+            onPressed: () => context.go(AppRoutes.lists),
+            icon: const Icon(Icons.arrow_back_rounded, size: 20),
+            color: AppColors.onSurfaceVariant,
+            tooltip: 'Back to lists',
           ),
-        ),
-        if (!batchMode)
-          PopupMenuButton<String>(
-            tooltip: 'List actions',
-            position: PopupMenuPosition.under,
-            color: AppColors.surfaceContainerLowest,
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppRadii.container),
-              side: BorderSide(
-                color: AppColors.outlineVariant.withValues(alpha: 0.15),
-              ),
-            ),
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'select',
-                child: Row(
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
-                    const Icon(Icons.check_circle_outline_rounded, size: 18),
-                    const SizedBox(width: AppSpacing.md),
-                    Text('Select items', style: theme.textTheme.bodySmall),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 'rename',
-                child: Row(
-                  children: [
-                    const Icon(Icons.edit_outlined, size: 18),
-                    const SizedBox(width: AppSpacing.md),
-                    Text('Rename', style: theme.textTheme.bodySmall),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 'delete',
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.delete_outline_rounded,
-                      size: 18,
-                      color: AppColors.error,
+                    Container(
+                      width: 3,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: AppColors.accent,
+                        borderRadius: BorderRadius.circular(AppRadii.sm),
+                      ),
                     ),
                     const SizedBox(width: AppSpacing.md),
-                    Text(
-                      'Delete',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: AppColors.error,
+                    Expanded(
+                      child: Text(
+                        detail.name,
+                        style: AppTextStyles.heroTitle(theme),
                       ),
                     ),
                   ],
                 ),
-              ),
-            ],
-            onSelected: (value) {
-              if (value == 'select') onEnterBatchMode();
-              if (value == 'rename') onRename();
-              if (value == 'delete') onDelete();
-            },
-            child: Container(
-              padding: const EdgeInsets.all(AppSpacing.sm),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceContainerLowest,
-                borderRadius: BorderRadius.circular(AppRadii.container),
-                border: Border.all(
-                  color: AppColors.outlineVariant.withValues(alpha: 0.1),
+                const SizedBox(height: AppSpacing.sm),
+                Padding(
+                  padding: const EdgeInsets.only(left: AppSpacing.md + 3),
+                  child: Text(
+                    '${detail.itemCount} ${detail.itemCount == 1 ? 'item' : 'items'}'
+                        .toUpperCase(),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: AppColors.onSurfaceVariant,
+                      letterSpacing: 1.0,
+                    ),
+                  ),
                 ),
-              ),
-              child: const Icon(
-                Icons.more_vert_rounded,
-                size: 20,
-                color: AppColors.onSurfaceVariant,
-              ),
+              ],
             ),
           ),
-      ],
+          if (!batchMode)
+            PopupMenuButton<String>(
+              tooltip: 'List actions',
+              position: PopupMenuPosition.under,
+              color: AppColors.surfaceContainerLowest,
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadii.container),
+                side: BorderSide(
+                  color: AppColors.outlineVariant.withValues(alpha: 0.15),
+                ),
+              ),
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  value: 'select',
+                  child: Row(
+                    children: [
+                      const Icon(Icons.check_circle_outline_rounded, size: 18),
+                      const SizedBox(width: AppSpacing.md),
+                      Text('Select items', style: theme.textTheme.bodySmall),
+                    ],
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'rename',
+                  child: Row(
+                    children: [
+                      const Icon(Icons.edit_outlined, size: 18),
+                      const SizedBox(width: AppSpacing.md),
+                      Text('Rename', style: theme.textTheme.bodySmall),
+                    ],
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'delete',
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.delete_outline_rounded,
+                        size: 18,
+                        color: AppColors.error,
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      Text(
+                        'Delete',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: AppColors.error,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              onSelected: (value) {
+                if (value == 'select') onEnterBatchMode();
+                if (value == 'rename') onRename();
+                if (value == 'delete') onDelete();
+              },
+              child: Container(
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceContainerLowest,
+                  borderRadius: BorderRadius.circular(AppRadii.container),
+                  border: Border.all(
+                    color: AppColors.outlineVariant.withValues(alpha: 0.1),
+                  ),
+                ),
+                child: const Icon(
+                  Icons.more_vert_rounded,
+                  size: 20,
+                  color: AppColors.onSurfaceVariant,
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
@@ -483,11 +516,12 @@ class _SortSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDisabled = onChanged == null;
 
     return PopupMenuButton<ShelfSortOption>(
       initialValue: value,
       onSelected: onChanged,
-      tooltip: 'Sort order',
+      tooltip: isDisabled ? 'Sorting disabled in batch mode' : 'Sort order',
       position: PopupMenuPosition.under,
       color: AppColors.surfaceContainerLowest,
       elevation: 2,
@@ -502,16 +536,32 @@ class _SortSelector extends StatelessWidget {
             .map(
               (option) => PopupMenuItem<ShelfSortOption>(
                 value: option,
-                child: Text(
-                  option.label,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color:
-                        option == value
-                            ? AppColors.accent
-                            : AppColors.onSurface,
-                    fontWeight:
-                        option == value ? FontWeight.w700 : FontWeight.w500,
-                  ),
+                child: Row(
+                  children: [
+                    if (option == value)
+                      Container(
+                        width: 6,
+                        height: 6,
+                        margin: const EdgeInsets.only(right: AppSpacing.md),
+                        decoration: const BoxDecoration(
+                          color: AppColors.accent,
+                          shape: BoxShape.circle,
+                        ),
+                      )
+                    else
+                      const SizedBox(width: AppSpacing.md + 6),
+                    Text(
+                      option.label,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color:
+                            option == value
+                                ? AppColors.accent
+                                : AppColors.onSurface,
+                        fontWeight:
+                            option == value ? FontWeight.w700 : FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             )
@@ -523,7 +573,10 @@ class _SortSelector extends StatelessWidget {
           vertical: AppSpacing.sm,
         ),
         decoration: BoxDecoration(
-          color: AppColors.surfaceContainerLowest,
+          color:
+              isDisabled
+                  ? AppColors.surfaceContainerLow.withValues(alpha: 0.5)
+                  : AppColors.surfaceContainerLowest,
           borderRadius: BorderRadius.circular(AppRadii.container),
           border: Border.all(
             color: AppColors.outlineVariant.withValues(alpha: 0.1),
@@ -537,14 +590,14 @@ class _SortSelector extends StatelessWidget {
             Text(
               value.label.toUpperCase(),
               style: theme.textTheme.labelLarge?.copyWith(
-                color: AppColors.onSurface,
+                color: isDisabled ? AppColors.subtleText : AppColors.onSurface,
               ),
             ),
             const SizedBox(width: AppSpacing.xs),
-            const Icon(
+            Icon(
               Icons.expand_more_rounded,
               size: 16,
-              color: AppColors.subtleText,
+              color: isDisabled ? AppColors.subtleText : AppColors.subtleText,
             ),
           ],
         ),
