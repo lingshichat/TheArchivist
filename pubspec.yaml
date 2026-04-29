@@ -56,7 +56,6 @@ dev_dependencies:
   http_mock_adapter: ^0.6.1
   drift_dev: ^2.22.1
   build_runner: ^2.4.14
-  msix: ^3.16.8
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -66,11 +65,3 @@ flutter:
   uses-material-design: true
   assets:
     - assets/icon.png
-
-msix_config:
-  display_name: The Archivist
-  publisher_display_name: lingshichat
-  identity_name: com.thearchivist.app
-  logo_path: assets/icon.png
-  capabilities: internetClient
-  install_certificate: false

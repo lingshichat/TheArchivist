@@ -32,22 +32,20 @@ jobs:
       - name: Build Windows
         run: flutter build windows --release
 
-      - name: Build MSIX installer
-        run: dart run msix:create
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress
 
-      - name: Rename MSIX with version
-        shell: pwsh
+      - name: Build EXE installer
         run: |
+          $env:PATH += ";C:\Program Files (x86)\Inno Setup 6"
           $version = "${{ github.ref_name }}"
-          $src = Get-ChildItem -Path "build/windows/x64/runner/Release" -Filter "*.msix" | Select-Object -First 1
-          $newName = "TheArchivist-$version.msix"
-          Rename-Item -Path $src.FullName -NewName $newName
+          iscc /DMyAppVersion=$version windows/installer/setup.iss
 
-      - name: Upload Windows artifact (MSIX)
+      - name: Upload Windows artifact (EXE)
         uses: actions/upload-artifact@v4
         with:
           name: windows-build
-          path: build/windows/x64/runner/Release/TheArchivist-*.msix
+          path: windows/TheArchivist-*-setup.exe
 
   build-android:
     runs-on: ubuntu-latest
@@ -99,5 +97,5 @@ jobs:
         with:
           body_path: CHANGELOG.md
           files: |
-            artifacts/windows-build/TheArchivist-*.msix
+            artifacts/windows-build/TheArchivist-*-setup.exe
             artifacts/android-build/TheArchivist-*.apk
