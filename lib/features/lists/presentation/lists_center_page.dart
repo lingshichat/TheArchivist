@@ -151,40 +151,44 @@ class _ShelfGrid extends ConsumerWidget {
 
   final List<ShelfListCardViewData> shelves;
 
+  // Aligned with PosterWrap parameters used by Library page.
+  static const int _minColumns = 4;
+  static const int _maxColumns = 7;
+  static const double _minTileWidth = 170;
+  static const double _horizontalSpacing = 28;
+  static const double _verticalSpacing = 48;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = _computeColumns(constraints.maxWidth);
+        final int estimatedColumns =
+            ((constraints.maxWidth + _horizontalSpacing) /
+                    (_minTileWidth + _horizontalSpacing))
+                .floor();
+        final int columns =
+            estimatedColumns.clamp(_minColumns, _maxColumns);
+        final double totalSpacing = (columns - 1) * _horizontalSpacing;
+        final double itemWidth =
+            (constraints.maxWidth - totalSpacing) / columns;
 
-        return GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: crossAxisCount,
-            crossAxisSpacing: AppSpacing.xl,
-            mainAxisSpacing: AppSpacing.xl,
-            childAspectRatio: 1.8,
-          ),
-          itemCount: shelves.length,
-          itemBuilder: (context, index) {
-            final shelf = shelves[index];
-            return ShelfCard(
-              data: shelf,
-              onEdit: () => _showRenameDialog(context, ref, shelf),
-              onDelete: () => _showDeleteDialog(context, ref, shelf),
-            );
-          },
+        return Wrap(
+          spacing: _horizontalSpacing,
+          runSpacing: _verticalSpacing,
+          children:
+              shelves.map((shelf) {
+                return SizedBox(
+                  width: itemWidth,
+                  child: ShelfCard(
+                    data: shelf,
+                    onEdit: () => _showRenameDialog(context, ref, shelf),
+                    onDelete: () => _showDeleteDialog(context, ref, shelf),
+                  ),
+                );
+              }).toList(),
         );
       },
     );
-  }
-
-  int _computeColumns(double width) {
-    if (width >= 1200) return 4;
-    if (width >= 900) return 3;
-    if (width >= 600) return 2;
-    return 1;
   }
 }
 

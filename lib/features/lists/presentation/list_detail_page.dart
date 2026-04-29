@@ -393,35 +393,17 @@ class _DetailHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 3,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        color: AppColors.accent,
-                        borderRadius: BorderRadius.circular(AppRadii.sm),
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.md),
-                    Expanded(
-                      child: Text(
-                        detail.name,
-                        style: AppTextStyles.heroTitle(theme),
-                      ),
-                    ),
-                  ],
+                Text(
+                  detail.name,
+                  style: AppTextStyles.heroTitle(theme),
                 ),
                 const SizedBox(height: AppSpacing.sm),
-                Padding(
-                  padding: const EdgeInsets.only(left: AppSpacing.md + 3),
-                  child: Text(
-                    '${detail.itemCount} ${detail.itemCount == 1 ? 'item' : 'items'}'
-                        .toUpperCase(),
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: AppColors.onSurfaceVariant,
-                      letterSpacing: 1.0,
-                    ),
+                Text(
+                  '${detail.itemCount} ${detail.itemCount == 1 ? 'item' : 'items'}'
+                      .toUpperCase(),
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: AppColors.onSurfaceVariant,
+                    letterSpacing: 1.0,
                   ),
                 ),
               ],

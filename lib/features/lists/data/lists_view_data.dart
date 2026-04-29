@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -12,12 +14,28 @@ class ShelfListCardViewData {
     required this.name,
     required this.itemCount,
     required this.createdAt,
+    this.previewItems = const [],
   });
 
   final String id;
   final String name;
   final int itemCount;
   final DateTime createdAt;
+  final List<ShelfPreviewItem> previewItems;
+}
+
+class ShelfPreviewItem {
+  const ShelfPreviewItem({
+    required this.id,
+    required this.title,
+    required this.mediaType,
+    this.posterUrl,
+  });
+
+  final String id;
+  final String title;
+  final MediaType mediaType;
+  final String? posterUrl;
 }
 
 class ShelfDetailViewData {
@@ -38,25 +56,68 @@ final shelfListCenterProvider = StreamProvider<List<ShelfListCardViewData>>(
   (ref) {
     final shelfRepository = ref.watch(shelfRepositoryProvider);
 
-    return shelfRepository.watchUserShelves().asyncMap((shelves) async {
-      final result = <ShelfListCardViewData>[];
+    // Re-emit when either shelf definitions or shelf ↔ media links change.
+    final controller = StreamController<List<ShelfListCardViewData>>();
 
-      for (final shelf in shelves) {
-        final count = await shelfRepository.countShelfItems(shelf.id);
-        result.add(
-          ShelfListCardViewData(
-            id: shelf.id,
-            name: shelf.name,
-            itemCount: count,
-            createdAt: shelf.createdAt,
+    final sub1 = shelfRepository.watchUserShelves().listen((_) {
+      _reloadShelfCards(shelfRepository, controller);
+    });
+    final sub2 = shelfRepository.watchAllShelfLinks().listen((_) {
+      _reloadShelfCards(shelfRepository, controller);
+    });
+
+    ref.onDispose(() {
+      sub1.cancel();
+      sub2.cancel();
+      controller.close();
+    });
+
+    return controller.stream;
+  },
+);
+
+Future<void> _reloadShelfCards(
+  ShelfRepository shelfRepository,
+  StreamController<List<ShelfListCardViewData>> controller,
+) async {
+  final shelves = await shelfRepository.watchUserShelves().first;
+  final result = <ShelfListCardViewData>[];
+
+  for (final shelf in shelves) {
+    final count = await shelfRepository.countShelfItems(shelf.id);
+
+    final previewItems = <ShelfPreviewItem>[];
+    if (count > 0) {
+      final items = await shelfRepository
+          .watchShelfMediaItems(shelf.id)
+          .first;
+      for (final item in items.take(4)) {
+        previewItems.add(
+          ShelfPreviewItem(
+            id: item.id,
+            title: item.title,
+            mediaType: item.mediaType,
+            posterUrl: item.posterUrl,
           ),
         );
       }
+    }
 
-      return result;
-    });
-  },
-);
+    result.add(
+      ShelfListCardViewData(
+        id: shelf.id,
+        name: shelf.name,
+        itemCount: count,
+        createdAt: shelf.createdAt,
+        previewItems: previewItems,
+      ),
+    );
+  }
+
+  if (!controller.isClosed) {
+    controller.add(result);
+  }
+}
 
 class ShelfDetailQuery {
   const ShelfDetailQuery({required this.shelfId, required this.sortBy});

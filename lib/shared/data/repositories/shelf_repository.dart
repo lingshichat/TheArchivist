@@ -281,6 +281,11 @@ class ShelfRepository {
     return _db.shelfDao.countMediaItemsByShelfId(shelfListId);
   }
 
+  /// Emits whenever any shelf ↔ media link changes (add, remove, reorder).
+  Stream<List<MediaItemShelve>> watchAllShelfLinks() {
+    return _db.shelfDao.watchAllShelfLinks();
+  }
+
   Stream<List<MediaItem>> watchShelfMediaItems(
     String shelfListId, {
     ShelfSortOption sortBy = ShelfSortOption.position,

@@ -232,6 +232,13 @@ class ShelfDao extends DatabaseAccessor<AppDatabase> with _$ShelfDaoMixin {
     );
   }
 
+  /// Emits whenever any shelf ↔ media link changes (add, remove, reorder).
+  Stream<List<MediaItemShelve>> watchAllShelfLinks() {
+    return (select(mediaItemShelves)
+          ..where((t) => t.deletedAt.isNull()))
+        .watch();
+  }
+
   Stream<List<MediaItem>> watchMediaItemsByShelfId(
     String shelfListId, {
     String sortBy = 'position',
