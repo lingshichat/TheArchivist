@@ -671,7 +671,7 @@ class _MockStep {
       DioException(
         requestOptions: options,
         response: response,
-        type: _errorType,
+        type: _errorType!,
       ),
     );
   }
