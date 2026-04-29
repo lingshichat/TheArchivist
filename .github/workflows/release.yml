@@ -32,16 +32,14 @@ jobs:
       - name: Build Windows
         run: flutter build windows --release
 
-      - name: Archive Windows build
-        shell: pwsh
-        run: |
-          Compress-Archive -Path "build/windows/x64/runner/Release/*" -DestinationPath "TheArchivist-Windows.zip"
+      - name: Build MSIX installer
+        run: dart run msix:create
 
-      - name: Upload Windows artifact
+      - name: Upload Windows artifact (MSIX)
         uses: actions/upload-artifact@v4
         with:
           name: windows-build
-          path: TheArchivist-Windows.zip
+          path: build/windows/x64/runner/Release/*.msix
 
   build-android:
     runs-on: ubuntu-latest
@@ -88,5 +86,5 @@ jobs:
         with:
           body_path: CHANGELOG.md
           files: |
-            artifacts/windows-build/TheArchivist-Windows.zip
+            artifacts/windows-build/*.msix
             artifacts/android-build/app-release.apk
