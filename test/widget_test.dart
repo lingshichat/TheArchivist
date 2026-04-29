@@ -7,6 +7,7 @@ import 'package:record_anywhere/app/app.dart';
 void main() {
   testWidgets('App smoke test', (WidgetTester tester) async {
     await tester.pumpWidget(const ProviderScope(child: RecordAnywhereApp()));
+    await tester.pumpAndSettle();
     expect(find.byType(MaterialApp), findsOneWidget);
   });
 }

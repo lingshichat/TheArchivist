@@ -42,11 +42,13 @@ void main() {
 
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
+    await tester.pumpAndSettle();
 
     expect(find.text('Watchlist'), findsOneWidget);
     expect(find.text('0 ITEMS'), findsOneWidget);
     expect(find.text('This list is empty'), findsOneWidget);
-    expect(find.text('OPEN LIBRARY'), findsOneWidget);  });
+    expect(find.text('OPEN LIBRARY'), findsOneWidget);
+  });
 
   testWidgets('list detail page shows poster items when list has content',
       (tester) async {
@@ -99,6 +101,7 @@ void main() {
 
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
+    await tester.pumpAndSettle();
 
     expect(find.text('Watchlist'), findsOneWidget);
     expect(find.text('2 ITEMS'), findsOneWidget);
