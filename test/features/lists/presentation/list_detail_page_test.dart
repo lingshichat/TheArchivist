@@ -44,7 +44,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 200));
 
     expect(find.text('Watchlist'), findsOneWidget);
-    expect(find.text('0 items'), findsOneWidget);
+    expect(find.text('0 ITEMS'), findsOneWidget);
     expect(find.text('This list is empty'), findsOneWidget);
     expect(find.text('OPEN LIBRARY'), findsOneWidget);  });
 
@@ -101,7 +101,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 200));
 
     expect(find.text('Watchlist'), findsOneWidget);
-    expect(find.text('2 items'), findsOneWidget);
+    expect(find.text('2 ITEMS'), findsOneWidget);
     expect(find.text('Arrival'), findsOneWidget);
     expect(find.text('Inception'), findsOneWidget);
     expect(find.text('This list is empty'), findsNothing);
