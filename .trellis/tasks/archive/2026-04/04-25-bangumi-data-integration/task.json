@@ -1,0 +1,40 @@
+{
+  "id": "bangumi-data-integration",
+  "name": "bangumi-data-integration",
+  "title": "脑暴：Bangumi 全量数据接入本地",
+  "description": "调研 Bangumi API 已返回但未落地的收藏级数据（comment、tags、社区评分）及未接入的端点（章节吐槽、角色/人物）。区分收藏 comment（单条、双向同步）和章节讨论（多条、时序、独立 feature），本次只做收藏级数据接入。",
+  "status": "completed",
+  "dev_type": null,
+  "scope": "backend",
+  "package": null,
+  "priority": "P2",
+  "creator": "lingshichat",
+  "assignee": "lingshichat",
+  "createdAt": "2026-04-25",
+  "completedAt": "2026-04-26",
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "current_phase": 0,
+  "next_action": [
+    "等待人工验收 Bangumi OAuth 登录和详情页同步字段",
+    "验收通过后提交并归档任务"
+  ],
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [
+    "lib/features/bangumi/data/bangumi_models.dart",
+    "lib/features/bangumi/data/bangumi_api_service.dart",
+    "lib/features/bangumi/data/bangumi_sync_service.dart",
+    "lib/features/bangumi/data/bangumi_pull_service.dart",
+    "lib/features/bangumi/data/bangumi_subject_mapper.dart",
+    "lib/features/bangumi/data/bangumi_type_mapper.dart",
+    "lib/shared/data/tables/media_items.dart",
+    "lib/shared/data/tables/user_entries.dart"
+  ],
+  "notes": "实现已完成，进入验收收尾；匹配已有本地条目的功能已写入 PRD 补充设计，暂不实现",
+  "meta": {}
+}

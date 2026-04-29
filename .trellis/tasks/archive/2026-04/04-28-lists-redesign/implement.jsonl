@@ -1,0 +1,7 @@
+{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend development guide"}
+{"file": ".trellis/spec/frontend/design-system.md", "reason": "Token contract, surface philosophy, typography rules, No-Line rule"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Component patterns, hover feedback contract, styling patterns"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Forbidden patterns, required patterns, testing requirements"}
+{"file": "lib/shared/theme/app_theme.dart", "reason": "Token reference for colors, spacing, radii, text styles"}
+{"file": "lib/features/home/presentation/home_page.dart", "reason": "Reference for card hover patterns and page structure"}

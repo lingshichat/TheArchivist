@@ -1,0 +1,30 @@
+{
+  "id": "settings-preferences-cleanup",
+  "name": "settings-preferences-cleanup",
+  "title": "清理设置页：移除未实装的占位 UI",
+  "description": "删除设置页左侧 Appearance 和 Logging Preferences 两个纯占位 section，仅保留已实装的功能模块（Local Data、Bangumi Connection、Cloud Sync、About）",
+  "status": "completed",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "lingshichat",
+  "assignee": "lingshichat",
+  "createdAt": "2026-04-25",
+  "completedAt": "2026-04-25",
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "current_phase": 4,
+  "next_action": [],
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [
+    "lib/features/settings/presentation/settings_page.dart"
+  ],
+  "notes": "",
+  "meta": {}
+}

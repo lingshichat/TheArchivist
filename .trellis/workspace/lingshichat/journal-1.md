@@ -735,3 +735,63 @@ Redesigned lists page components (ShelfCard, ListsCenterPage, ListDetailPage) to
 ### Next Steps
 
 - None - task complete
+
+
+## Session 17: Lists page redesign — poster mosaic cards
+
+**Date**: 2026-04-29
+**Task**: Lists page redesign — poster mosaic cards
+**Branch**: `feat/dark-theme-redesign`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+## Summary
+
+Rewrote the Lists page to use poster mosaic cards, aligning with the Library page's PosterCard design system.
+
+## Design Direction
+
+- Adopted Stitch "The Archivist" reference: 2×2 poster mosaic inside 2:3 cards
+- Card shape, hover animation, shadow, and border now match PosterCard exactly
+- Bottom meta aligned with libraryFooter variant (bodyLarge title + capsule count badge)
+
+## Changes
+
+### UI
+- **ShelfCard** — 2×2 mosaic grid with poster thumbnails or hash-based fallback gradients
+- **ListsCenterPage** — Wrap layout aligned with PosterWrap params (4–7 cols, 170px min, 28/48 spacing)
+- **ListDetailPage** — Removed green accent bar from header
+
+### Data Layer (retained from prior session)
+- `ShelfPreviewItem` + `previewItems` in view data
+- `watchAllShelfLinks()` reactive stream
+
+## Iterations
+
+1. Initial implementation used diagonal peek posters — rejected, not matching PRD
+2. Stitch HTML mockup generated for design validation
+3. Card size too large — added max width constraint, then aligned with Library params
+4. Style drift from PosterCard — fixed InkWell, spacing, and footer typography
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `031f870` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
