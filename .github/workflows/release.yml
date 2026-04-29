@@ -40,8 +40,8 @@ jobs:
         run: |
           $version = "${{ github.ref_name }}"
           $src = Get-ChildItem -Path "build/windows/x64/runner/Release" -Filter "*.msix" | Select-Object -First 1
-          $dest = "build/windows/x64/runner/Release/TheArchivist-$version.msix"
-          Rename-Item -Path $src.FullName -NewName $dest
+          $newName = "TheArchivist-$version.msix"
+          Rename-Item -Path $src.FullName -NewName $newName
 
       - name: Upload Windows artifact (MSIX)
         uses: actions/upload-artifact@v4
