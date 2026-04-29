@@ -1,10 +1,7 @@
 import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:record_anywhere/features/sync/data/sync_models.dart';
 import 'package:record_anywhere/features/sync/data/providers.dart';
-import 'package:record_anywhere/features/sync/data/sync_queue.dart';
-import 'package:record_anywhere/features/sync/data/sync_status.dart';
 import 'package:record_anywhere/shared/data/app_database.dart';
 import 'package:record_anywhere/shared/data/device_identity.dart';
 import 'package:record_anywhere/shared/data/providers.dart';
