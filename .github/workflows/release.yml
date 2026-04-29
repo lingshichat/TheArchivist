@@ -35,11 +35,19 @@ jobs:
       - name: Build MSIX installer
         run: dart run msix:create
 
+      - name: Rename MSIX with version
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}"
+          $src = Get-ChildItem -Path "build/windows/x64/runner/Release" -Filter "*.msix" | Select-Object -First 1
+          $dest = "build/windows/x64/runner/Release/TheArchivist-$version.msix"
+          Rename-Item -Path $src.FullName -NewName $dest
+
       - name: Upload Windows artifact (MSIX)
         uses: actions/upload-artifact@v4
         with:
           name: windows-build
-          path: build/windows/x64/runner/Release/*.msix
+          path: build/windows/x64/runner/Release/TheArchivist-*.msix
 
   build-android:
     runs-on: ubuntu-latest
@@ -64,11 +72,16 @@ jobs:
       - name: Build Android APK (64-bit only)
         run: flutter build apk --release --target-platform=android-arm64
 
+      - name: Rename APK with version
+        run: |
+          version="${{ github.ref_name }}"
+          mv build/app/outputs/flutter-apk/app-release.apk "build/app/outputs/flutter-apk/TheArchivist-$version.apk"
+
       - name: Upload Android artifact
         uses: actions/upload-artifact@v4
         with:
           name: android-build
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: build/app/outputs/flutter-apk/TheArchivist-*.apk
 
   create-release:
     needs: [build-windows, build-android]
@@ -86,5 +99,5 @@ jobs:
         with:
           body_path: CHANGELOG.md
           files: |
-            artifacts/windows-build/*.msix
-            artifacts/android-build/app-release.apk
+            artifacts/windows-build/TheArchivist-*.msix
+            artifacts/android-build/TheArchivist-*.apk
