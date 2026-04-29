@@ -53,7 +53,6 @@
 |----------|--------|
 | Windows | Primary target |
 | Android | Supported |
-| Web | Supported |
 | macOS | Planned |
 | Linux | Planned |
 | iOS | Planned |
@@ -82,9 +81,6 @@ flutter pub run build_runner build
 
 # Run on Windows
 flutter run -d windows
-
-# Or run on web
-flutter run -d chrome
 ```
 
 ### Build
@@ -93,11 +89,8 @@ flutter run -d chrome
 # Windows
 flutter build windows
 
-# Android
-flutter build apk
-
-# Web
-flutter build web
+# Android (64-bit)
+flutter build apk --target-platform=android-arm64
 ```
 
 ---
