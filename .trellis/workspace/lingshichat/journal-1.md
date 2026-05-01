@@ -795,3 +795,36 @@ Rewrote the Lists page to use poster mosaic cards, aligning with the Library pag
 ### Next Steps
 
 - None - task complete
+
+
+## Session 18: Trellis 0.5.0-rc.1 migration
+
+**Date**: 2026-05-01
+**Task**: Trellis 0.5.0-rc.1 migration
+**Branch**: `main`
+
+### Summary
+
+Migrated project Trellis runtime and platform files to 0.5.0-rc.1. Renamed Trellis skills and Codex agents to trellis-* variants, removed deprecated commands and Multi-Agent Pipeline files, added session-aware active task support and workflow breadcrumb hook, preserved local AGENTS.md and Codex config notes, verified trellis update dry-run and task scripts.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `ba0f48c` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

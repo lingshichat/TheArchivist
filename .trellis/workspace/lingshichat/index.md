@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 17
-- **Last Active**: 2026-04-29
+- **Total Sessions**: 18
+- **Last Active**: 2026-05-01
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~797 | Active |
+| `journal-1.md` | ~830 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 18 | 2026-05-01 | Trellis 0.5.0-rc.1 migration | `ba0f48c` | `main` |
 | 17 | 2026-04-29 | Lists page redesign — poster mosaic cards | `031f870` | `feat/dark-theme-redesign` |
 | 16 | 2026-04-28 | Redesign lists page with dark theme styling | `135fb45` | `feat/dark-theme-redesign` |
 | 15 | 2026-04-28 | PR2: 交互动画与页面过渡 | `8b952a7` | `feat/dark-theme-redesign` |
