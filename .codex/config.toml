@@ -3,3 +3,10 @@
 
 # Keep AGENTS.md as the primary project instruction file.
 project_doc_fallback_filenames = ["AGENTS.md"]
+
+# Trellis SessionStart + UserPromptSubmit hooks require user-level opt-in:
+#
+#   [features]
+#   codex_hooks = true
+#
+# Put that block in ~/.codex/config.toml. Project config cannot enable it.
