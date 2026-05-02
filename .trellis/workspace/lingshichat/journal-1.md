@@ -864,3 +864,36 @@ Migrated project Trellis runtime and platform files to 0.5.0-rc.1. Renamed Trell
 ### Next Steps
 
 - None - task complete
+
+
+## Session 20: Sidebar update badge with scroll-to-update
+
+**Date**: 2026-05-03
+**Task**: Sidebar update badge with scroll-to-update
+**Branch**: `main`
+
+### Summary
+
+侧边栏 Settings 导航项新增更新角标：watch updateControllerProvider，updateAvailable/downloaded/downloading 时显示 accent 色 NEW 标签。点击跳转设置页并自动滚动到 Updates section（scrollToUpdateProvider + ensureVisible 300ms）。mock 开关开启时自动触发 checkForUpdate，关闭时 reset。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `61b8bb3` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

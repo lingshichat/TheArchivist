@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 19
+- **Total Sessions**: 20
 - **Last Active**: 2026-05-03
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~866 | Active |
+| `journal-1.md` | ~899 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 20 | 2026-05-03 | Sidebar update badge with scroll-to-update | `61b8bb3` | `main` |
 | 19 | 2026-05-03 | Update check UI polish and mock preview system | `ce52849`, `1bdbb8d`, `4131d8c`, `529832a` | `main` |
 | 18 | 2026-05-01 | Trellis 0.5.0-rc.1 migration | `ba0f48c` | `main` |
 | 17 | 2026-04-29 | Lists page redesign — poster mosaic cards | `031f870` | `feat/dark-theme-redesign` |
