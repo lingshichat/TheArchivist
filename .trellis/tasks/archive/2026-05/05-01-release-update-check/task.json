@@ -1,0 +1,53 @@
+{
+  "id": "release-update-check",
+  "name": "release-update-check",
+  "title": "第一阶段实现更新检查基础能力：从 GitHub Releases 检查最新版本；启动时自动检查；设置页提供手动检查更新按钮；发现新版本后显示版本号、更新说明和下载按钮；Windows 与 Android 都能根据当前平台识别对应 release asset；支持应用内下载并显示下载进度；暂不实现自动安装或拉起安装器，Windows 安装流程和 Android APK 安装流程后续单独实现。当前版本应从项目运行时版本信息读取，不再硬编码。",
+  "description": "",
+  "status": "completed",
+  "dev_type": "fullstack",
+  "scope": "update",
+  "package": null,
+  "priority": "P2",
+  "creator": "lingshichat",
+  "assignee": "lingshichat",
+  "createdAt": "2026-05-01",
+  "completedAt": "2026-05-03",
+  "branch": "feature/release-update-check",
+  "base_branch": "main",
+  "worktree_path": null,
+  "current_phase": 0,
+  "next_action": [
+    {
+      "phase": 1,
+      "action": "brainstorm"
+    },
+    {
+      "phase": 2,
+      "action": "research"
+    },
+    {
+      "phase": 3,
+      "action": "implement"
+    },
+    {
+      "phase": 4,
+      "action": "check"
+    },
+    {
+      "phase": 5,
+      "action": "update-spec"
+    },
+    {
+      "phase": 6,
+      "action": "record-session"
+    }
+  ],
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {}
+}

@@ -1,0 +1,9 @@
+{"file": ".opencode/commands/trellis/finish-work.md", "reason": "Finish work checklist"}
+{"file": ".opencode/commands/trellis/check.md", "reason": "Code quality check spec"}
+{"file": ".trellis/spec/architecture/system-boundaries.md", "reason": "验证 UI、provider、service、client 边界无反向依赖"}
+{"file": ".trellis/spec/frontend/design-system.md", "reason": "验证设置页和弹窗符合视觉与文案规范"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "验证 Flutter UI 质量和禁用模式"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "验证网络、下载和服务代码质量"}
+{"file": "windows/installer/setup.iss", "reason": "验证 Windows installer 被拉起时与现有安装脚本兼容"}
+{"file": "android/app/src/main/AndroidManifest.xml", "reason": "验证 Android APK 安装所需权限/provider 配置"}
+{"file": "android/app/src/main/kotlin/com/thearchivist/app/MainActivity.kt", "reason": "验证 Android 原生安装桥接实现"}

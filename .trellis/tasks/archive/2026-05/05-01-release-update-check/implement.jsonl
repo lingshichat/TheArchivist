@@ -1,0 +1,19 @@
+{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend development guide"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend development guide"}
+{"file": ".trellis/spec/architecture/system-boundaries.md", "reason": "更新检查跨 UI、网络服务、平台下载边界，需遵循层级依赖"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "新增更新数据层、网络客户端与服务时确定文件放置"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "GitHub Releases 请求和下载失败需要统一错误映射"}
+{"file": ".trellis/spec/frontend/network-guidelines.md", "reason": "外部 GitHub API 需遵循 ApiClient-Service-Provider 分层"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "启动检查、手动检查、下载进度状态需要 Provider 管理"}
+{"file": ".trellis/spec/frontend/design-system.md", "reason": "设置页入口与更新提示 UI 需匹配现有桌面设计系统"}
+{"file": "pubspec.yaml", "reason": "确认当前版本、依赖与下载/平台能力"}
+{"file": ".github/workflows/release.yml", "reason": "确认 GitHub Release asset 命名和平台包产物"}
+{"file": "CHANGELOG.md", "reason": "更新说明来源与 release body 格式"}
+{"file": "lib/features/settings/presentation/settings_page.dart", "reason": "添加手动检查入口、更新提示和下载进度 UI"}
+{"file": "lib/shared/network/bangumi_api_client.dart", "reason": "参考 PackageInfo.fromPlatform 与网络客户端模式"}
+{"file": "lib/features/bangumi/data/providers.dart", "reason": "参考 provider 与 url_launcher 注入模式"}
+{"file": "windows/installer/setup.iss", "reason": "实现 Windows 下载完成后拉起 Inno Setup 安装器并确认安装参数"}
+{"file": "android/app/build.gradle.kts", "reason": "确认 Android applicationId、versionCode/versionName、签名与 ABI 对更新安装的影响"}
+{"file": "android/app/src/main/AndroidManifest.xml", "reason": "添加或验证 Android 拉起 APK 安装器所需权限和 provider"}
+{"file": "android/app/src/main/kotlin/com/thearchivist/app/MainActivity.kt", "reason": "实现或桥接 Android APK 安装 Intent"}

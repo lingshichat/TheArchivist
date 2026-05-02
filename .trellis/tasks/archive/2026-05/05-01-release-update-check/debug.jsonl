@@ -1,0 +1,6 @@
+{"file": ".opencode/commands/trellis/check.md", "reason": "Code quality check spec"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "调试 GitHub API、版本解析、下载失败和取消状态"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "调试启动检查、手动检查和下载进度状态流"}
+{"file": "windows/installer/setup.iss", "reason": "调试 Windows installer 启动、退出当前 app 与覆盖安装行为"}
+{"file": "android/app/src/main/AndroidManifest.xml", "reason": "调试 Android 安装权限、FileProvider 和系统安装器拉起失败"}
+{"file": "android/app/src/main/kotlin/com/thearchivist/app/MainActivity.kt", "reason": "调试 Android MethodChannel/Intent 安装流程"}
