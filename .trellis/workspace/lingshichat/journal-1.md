@@ -828,3 +828,39 @@ Migrated project Trellis runtime and platform files to 0.5.0-rc.1. Renamed Trell
 ### Next Steps
 
 - None - task complete
+
+
+## Session 19: Update check UI polish and mock preview system
+
+**Date**: 2026-05-03
+**Task**: Update check UI polish and mock preview system
+**Branch**: `main`
+
+### Summary
+
+重构设置页更新 UI：提取为独立 SectionCard，添加状态 badge 和动画（opacity 脉冲、AnimatedSwitcher、AnimatedSize），按钮统一为标准 FilledButton/OutlinedButton。创建全局 mock 预览系统：shared/providers/mock_provider.dart 全局开关，update_mock.dart 数据工厂，controller 检测 mock 标志走模拟流程。设置页 debug-only mock 开关可一键切换预览模式。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `ce52849` | (see git log) |
+| `1bdbb8d` | (see git log) |
+| `4131d8c` | (see git log) |
+| `529832a` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
