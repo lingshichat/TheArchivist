@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../app/shell/app_shell_scaffold.dart';
 import '../../update/data/providers.dart';
 import '../../update/data/update_models.dart';
 import '../../sync/data/providers.dart';
@@ -39,23 +40,47 @@ class SettingsPage extends StatelessWidget {
   }
 }
 
-class _SettingsContent extends StatelessWidget {
+class _SettingsContent extends ConsumerStatefulWidget {
   const _SettingsContent();
 
   @override
+  ConsumerState<_SettingsContent> createState() => _SettingsContentState();
+}
+
+class _SettingsContentState extends ConsumerState<_SettingsContent> {
+  final _updateSectionKey = GlobalKey();
+
+  @override
   Widget build(BuildContext context) {
-    return const Column(
+    ref.listen<bool>(scrollToUpdateProvider, (previous, shouldScroll) {
+      if (shouldScroll) {
+        ref.read(scrollToUpdateProvider.notifier).state = false;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final context = _updateSectionKey.currentContext;
+          if (context != null && context.mounted) {
+            Scrollable.ensureVisible(
+              context,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOut,
+              alignment: 0.1,
+            );
+          }
+        });
+      }
+    });
+
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _LocalDataSection(),
-        SizedBox(height: 48),
-        BangumiConnectionSection(),
-        SizedBox(height: 32),
-        SyncTargetSection(),
-        SizedBox(height: 32),
-        _AboutSection(),
-        SizedBox(height: 32),
-        _UpdateSection(),
+        const _LocalDataSection(),
+        const SizedBox(height: 48),
+        const BangumiConnectionSection(),
+        const SizedBox(height: 32),
+        const SyncTargetSection(),
+        const SizedBox(height: 32),
+        const _AboutSection(),
+        const SizedBox(height: 32),
+        _UpdateSection(key: _updateSectionKey),
       ],
     );
   }
@@ -341,7 +366,7 @@ class _AboutSection extends ConsumerWidget {
 }
 
 class _UpdateSection extends ConsumerWidget {
-  const _UpdateSection();
+  const _UpdateSection({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -714,7 +739,11 @@ class _MockUpdateToggle extends ConsumerWidget {
             value: isMock,
             onChanged: (value) {
               ref.read(mockModeProvider.notifier).state = value;
-              if (!value) {
+              if (value) {
+                ref
+                    .read(updateControllerProvider.notifier)
+                    .checkForUpdate(UpdateCheckTrigger.automatic);
+              } else {
                 ref.read(updateControllerProvider.notifier).reset();
               }
             },

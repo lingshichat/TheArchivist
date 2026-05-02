@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/update/data/providers.dart';
+import '../../features/update/data/update_models.dart';
+import '../../shared/providers/mock_provider.dart';
 import '../../shared/theme/app_theme.dart';
 import '../../shared/widgets/app_top_bar.dart';
 import '../router/app_router.dart';
+
+/// Set to `true` by sidebar when navigating to settings with update intent.
+/// The settings page watches this and scrolls to the update section.
+final scrollToUpdateProvider = StateProvider<bool>((ref) => false);
 
 class AppShellScaffold extends StatefulWidget {
   const AppShellScaffold({
@@ -93,11 +101,8 @@ class _AppShellScaffoldState extends State<AppShellScaffold> {
               isActive: _isListsSelected(widget.currentPath),
               onTap: () => context.go(AppRoutes.lists),
             ),
-            _SidebarNavItem(
-              label: 'Settings',
-              icon: Icons.settings_outlined,
+            _SidebarSettingsItem(
               isActive: _isSettingsSelected(widget.currentPath),
-              onTap: () => context.go(AppRoutes.settings),
             ),
             const Spacer(),
             const _SidebarProfile(),
@@ -338,12 +343,14 @@ class _SidebarNavItem extends StatefulWidget {
     required this.icon,
     required this.isActive,
     required this.onTap,
+    this.badge,
   });
 
   final String label;
   final IconData icon;
   final bool isActive;
   final VoidCallback onTap;
+  final Widget? badge;
 
   @override
   State<_SidebarNavItem> createState() => _SidebarNavItemState();
@@ -438,12 +445,64 @@ class _SidebarNavItemState extends State<_SidebarNavItem> {
                           widget.isActive ? FontWeight.w700 : FontWeight.w600,
                     ),
                   ),
+                  if (widget.badge != null) ...[
+                    const SizedBox(width: AppSpacing.sm),
+                    widget.badge!,
+                  ],
                 ],
               ),
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+class _SidebarSettingsItem extends ConsumerWidget {
+  const _SidebarSettingsItem({required this.isActive});
+
+  final bool isActive;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final updateState = ref.watch(updateControllerProvider);
+    final isMock = watchMockMode(ref);
+    final hasUpdate = updateState.status == UpdateStatus.updateAvailable ||
+        updateState.status == UpdateStatus.downloaded ||
+        updateState.status == UpdateStatus.downloading;
+
+    return _SidebarNavItem(
+      label: 'Settings',
+      icon: Icons.settings_outlined,
+      isActive: isActive,
+      onTap: () {
+        if (hasUpdate || isMock) {
+          ref.read(scrollToUpdateProvider.notifier).state = true;
+        }
+        context.go(AppRoutes.settings);
+      },
+      badge: hasUpdate
+          ? Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 6,
+                vertical: 1,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.accent,
+                borderRadius: BorderRadius.circular(AppRadii.card),
+              ),
+              child: Text(
+                'NEW',
+                style: TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.accentForeground,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            )
+          : null,
     );
   }
 }
