@@ -5,6 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../features/bangumi/data/bangumi_sync_feedback.dart';
 import '../features/bangumi/data/providers.dart';
+import '../features/update/data/providers.dart';
+import '../features/update/data/update_models.dart';
+import '../features/update/presentation/update_available_dialog.dart';
 import '../shared/theme/app_theme.dart';
 import '../shared/widgets/local_feedback.dart';
 import 'router/app_router.dart';
@@ -24,11 +27,64 @@ class RecordAnywhereApp extends ConsumerWidget {
       themeMode: ThemeMode.dark,
       routerConfig: router,
       builder: (context, child) {
-        return _BangumiSyncFeedbackHost(
-          child: child ?? const SizedBox.shrink(),
+        return _UpdateFeedbackHost(
+          child: _BangumiSyncFeedbackHost(
+            child: child ?? const SizedBox.shrink(),
+          ),
         );
       },
     );
+  }
+}
+
+class _UpdateFeedbackHost extends ConsumerStatefulWidget {
+  const _UpdateFeedbackHost({required this.child});
+
+  final Widget child;
+
+  @override
+  ConsumerState<_UpdateFeedbackHost> createState() =>
+      _UpdateFeedbackHostState();
+}
+
+class _UpdateFeedbackHostState extends ConsumerState<_UpdateFeedbackHost> {
+  bool _startedAutomaticCheck = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _startedAutomaticCheck) {
+        return;
+      }
+      _startedAutomaticCheck = true;
+      unawaited(
+        ref
+            .read(updateControllerProvider.notifier)
+            .checkForUpdate(UpdateCheckTrigger.automatic),
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.listen<UpdateState>(updateControllerProvider, (previous, next) {
+      if (!next.autoPromptPending ||
+          next.status != UpdateStatus.updateAvailable ||
+          next.updateInfo == null) {
+        return;
+      }
+
+      ref.read(updateControllerProvider.notifier).acknowledgeAutoPrompt();
+      unawaited(
+        showUpdateAvailableDialog(
+          context: context,
+          updateInfo: next.updateInfo!,
+        ),
+      );
+    });
+
+    return widget.child;
   }
 }
 
@@ -88,9 +144,8 @@ class _BangumiSyncFeedbackHost extends ConsumerWidget {
       showLocalFeedback(
         context,
         event.message,
-        tone: event.isError
-            ? LocalFeedbackTone.error
-            : LocalFeedbackTone.success,
+        tone:
+            event.isError ? LocalFeedbackTone.error : LocalFeedbackTone.success,
       );
     }
 

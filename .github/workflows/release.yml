@@ -23,6 +23,9 @@ jobs:
       - name: Disable analytics
         run: flutter config --no-analytics
 
+      - name: Setup Android NDK
+        run: ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager "ndk;27.0.12077973"
+
       - name: Get dependencies
         run: flutter pub get
 
