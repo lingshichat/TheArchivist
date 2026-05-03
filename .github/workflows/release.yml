@@ -9,7 +9,81 @@ permissions:
   contents: write
 
 jobs:
+  validate-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.6'
+          channel: 'stable'
+
+      - name: Disable analytics
+        run: flutter config --no-analytics
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Generate code
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
+
+      - name: Validate versions
+        run: |
+          python3 << 'PYEOF'
+          import re, sys
+
+          tag_version = "${{ github.ref_name }}".lstrip('v')
+
+          with open('pubspec.yaml', 'r') as f:
+              for line in f:
+                  if line.startswith('version:'):
+                      pubspec_version = line.split(':')[1].strip().split('+')[0]
+                      break
+              else:
+                  print("ERROR: Could not find version in pubspec.yaml", file=sys.stderr)
+                  sys.exit(1)
+
+          changelog_version = None
+          with open('CHANGELOG.md', 'r') as f:
+              for line in f:
+                  m = re.match(r'^## \s*\[?([^\]\s]+)\]?', line)
+                  if m:
+                      changelog_version = m.group(1).strip()
+                      break
+
+          if changelog_version is None:
+              print("ERROR: Could not find version heading in CHANGELOG.md", file=sys.stderr)
+              sys.exit(1)
+
+          print(f"Tag version:       {tag_version}")
+          print(f"Pubspec version:   {pubspec_version}")
+          print(f"Changelog version: {changelog_version}")
+
+          errors = []
+          if tag_version != pubspec_version:
+              errors.append(f"Tag version ({tag_version}) != pubspec.yaml version ({pubspec_version})")
+          if tag_version != changelog_version:
+              errors.append(f"Tag version ({tag_version}) != CHANGELOG.md version ({changelog_version})")
+
+          if errors:
+              print("\nERROR: Version mismatch detected!", file=sys.stderr)
+              for e in errors:
+                  print(f"  - {e}", file=sys.stderr)
+              sys.exit(1)
+
+          print("\nAll versions match. Release validation passed.")
+          PYEOF
+
   build-windows:
+    needs: validate-release
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -51,6 +125,7 @@ jobs:
           path: windows/TheArchivist-*-setup.exe
 
   build-android:
+    needs: validate-release
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -95,10 +170,47 @@ jobs:
         with:
           path: artifacts
 
+      - name: Extract release notes
+        run: |
+          python3 << 'PYEOF'
+          import re, sys
+
+          tag_version = "${{ github.ref_name }}".lstrip('v')
+
+          with open('CHANGELOG.md', 'r') as f:
+              content = f.read()
+
+          # Match ## [version] or ## version at start of line
+          pattern = rf'^## \s*\[?{re.escape(tag_version)}\]?.*$'
+          lines = content.split('\n')
+          start = None
+          for i, line in enumerate(lines):
+              if re.match(pattern, line):
+                  start = i
+                  break
+
+          if start is None:
+              print(f"ERROR: Version {tag_version} not found in CHANGELOG.md", file=sys.stderr)
+              sys.exit(1)
+
+          # Find end (next ## heading or EOF)
+          end = len(lines)
+          for i in range(start + 1, len(lines)):
+              if lines[i].startswith('## '):
+                  end = i
+                  break
+
+          section = '\n'.join(lines[start:end]).strip()
+          with open('release_notes.md', 'w') as f:
+              f.write(section)
+
+          print(f"Extracted release notes for version {tag_version}")
+          PYEOF
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          body_path: CHANGELOG.md
+          body_path: release_notes.md
           files: |
             artifacts/windows-build/TheArchivist-*-setup.exe
             artifacts/android-build/TheArchivist-*.apk
