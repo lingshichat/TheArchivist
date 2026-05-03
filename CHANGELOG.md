@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.1.1] - 2026-05-03
+
+### Features
+- **Sidebar Update Badge**: Visual indicator for content updates with auto-scroll to the latest item.
+- **In-App Update Check**: Check for new releases, download updates, and platform-specific install support.
+- **Settings Update UI**: Update check preview interface in settings with mock data support.
+- **Android FileProvider**: Added FileProvider paths for APK installation on Android.
+
+### Fixes
+- Resolved test failures related to pending timers, uppercase label assertions, and analyze errors.
+
+### Build
+- **Windows Installer**: Replaced MSIX with Inno Setup EXE installer.
+- **Release Artifacts**: Renamed artifacts to include app name and version (e.g., `TheArchivist-v0.1.1-setup.exe`).
+- **CI Workflow**: Aligned Flutter version with local environment; streamlined build matrix (web removed, Android 64-bit only).
+
 ## [0.1.0] - 2026-04-29
 
 ### Features
